@@ -4,9 +4,47 @@ import { useState } from 'react';
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const handleJoinWaitlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'Please enter your email address' });
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/join-waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message });
+        setEmail('');
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Something went wrong. Please try again.' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error. Please check your connection and try again.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -400,71 +438,75 @@ export default function Home() {
           </p>
           
           <div className="max-w-lg mx-auto">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <input
-                type="email"
-                placeholder="Enter your professional email"
-                className="flex-1 px-6 py-4 rounded-xl border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-slate-900 placeholder-slate-500 bg-white shadow-lg text-sm font-medium"
-              />
-              <button className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold hover:bg-slate-100 transition-colors duration-200 shadow-lg text-sm">
-                Join Waitlist
-              </button>
-            </div>
-            <p className="text-slate-400 text-sm mt-4 font-medium">
-              Professional-grade security • No spam • Unsubscribe anytime
-            </p>
+            <form onSubmit={handleJoinWaitlist} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your professional email"
+                  className="flex-1 px-6 py-4 rounded-xl border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50 text-slate-900 placeholder-slate-500 bg-white shadow-lg text-sm font-medium"
+                  disabled={isLoading}
+                />
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold hover:bg-slate-100 transition-colors duration-200 shadow-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Joining...
+                    </>
+                  ) : (
+                    'Join Waitlist'
+                  )}
+                </button>
+              </div>
+              
+              {message && (
+                <div className={`text-sm font-medium px-4 py-3 rounded-lg ${
+                  message.type === 'success' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                    : 'bg-red-100 text-red-800 border border-red-200'
+                }`}>
+                  {message.text}
+                </div>
+              )}
+              
+              <p className="text-slate-400 text-sm font-medium">
+                Professional-grade security • No spam • Unsubscribe anytime
+              </p>
+            </form>
           </div>
         </div>
       </section>
 
       {/* Professional Footer */}
-      <footer className="bg-slate-900 text-white py-16 px-4 sm:px-6 lg:px-8">
+      <footer className="bg-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <div>
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-lg tracking-tight">RR</span>
-                </div>
-                <span className="text-2xl font-bold tracking-tight">ResumeRouter</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg tracking-tight">RR</span>
               </div>
-              <p className="text-slate-400 mb-6 leading-relaxed">
-                Advanced AI-powered platform for strategic career optimization and professional development.
-              </p>
-              <p className="text-slate-400 text-sm font-medium">
-                hello@resumerouter.com
-              </p>
+              <span className="text-xl font-bold tracking-tight">ResumeRouter</span>
             </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Platform</h3>
-              <ul className="space-y-3 text-slate-400">
-                <li><a href="#features" className="hover:text-white transition-colors font-medium">Solutions</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Security</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Company</h3>
-              <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors font-medium">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Leadership</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Press</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-6">Connect</h3>
-              <ul className="space-y-3 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors font-medium">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Twitter</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors font-medium">Support</a></li>
-              </ul>
+            
+            <div className="flex items-center space-x-6 text-slate-400">
+              <a href="#" className="hover:text-white transition-colors font-medium text-sm">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors font-medium text-sm">Terms</a>
+              <a href="#" className="hover:text-white transition-colors font-medium text-sm">Contact</a>
+              <a href="#" className="hover:text-white transition-colors font-medium text-sm">Twitter</a>
+              <a href="#" className="hover:text-white transition-colors font-medium text-sm">LinkedIn</a>
             </div>
           </div>
-          <div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-            <p className="font-medium">&copy; 2024 ResumeRouter. All rights reserved. | Privacy Policy | Terms of Service</p>
+          
+          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
+            <p className="font-medium">&copy; 2024 ResumeRouter. All rights reserved.</p>
           </div>
         </div>
       </footer>
