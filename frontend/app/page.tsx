@@ -110,7 +110,10 @@ export default function Home() {
 
             {/* Professional CTA */}
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-20">
-              <button className="bg-slate-900 text-white px-10 py-4 rounded-xl text-lg font-semibold hover:bg-slate-800 transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl border border-slate-800">
+              <button 
+                onClick={() => document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-slate-900 text-white px-10 py-4 rounded-xl text-lg font-semibold hover:bg-slate-800 transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl border border-slate-800"
+              >
                 Request Demo
               </button>
               <button className="border-2 border-slate-300 text-slate-700 px-10 py-4 rounded-xl text-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all duration-200 shadow-sm">
@@ -245,7 +248,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-900 mb-1">Industry-Specific Optimization</h4>
-                      <p className="text-slate-600 text-sm">Our AI understands the nuances of different industries and tailors your resume accordingly.</p>
+                      <p className="text-slate-600 text-sm leading-relaxed">Our AI understands the nuances of different industries and tailors your resume accordingly. Whether you&apos;re in tech, finance, healthcare, or any other sector, we adapt your experience to match industry-specific terminology and expectations.</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -256,7 +259,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-900 mb-1">Real-Time Market Analysis</h4>
-                      <p className="text-slate-600 text-sm">Stay current with the latest job market trends and employer preferences.</p>
+                      <p className="text-slate-600 text-sm leading-relaxed">Stay current with the latest job market trends and employer preferences. Our platform continuously analyzes job postings and industry data to ensure your resume reflects the most sought-after skills and keywords in your field.</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -267,35 +270,43 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-900 mb-1">Personalized Recommendations</h4>
-                      <p className="text-slate-600 text-sm">Get tailored suggestions based on your unique background and career goals.</p>
+                      <p className="text-slate-600 text-sm leading-relaxed">Get tailored suggestions based on your unique background and career goals. Our AI considers your experience level, target roles, and career trajectory to provide recommendations that are specifically designed for your professional journey.</p>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/60">
                 <h4 className="text-lg sm:text-xl font-bold text-slate-900 mb-4 sm:mb-6">How It Works</h4>
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                    <div className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                <p className="text-slate-600 mb-6 text-sm leading-relaxed">
+                  Our streamlined process makes resume optimization simple and effective. Get professional results in just three easy steps.
+                </p>
+                <div className="space-y-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
                     <div>
-                      <h5 className="font-semibold text-slate-900 text-sm sm:text-base">Upload Your Resume</h5>
-                      <p className="text-slate-600 text-xs sm:text-sm">Simply upload your current resume in any standard format.</p>
+                      <h5 className="font-semibold text-slate-900 text-base mb-2">Upload Your Resume</h5>
+                      <p className="text-slate-600 text-sm leading-relaxed">Simply upload your current resume in any standard format including PDF, DOC, DOCX, or TXT files. Our platform supports all common resume formats.</p>
                     </div>
                   </div>
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                    <div className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
                     <div>
-                      <h5 className="font-semibold text-slate-900 text-sm sm:text-base">AI Analysis</h5>
-                      <p className="text-slate-600 text-xs sm:text-sm">Our AI analyzes your skills, experience, and target roles.</p>
+                      <h5 className="font-semibold text-slate-900 text-base mb-2">AI Analysis</h5>
+                      <p className="text-slate-600 text-sm leading-relaxed">Our advanced AI analyzes your skills, experience, and target roles to identify optimization opportunities and industry-specific requirements.</p>
                     </div>
                   </div>
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                    <div className="w-8 h-8 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
                     <div>
-                      <h5 className="font-semibold text-slate-900 text-sm sm:text-base">Get Optimized Results</h5>
-                      <p className="text-slate-600 text-xs sm:text-sm">Receive tailored recommendations and optimized resume versions.</p>
+                      <h5 className="font-semibold text-slate-900 text-base mb-2">Get Optimized Results</h5>
+                      <p className="text-slate-600 text-sm leading-relaxed">Receive tailored recommendations and optimized resume versions that are specifically crafted to match your target job requirements.</p>
                     </div>
                   </div>
+                </div>
+                <div className="mt-6 pt-6 border-t border-slate-200">
+                  <p className="text-slate-500 text-xs font-medium">
+                    ✓ Instant analysis • ✓ Professional results • ✓ Industry-specific optimization
+                  </p>
                 </div>
               </div>
             </div>
