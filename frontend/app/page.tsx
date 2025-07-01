@@ -66,6 +66,8 @@ export default function Home() {
               <a href="#home" className="px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors font-medium text-sm">Platform</a>
               <a href="#features" className="px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors font-medium text-sm">Solutions</a>
               <a href="#faq" className="px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors font-medium text-sm">Resources</a>
+              <a href="/Auth/SignIn" className="px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors font-medium text-sm">Sign In</a>
+
               <a href="#waitlist" className="ml-4 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-slate-800 transition-all duration-200 font-semibold text-sm shadow-sm">
                 Get Early Access
               </a>
