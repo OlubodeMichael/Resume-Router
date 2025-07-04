@@ -4,21 +4,33 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon server.ts",
-    "dev": "nodemon server.ts",
+    "start": "nodemon src/server.ts",
+    "dev": "nodemon src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.11.1",
     "@types/node": "^22.9.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.0.1",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "langchain": "^0.3.29",
+    "morgan": "^1.10.0",
     "nodemon": "^3.1.10",
+    "openai": "^5.8.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "prisma": "^6.11.1"
   }
 }
