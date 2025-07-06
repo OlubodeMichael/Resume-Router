@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -17,6 +13,66 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
-  password  String?  // nullable for Google users
-  createdAt DateTime @default(now())
+  password  String?   // Nullable for OAuth users
+  phone     String?   // Optional phone field
+  linkedin  String?   // Optional LinkedIn URL
+  address   String?   // Optional address
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?  @updatedAt
+
+  // Relations
+  resumes     Resume[]
+  experiences Experience[]
+  education   Education[]
+  skills      Skill[] // Even if 1 record per user, still modeled as an array
+}
+
+
+model Resume {
+  id              String   @id @default(uuid())
+  userId          String
+  template        String? // e.g., "modern", "classic"
+  outputFormat    String? // "pdf", "html", etc.
+  jsonData        Json? // full resume structure
+  aiGeneratedText String? // optional, if using AI
+  pdfUrl          String? // optional S3 link
+  createdAt       DateTime @default(now())
+
+  // Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Experience {
+  id              String    @id @default(uuid())
+  userId          String
+  title           String
+  company         String
+  description     String?       // short paragraph (1–2 sentences)
+  responsibilities Json?        // bullet points (array of strings)
+  startDate       DateTime
+  endDate         DateTime?
+
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+
+model Education {
+  id           String    @id @default(uuid())
+  userId       String
+  school       String
+  degree       String
+  fieldOfStudy String?
+  startDate    DateTime
+  endDate      DateTime?
+
+  // Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Skill {
+  id       String   @id @default(uuid())
+  userId   String   @unique
+  metadata Json                         // Stores categories and skill arrays
+
+  user     User     @relation(fields: [userId], references: [id])
 }
