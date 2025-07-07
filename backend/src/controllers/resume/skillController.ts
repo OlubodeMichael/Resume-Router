@@ -72,12 +72,13 @@ export const addSkills = catchAsync(
   export const updateSkills = catchAsync(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user?.id;
+      const { id } = req.params;
       if (!userId) {
         res.status(401).json({ message: "User not authenticated" });
         return;
       }
   
-      const { skills } = req.body;
+      const skills = req.body;
   
       if (
         !skills ||
@@ -92,13 +93,12 @@ export const addSkills = catchAsync(
         return;
       }
   
-      await prisma.skill.upsert({
-        where: { userId },
-        update: { metadata: skills },
-        create: { userId, metadata: skills },
+      const updatedSkills = await prisma.skill.update({
+        where: { id, userId },
+        data: { metadata: skills },
       });
   
-      res.status(200).json({ message: "Skills replaced successfully." });
+      res.status(200).json({ message: "Skills replaced successfully.", updatedSkills });
     }
   );
   

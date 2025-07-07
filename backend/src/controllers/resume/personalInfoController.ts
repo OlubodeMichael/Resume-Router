@@ -21,13 +21,12 @@ export const updatePersonalInfo = catchAsync(
           return;
       }
   
-      const { name, email, phone, linkedin, address } = parsed.data;
+      const { name, phone, linkedin, address } = parsed.data;
   
       await prisma.user.update({
           where: { id: userId },
           data: {
               name: name || undefined,
-              email: email || undefined,
               phone: phone || undefined,
               linkedin: linkedin || undefined,
               address: address || undefined,
