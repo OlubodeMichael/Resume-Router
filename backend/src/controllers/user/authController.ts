@@ -150,17 +150,3 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-export const me = async (req: Request, res: Response) => {
-    try {
-        res.status(200).json({
-            message: "User fetched successfully",
-            user: {
-                id: req.user.id,
-                email: req.user.email,
-                name: req.user.name
-            }
-        });
-    } catch (error) {
-        console.error("User fetch error:", error);
-    }
-}

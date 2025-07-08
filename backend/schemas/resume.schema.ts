@@ -39,3 +39,7 @@ export const resumeInputSchema = z.object({
   skills: z.array(z.string()).optional(),
 });
 
+export const jobDescriptionSchema = z.object({
+  content: z.string().min(30, "Job description is too short"),
+  source: z.string().optional(),
+});

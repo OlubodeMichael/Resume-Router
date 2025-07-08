@@ -21,6 +21,7 @@ model User {
   updatedAt DateTime?  @updatedAt
 
   // Relations
+  jobDescriptions JobDescription[]
   resumes     Resume[]
   experiences Experience[]
   education   Education[]
@@ -75,4 +76,15 @@ model Skill {
   metadata Json                         // Stores categories and skill arrays
 
   user     User     @relation(fields: [userId], references: [id])
+}
+
+model JobDescription {
+  id         String   @id @default(uuid())
+  userId     String
+  content    String    // raw pasted job description
+  source     String?   // e.g., "LinkedIn" (optional)
+  parsedData Json?     // will be used later by LangChain
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }

@@ -1,18 +1,9 @@
-import express, { Request, Response } from 'express';
+import express, { RequestHandler } from 'express';
+import { protect } from '../controllers/user/authController';
+import { getMe } from '../controllers/user/userController';
 
 const router = express.Router();
 
-router.post('/', (req: Request, res: Response) => {
-    const { firstName, lastName, email, password } = req.body;
-
-    const user = {
-        firstName,
-        lastName,
-        email,
-        password
-    }
-
-    res.status(201).json(user);
-});
+router.get("/me", protect as RequestHandler, getMe as RequestHandler);
 
 export default router;
