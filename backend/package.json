@@ -12,6 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@langchain/core": "^0.3.62",
+    "@langchain/google-genai": "^0.2.14",
     "@prisma/client": "^6.11.1",
     "@types/node": "^22.9.0",
     "bcrypt": "^6.0.0",
@@ -22,7 +24,7 @@
     "langchain": "^0.3.29",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.10",
-    "openai": "^5.8.2",
+    "openai": "^5.8.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "zod": "^3.25.74"

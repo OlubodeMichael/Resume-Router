@@ -27,3 +27,14 @@ export const createJobDescription = catchAsync(async (req: Request, res: Respons
       jobId: job.id,
     });
   });
+
+
+  export const parseJobDescription = catchAsync(async (req: Request, res: Response) => {
+    const jobId = req.params.id;
+    const parsed = await JobService.parseJobDescription(jobId);
+  
+    res.status(200).json({
+      message: "Job description parsed successfully",
+      parsedData: parsed,
+    });
+  });

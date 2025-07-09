@@ -32,16 +32,18 @@ model User {
 model Resume {
   id              String   @id @default(uuid())
   userId          String
-  template        String? // e.g., "modern", "classic"
-  outputFormat    String? // "pdf", "html", etc.
-  jsonData        Json? // full resume structure
-  aiGeneratedText String? // optional, if using AI
-  pdfUrl          String? // optional S3 link
+  jobDescriptionId String?  // ✅ Add this
+  template        String?
+  outputFormat    String?
+  jsonData        Json?
+  aiGeneratedText String?
+  pdfUrl          String?
   createdAt       DateTime @default(now())
 
-  // Relation
-  user User @relation(fields: [userId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
+  jobDescription  JobDescription? @relation(fields: [jobDescriptionId], references: [id])
 }
+
 
 model Experience {
   id              String    @id @default(uuid())
@@ -81,10 +83,11 @@ model Skill {
 model JobDescription {
   id         String   @id @default(uuid())
   userId     String
-  content    String    // raw pasted job description
-  source     String?   // e.g., "LinkedIn" (optional)
-  parsedData Json?     // will be used later by LangChain
+  content    String
+  source     String?
+  parsedData Json?
   createdAt  DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  resumes  Resume[]  // ✅ This is the missing reverse relation
 }
