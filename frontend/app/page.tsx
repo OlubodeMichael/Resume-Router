@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -18,20 +19,22 @@ export default function Home() {
           <Features />
 
           {/* Additional Content Section */}
-          <div className="rounded-3xl p-8 sm:px-12 border border-slate-200/60">
+          <div className="rounded-3xl p-8 sm:px-12 border border-slate-200/60" id="how-it-works">
             <HowItWorks />
             <WhyChooseUs />
           </div>
         </div>
       </section>
 
-      {/* Professional FAQ Section */}
-      <FAQ />
+      
 
       {/* Professional Waitlist Section */}
       <div className='w-full flex flex-col items-center justify-center text-center  px-4 bg-gray-50'>
       <JoinWaitlist />
       </div>
+
+      {/* Professional FAQ Section */}
+      <FAQ />
 
       {/* Professional Footer */}
       <Footer />
@@ -46,16 +49,16 @@ function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-white py-2 relative">
+      <nav className="sticky top-0 z-50 w-full bg-white py-2 opacity-98 backdrop-blur-sm smooth-scroll">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-          <div className="flex justify-center items-center space-x-2">
+          <Link className="flex justify-center items-center space-x-2" href="/" >
             <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
               RR
             </div>
             <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
-          </div>
+          </Link>
           </div>
           {/* Desktop Links */}
           <div className="hidden md:flex items-center space-x-8">
@@ -226,8 +229,8 @@ function Features() {
 
  function HowItWorks() {
   return (
-    <div className="w-full flex flex-col items-center justify-center text-center  px-4 ">
-    <div className="w-full flex flex-col items-center justify-center text-center  bg-white rounded-2xl p-6 sm:p-10 border border-slate-200 shadow-sm font-sans">
+    
+    <div className="w-full flex flex-col items-center justify-center text-center  rounded-2xl py-30 p-6 sm:p-10  font-sans" >
       <h2 className="text-3xl sm:text-4xl font-serif font-medium text-slate-900 text-center mb-4">
         How It Works
       </h2>
@@ -270,7 +273,7 @@ function Features() {
         </p>
       </div>
     </div>
-    </div>
+    
   );
 }
 
@@ -382,7 +385,7 @@ function FAQ() {
                   onClick={() => toggleFaq(index)}
                   className="w-full px-8 py-6 text-left flex items-center justify-between transition-colors duration-200"
                 >
-                  <h3 className="text-xl font-medium text-slate-900 pr-4">{faq.question}</h3>
+                  <h3 className="text-md sm:text-lg font-medium text-slate-900 pr-4 font-sans">{faq.question}</h3>
                   <svg
                     className={`w-6 h-6 text-slate-500 transition-transform duration-200 flex-shrink-0 ${
                       openFaq === index ? 'rotate-180' : ''
@@ -423,6 +426,7 @@ function JoinWaitlist() {
 
     if (!email.trim()) {
       setMessage({ type: 'error', text: 'Please enter your email address' });
+      setTimeout(() => setMessage(null), 3000);
       return;
     }
 
@@ -435,32 +439,36 @@ function JoinWaitlist() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-
+    
       const data = await res.json();
       if (res.ok) {
         setMessage({ type: 'success', text: data.message || 'Successfully joined!' });
         setEmail('');
+        setTimeout(() => setMessage(null), 3000);
       } else {
         setMessage({ type: 'error', text: data.message || 'Something went wrong. Please try again.' });
+        setTimeout(() => setMessage(null), 3000);
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setTimeout(() => setMessage(null), 3000);
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); 
     }
+    
   };
 
   return (
-    <section id="join-waitlist" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 text-center">
+    <section id="join-waitlist" className="pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 text-center">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium text-slate-900 mb-4 sm:mb-6 leading-tight px-4 sm:px-0">
+        <h2 className="text-[2.5rem] sm:text-[3rem] lg:text-5xl font-serif font-medium text-slate-900 mb-4 sm:mb-6 leading-tight px-4 sm:px-0">
           Build resumes that get noticed
         </h2>
-        <p className="text-slate-600 text-base sm:text-lg mb-6 font-sans px-4 sm:px-0">
+        <p className="text-slate-600 text-md sm:text-lg mb-6 font-sans px-4 sm:px-0">
           Join ResumeRouter today and tailor your next resume with AI no writing skills required.
         </p>
 
-        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 text-sm font-medium text-slate-600 mb-6 sm:mb-8 px-4 sm:px-0">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 text-md font-medium text-slate-600 mb-6 sm:mb-8 px-4 sm:px-0">
           <span className="flex items-center gap-2">
             <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -488,13 +496,13 @@ function JoinWaitlist() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-slate-300 shadow-sm text-slate-800 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition"
+              className="w-[90%] px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-slate-300 shadow-sm text-slate-800 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto bg-blue-800 text-white px-6 sm:px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-base sm:text-lg"
+              className=" whitespace-nowrap w-full sm:w-auto bg-blue-800 text-white px-6 sm:px-4 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-base sm:text-md"
             >
               {isLoading ? 'Joining...' : 'Join the Waitlist'}
             </button>
@@ -517,16 +525,16 @@ function JoinWaitlist() {
         
         <div className="pt-6 sm:pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center text-sm text-slate-600 px-4 sm:px-0">
           <div>
-            <p className="font-semibold text-slate-900 text-base">Over 12k</p>
-            <p className="text-xs sm:text-sm">Professionals helped</p>
+            <p className="font-semibold text-slate-900 text-xl">Over 12k</p>
+            <p className="text-sm sm:text-md">Professionals helped</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900 text-base">5.4 hours saved</p>
-            <p className="text-xs sm:text-sm">Per resume, on average</p>
+            <p className="font-semibold text-slate-900 text-xl">5.4 hours saved</p>
+            <p className="text-sm sm:text-md">Per resume, on average</p>
           </div>
           <div>
-            <p className="font-semibold text-slate-900 text-base">99.7%</p>
-            <p className="text-xs sm:text-sm">Plan to use us again</p>
+            <p className="font-semibold text-slate-900 text-xl">99.7%</p>
+            <p className="text-sm sm:text-md">Plan to use us again</p>
           </div>
         </div>
       </div>
