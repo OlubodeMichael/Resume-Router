@@ -45,68 +45,94 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 w-full  bg-white py-2">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
-        {/* Logo */}
-        <div className="flex items-center space-x-2">
-        <div className="flex justify-center items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
-            RR
+    <>
+      <nav className="sticky top-0 z-50 w-full bg-white py-2 relative">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+          <div className="flex justify-center items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
+              RR
+            </div>
+            <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
+          </div>
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#features" className="text-gray-700 hover:text-black font-medium">Features</a>
+            <a href="#how-it-works" className="text-gray-700 hover:text-black font-medium">How It Works</a>
+            <a href="#faq" className="text-gray-700 hover:text-black font-medium">FAQ</a>
+          </div>
+          {/* Join Waitlist Button */}
+          <div className="hidden md:block">
+            <a
+              href="#join-waitlist"
+              className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
+            >
+              Join Waitlist
+            </a>
+          </div>
+          {/* Hamburger Icon */}
+          <button
+            className="md:hidden flex items-center z-50 relative"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg
+              className="w-7 h-7 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+              )}
+            </svg>
+          </button>
         </div>
-        </div>
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center space-x-8">
-          <a href="#features" className="text-gray-700 hover:text-black font-medium">Features</a>
-          <a href="#how-it-works" className="text-gray-700 hover:text-black font-medium">How It Works</a>
-          <a href="#faq" className="text-gray-700 hover:text-black font-medium">FAQ</a>
-        </div>
-        {/* Join Waitlist Button */}
-        <div className="hidden md:block">
+      </nav>
+
+      {/* Mobile Menu Dropdown */}
+      <div className={`fixed top-[72px] left-0 right-0 bg-white shadow-xl z-[60] md:hidden border-t border-gray-100 transform transition-all duration-300 ease-in-out ${
+        menuOpen 
+          ? 'translate-y-0 opacity-100' 
+          : '-translate-y-full opacity-0 pointer-events-none'
+      }`}>
+        <div className="px-4 py-2">
+          <a 
+            href="#features" 
+            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
+            onClick={() => setMenuOpen(false)}
+          >
+            Features
+          </a>
+          <a 
+            href="#how-it-works" 
+            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
+            onClick={() => setMenuOpen(false)}
+          >
+            How It Works
+          </a>
+          <a 
+            href="#faq" 
+            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
+            onClick={() => setMenuOpen(false)}
+          >
+            FAQ
+          </a>
           <a
             href="#join-waitlist"
-            className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
+            className="block mt-4 bg-blue-800 text-white px-5 py-3 rounded-lg font-semibold shadow hover:bg-blue-900 transition-all duration-200 text-center"
+            onClick={() => setMenuOpen(false)}
           >
             Join Waitlist
           </a>
         </div>
-        {/* Hamburger Icon */}
-        <button
-          className="md:hidden flex items-center"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          <svg
-            className="w-7 h-7 text-gray-700"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {menuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-            )}
-          </svg>
-        </button>
       </div>
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden px-4 pb-4 bg-white shadow">
-          <a href="#features" className="block py-2 text-gray-700 hover:text-black font-medium">Features</a>
-          <a href="#how-it-works" className="block py-2 text-gray-700 hover:text-black font-medium">How It Works</a>
-          <a href="#faq" className="block py-2 text-gray-700 hover:text-black font-medium">FAQ</a>
-          <a
-            href="#join-waitlist"
-            className="block mt-2 bg-blue-800 text-white px-5 py-2 rounded-lg font-semibold shadow hover:bg-blue-900 transition text-center"
-          >
-            Join Waitlist
-          </a>
-        </div>
-      )}
-    </nav>
+    </>
   );
 }
 
@@ -425,16 +451,16 @@ function JoinWaitlist() {
   };
 
   return (
-    <section id="waitlist" className="py-24 px-6 sm:px-8 text-center">
+    <section id="join-waitlist" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 text-center">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-4xl sm:text-5xl font-serif font-medium text-slate-900 mb-6 leading-tight w-[80%] mx-auto">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium text-slate-900 mb-4 sm:mb-6 leading-tight px-4 sm:px-0">
           Build resumes that get noticed
         </h2>
-        <p className="text-slate-600 text-lg mb-6 font-sans">
+        <p className="text-slate-600 text-base sm:text-lg mb-6 font-sans px-4 sm:px-0">
           Join ResumeRouter today and tailor your next resume with AI no writing skills required.
         </p>
 
-        <div className="flex flex-wrap justify-center items-center gap-4 text-sm font-medium text-slate-600 mb-8">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 text-sm font-medium text-slate-600 mb-6 sm:mb-8 px-4 sm:px-0">
           <span className="flex items-center gap-2">
             <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -455,20 +481,20 @@ function JoinWaitlist() {
           </span>
         </div>
 
-        <form onSubmit={handleJoinWaitlist} className="max-w-xl mx-auto w-full">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+        <form onSubmit={handleJoinWaitlist} className="max-w-xl mx-auto w-full px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="flex-1 px-5 py-4 rounded-xl border border-slate-300 shadow-sm text-slate-800 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition w-[90%] mx-auto"
+              className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-slate-300 shadow-sm text-slate-800 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
+              className="w-full sm:w-auto bg-blue-800 text-white px-6 sm:px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-base sm:text-lg"
             >
               {isLoading ? 'Joining...' : 'Join the Waitlist'}
             </button>
@@ -476,7 +502,7 @@ function JoinWaitlist() {
 
           {message && (
             <div
-              className={`mt-4 text-sm font-medium px-4 py-3 rounded-lg ${
+              className={`mt-4 text-sm font-medium px-4 py-3 rounded-lg mx-4 sm:mx-0 ${
                 message.type === 'success'
                   ? 'bg-blue-100 text-blue-800 border border-blue-200'
                   : 'bg-red-100 text-red-800 border border-red-200'
@@ -486,19 +512,21 @@ function JoinWaitlist() {
             </div>
           )}
         </form>
-        <div className=' mt-10  border-t border-slate-200 pt-8 flex flex-row items-center justify-center w-[1000px] mx-auto'></div>
-        <div className=" pt-8 grid grid-cols-2 sm:grid-cols-3 gap-6 text-center text-sm grid-cols-center text-slate-600 w-full">
+        
+        <div className="mt-8 sm:mt-10 border-t border-slate-200 pt-6 sm:pt-8 mx-4 sm:mx-0"></div>
+        
+        <div className="pt-6 sm:pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center text-sm text-slate-600 px-4 sm:px-0">
           <div>
             <p className="font-semibold text-slate-900 text-base">Over 12k</p>
-            <p>Professionals helped</p>
+            <p className="text-xs sm:text-sm">Professionals helped</p>
           </div>
           <div>
             <p className="font-semibold text-slate-900 text-base">5.4 hours saved</p>
-            <p>Per resume, on average</p>
+            <p className="text-xs sm:text-sm">Per resume, on average</p>
           </div>
           <div>
             <p className="font-semibold text-slate-900 text-base">99.7%</p>
-            <p>Plan to use us again</p>
+            <p className="text-xs sm:text-sm">Plan to use us again</p>
           </div>
         </div>
       </div>
