@@ -19,6 +19,7 @@ import {
   deleteSkill,
   getSkills,
 } from "../controllers/resume/skillController";
+import { generateResume } from "../controllers/resume/resumeController";
 import { protect } from "../controllers/user/authController";
 
 const router = express.Router();
@@ -40,4 +41,5 @@ router.post("/skills", protect as RequestHandler, addSkills as RequestHandler);
 router.patch("/skills/:id", protect as RequestHandler, updateSkills as RequestHandler);
 router.delete("/skills/:category/:name", protect as RequestHandler, deleteSkill as RequestHandler);
 
+router.post("/generate", protect as RequestHandler, generateResume as RequestHandler);
 export default router;
