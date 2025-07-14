@@ -26,6 +26,8 @@ model User {
   experiences Experience[]
   education   Education[]
   skills      Skill[] // Even if 1 record per user, still modeled as an array
+  projects        Project[]
+  achievements    Achievement[]
 }
 
 
@@ -36,7 +38,7 @@ model Resume {
   template        String?
   outputFormat    String?
   jsonData        Json?
-  aiGeneratedText String?
+  aiGeneratedText Json?
   createdAt       DateTime @default(now())
 
   user           User           @relation(fields: [userId], references: [id])
@@ -90,4 +92,28 @@ model JobDescription {
 
   user     User      @relation(fields: [userId], references: [id])
   resumes  Resume[]  // ✅ This is the missing reverse relation
+}
+
+model Project {
+  id          String     @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  keywords    String[]   // ✅ works for tech and non-tech
+  link        String?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model Achievement {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  issuedBy  String?
+  date      DateTime?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
 }

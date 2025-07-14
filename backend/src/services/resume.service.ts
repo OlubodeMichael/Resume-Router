@@ -49,12 +49,36 @@ export const ResumeService = {
       .join(", ");
 
     const prompt = PromptTemplate.fromTemplate(`
-You're a resume expert. Given the job description and ONE of the user's past roles, generate 2–3 tailored bullet points using ATS-friendly, results-focused language.
+You are a resume AI assistant.
 
-Each bullet point should follow this format:
-- [Strong action verb] [what you did] [measurable result or impact]
+Based on the user's experience and a target job description, generate a structured JSON object.
 
-Job Keywords:
+Each job experience should return:
+- jobTitle
+- company
+- bullets (3-4 resume bullet points, written in ATS-friendly language)
+
+Use the job description and skills to tailor each bullet to match the role.
+make a full sentence for each bullet. adding terminologies and concepts that are relevant to the job description.
+
+Return your output in **valid JSON only**. No extra commentary.
+
+Format:
+{{
+  "sections": [
+    {{
+      "jobTitle": "Frontend Developer",
+      "company": "PixelCraft Inc",
+      "bullets": [
+        "Built 20+ scalable UI components using React and Tailwind CSS, reducing load times by 30%",
+        "Collaborated with backend engineers to integrate REST APIs",
+        "Optimized performance with lazy loading and memoization"
+      ]
+    }}
+  ]
+}}
+
+Job Description Keywords:
 {keywords}
 
 Job Responsibilities:
@@ -73,12 +97,11 @@ User Experience:
 
 User Skills:
 {userSkills}
-
 Education:
 {education}
     `);
 
-    const generatedBullets: string[] = [];
+    const generatedSections: any[] = [];
 
     for (const exp of experiences) {
       const experiencePrompt = await prompt
@@ -100,18 +123,22 @@ Education:
           education: formattedEducation,
         });
 
-      generatedBullets.push(experiencePrompt);
+      const parsedJson = JSON.parse(experiencePrompt);
+      if (parsedJson.sections && Array.isArray(parsedJson.sections)) {
+        generatedSections.push(...parsedJson.sections);
+      }
     }
 
-    const aiText = generatedBullets.join("\n\n");
+    const jsonData = { sections: generatedSections };
 
     const generatedResume = await prisma.resume.create({
       data: {
         userId,
         jobDescriptionId,
         template: "ai",
-        outputFormat: "text",
-        aiGeneratedText: aiText,
+        outputFormat: "json",
+        aiGeneratedText: null,
+        jsonData,
       },
     });
 
