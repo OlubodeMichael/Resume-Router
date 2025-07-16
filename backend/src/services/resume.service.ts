@@ -1,147 +1,207 @@
-import { prisma } from "../../lib/prisma";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { ChatOpenAI } from "@langchain/openai";
+import { prisma } from '../../lib/prisma';
+import { ChatOpenAI } from '@langchain/openai';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { z } from 'zod';
 
-interface ParsedData {
-  skills: string[];
-  responsibilities: string[];
-  questions: string[];
-}
-
-const llm = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  modelName: "gpt-4o-mini",
-  temperature: 0.3,
+// Define schema for resume content
+export const ResumeContentSchema = z.object({
+  header: z.object({
+    name: z.string(),
+    email: z.string(),
+    phone: z.string().optional(),
+    summary: z.string().optional(),
+  }),
+  skills: z.array(z.string()),
+  experience: z.array(
+    z.object({
+      title: z.string(),
+      company: z.string(),
+      startDate: z.string(),
+      endDate: z.string().optional(),
+      responsibilities: z.array(z.string()),
+    })
+  ),
+  education: z.array(
+    z.object({
+      degree: z.string(),
+      school: z.string(),
+      graduationYear: z.string().optional(),
+    })
+  ),
+  projects: z.array(
+    z.object({
+      title: z.string(),
+      description: z.string(),
+    })
+  ).optional(),
+  achievements: z.array(
+    z.object({
+      title: z.string(),
+      issuedBy: z.string().optional(),
+    })
+  ).optional(),
 });
 
-export const ResumeService = {
-  async generateResume(userId: string, jobDescriptionId: string) {
-    const job = await prisma.jobDescription.findUnique({
-      where: { id: jobDescriptionId },
-    });
+export type ResumeContent = z.infer<typeof ResumeContentSchema>;
 
-    if (!job || !job.parsedData) {
-      throw new Error("Job description not found or not parsed");
-    }
+// Initialize LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-3.5-turbo', // Replace with xAI's model when available
+  openAIApiKey: process.env.OPENAI_API_KEY,
+  temperature: 0.2,
+});
 
-    const parsed = job.parsedData as unknown as ParsedData;
+// Prompt for resume generation
+const prompt = PromptTemplate.fromTemplate(`
+  Generate a tailored resume based on the user's profile and job description.
+  Output in JSON format with the following structure:
+  use the job description to format your response for the skills, experience, education, projects, and achievements so that it is relevant to the job description and the user can pass the ATS.
+  for each of the experience, tailor the experience to the job description and the user can pass the ATS.
+  tailor the experience in a way that is relevant to the job description and the user can pass the ATS.
+  dont just repeat the experience the user has, tailor it to the job description and the user can pass the ATS.
+  take the experience the user has and tailor it to the job description and the user can pass the ATS.
+  {{
+    "header": {{
+      "name": "string",
+      "email": "string",
+      "phone": "string (optional)",
+      "summary": "string (optional)"
+    }},
+    "skills": ["skill1", "skill2"],
+    "experience": [
+      {{
+        "title": "string",
+        "company": "string",
+        "startDate": "string",
+        "endDate": "string (optional)",
+        "responsibilities": ["responsibility1", "responsibility2"]
+      }}
+    ],
+    "education": [
+      {{
+        "degree": "string",
+        "school": "string",
+        "graduationYear": "string (optional)"
+      }}
+    ],
+    "projects": [
+      {{
+        "title": "string",
+        "description": "string"
+      }}
+    ],
+    "achievements": [
+      {{
+        "title": "string",
+        "issuedBy": "string (optional)"
+      }}
+    ]
+  }}
 
-    const [experiences, skills, education] = await Promise.all([
-      prisma.experience.findMany({ where: { userId } }),
-      prisma.skill.findMany({ where: { userId } }),
-      prisma.education.findMany({ where: { userId } }),
-    ]);
+  User Profile:
+  {profile}
 
-    const formattedEducation = education
-      .map(
-        (e) =>
-          `- ${e.degree} in ${e.fieldOfStudy || ""} from ${e.school} (${e.startDate.toISOString().split("T")[0]} - ${
-            e.endDate?.toISOString().split("T")[0] || "Present"})`
-      )
-      .join("\n");
+  Job Description Parsed Data:
+  {jobDescription}
 
-    const formattedSkills = skills
-      .flatMap((s) => {
-        const data = s.metadata as { categories: Record<string, string[]> };
-        return Object.values(data.categories || {}).flat();
-      })
-      .join(", ");
+  Instructions:
+  - Match the user's skills, experience, education, projects, and achievements to the job description's requirements.
+  - Prioritize skills and experiences that align with the job's skills, experience level, and responsibilities.
+  - Create a professional summary tailored to the job.
+  - Ensure the output is concise and relevant to the job description.
+`);
 
-    const prompt = PromptTemplate.fromTemplate(`
-You are a resume AI assistant.
+// Generate Resume
+export const generateResume = async (
+  userId: string,
+  jobDescriptionId?: string
+): Promise<ResumeContent> => {
+  // Fetch user profile
+  let profile = await prisma.profile.findUnique({
+    where: { userId },
+    select: { skills: true, experience: true, education: true, projects: true, achievements: true },
+  });
 
-Based on the user's experience and a target job description, generate a structured JSON object.
-
-Each job experience should return:
-- jobTitle
-- company
-- bullets (3-4 resume bullet points, written in ATS-friendly language)
-
-Use the job description and skills to tailor each bullet to match the role.
-make a full sentence for each bullet. adding terminologies and concepts that are relevant to the job description.
-
-Return your output in **valid JSON only**. No extra commentary.
-
-Format:
-{{
-  "sections": [
-    {{
-      "jobTitle": "Frontend Developer",
-      "company": "PixelCraft Inc",
-      "bullets": [
-        "Built 20+ scalable UI components using React and Tailwind CSS, reducing load times by 30%",
-        "Collaborated with backend engineers to integrate REST APIs",
-        "Optimized performance with lazy loading and memoization"
-      ]
-    }}
-  ]
-}}
-
-Job Description Keywords:
-{keywords}
-
-Job Responsibilities:
-{responsibilities}
-
-Resume Questions:
-{questions}
-
-User Experience:
-- Title: {title}
-- Company: {company}
-- Duration: {startDate} to {endDate}
-- Description: {description}
-- Responsibilities:
-{userResponsibilities}
-
-User Skills:
-{userSkills}
-Education:
-{education}
-    `);
-
-    const generatedSections: any[] = [];
-
-    for (const exp of experiences) {
-      const experiencePrompt = await prompt
-        .pipe(llm)
-        .pipe(new StringOutputParser())
-        .invoke({
-          keywords: parsed.skills.join(", "),
-          responsibilities: parsed.responsibilities.join("\n"),
-          questions: parsed.questions.join("\n"),
-          title: exp.title,
-          company: exp.company,
-          startDate: exp.startDate.toISOString().split("T")[0],
-          endDate: exp.endDate?.toISOString().split("T")[0] || "Present",
-          description: exp.description || "",
-          userResponsibilities: Array.isArray(exp.responsibilities)
-            ? (exp.responsibilities as string[]).join("\n")
-            : "",
-          userSkills: formattedSkills,
-          education: formattedEducation,
-        });
-
-      const parsedJson = JSON.parse(experiencePrompt);
-      if (parsedJson.sections && Array.isArray(parsedJson.sections)) {
-        generatedSections.push(...parsedJson.sections);
-      }
-    }
-
-    const jsonData = { sections: generatedSections };
-
-    const generatedResume = await prisma.resume.create({
+  // If profile doesn't exist, create a default one
+  if (!profile) {
+    profile = await prisma.profile.create({
       data: {
         userId,
-        jobDescriptionId,
-        template: "ai",
-        outputFormat: "json",
-        aiGeneratedText: null,
-        jsonData,
+        skills: [],
+        experience: [],
+        education: [],
+        projects: [],
+        achievements: [],
       },
+      select: { skills: true, experience: true, education: true, projects: true, achievements: true },
     });
+  }
 
-    return generatedResume;
-  },
+  // Fetch user details
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Fetch job description (if provided)
+  let jobDescription = null;
+  if (jobDescriptionId) {
+    jobDescription = await prisma.jobDescription.findUnique({
+      where: { id: jobDescriptionId },
+      select: { parsedData: true },
+    });
+    if (!jobDescription) {
+      throw new Error('Job description not found');
+    }
+  }
+
+  // Properly cast JSON fields from profile
+  const experience = Array.isArray(profile.experience) ? profile.experience : [];
+  const education = Array.isArray(profile.education) ? profile.education : [];
+  const projects = Array.isArray(profile.projects) ? profile.projects : [];
+  const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
+
+  // Default resume content
+  let resumeContent: ResumeContent = {
+    header: {
+      name: user.name || 'Unknown',
+      email: user.email,
+      phone: '',
+      summary: 'Professional with relevant skills and experience.',
+    },
+    skills: profile.skills || [],
+    experience: experience as any,
+    education: education as any,
+    projects: projects as any,
+    achievements: achievements as any,
+  };
+
+  try {
+    const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+    const result = await chain.invoke({
+      profile: JSON.stringify(profile),
+      jobDescription: jobDescription ? JSON.stringify(jobDescription.parsedData) : '{}',
+    });
+    
+    // Parse the JSON response
+    const parsed = JSON.parse(result);
+    resumeContent = {
+      header: parsed.header || resumeContent.header,
+      skills: parsed.skills || resumeContent.skills,
+      experience: parsed.experience || resumeContent.experience,
+      education: parsed.education || resumeContent.education,
+      projects: parsed.projects || resumeContent.projects,
+      achievements: parsed.achievements || resumeContent.achievements,
+    };
+  } catch (error) {
+    console.error('Resume generation failed:', error);
+    // Return default resume content
+  }
+
+  return resumeContent;
 };

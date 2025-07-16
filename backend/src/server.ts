@@ -9,7 +9,7 @@ async function startServer() {
     // Try a simple query to confirm connection
     await prisma.user.findMany();
     console.log("✅ Connected to the database");
-
+    
     app.listen(3000, () => {
       console.log("🚀 Server is running on http://localhost:3000");
     });

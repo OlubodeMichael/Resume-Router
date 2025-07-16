@@ -1,10 +1,17 @@
-import express, { RequestHandler } from "express";
-import { createJobDescription, parseJobDescription } from "../controllers/Job/job.controller"
-import { protect } from "../controllers/user/authController";
+import express from 'express';
+import {
+  createJobDescription,
+  getJobDescriptions,
+  getJobDescription,
+  deleteJobDescription,
+} from '../controllers/jobDescriptionController';
+import { protect } from '../controllers/authController';
 
 const router = express.Router();
 
-router.post("/", protect as RequestHandler, createJobDescription as RequestHandler);
-router.post("/:id/parse", protect as RequestHandler, parseJobDescription as RequestHandler);
+router.post('/', protect, createJobDescription);
+router.get('/', protect, getJobDescriptions);
+router.get('/:id', protect, getJobDescription);
+router.delete('/:id', protect, deleteJobDescription);
 
 export default router;
