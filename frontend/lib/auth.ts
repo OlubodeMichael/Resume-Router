@@ -1,5 +1,7 @@
 import GoogleProvider from "next-auth/providers/google";
 import { AuthOptions, DefaultSession } from "next-auth";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { prisma } from "../../backend/lib/prisma";
 
 // Extend the JWT type to include our custom properties
 declare module "next-auth/jwt" {
@@ -20,6 +22,7 @@ declare module "next-auth" {
 }
 
 export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -27,6 +30,11 @@ export const authOptions: AuthOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
+
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
+  },
 
   session: {
     strategy: "jwt", // required for cookie + backend verification
