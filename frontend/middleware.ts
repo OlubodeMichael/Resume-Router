@@ -1,3 +1,4 @@
+// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const protectedRoutes = ["/dashboard"];
@@ -5,6 +6,7 @@ const protectedRoutes = ["/dashboard"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Allow public files, APIs, and unprotected routes
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
@@ -19,7 +21,7 @@ export async function middleware(req: NextRequest) {
 
   if (!token) {
     const referer = req.headers.get("referer");
-    if (referer && referer.includes("/api/auth/google/callback")) {
+    if (referer?.includes("/api/auth/google/callback")) {
       console.log("🔍 OAuth redirect detected, allowing access");
       return NextResponse.next();
     }
@@ -32,27 +34,22 @@ export async function middleware(req: NextRequest) {
   const verifyUrl =
     process.env.NODE_ENV === "development"
       ? "http://localhost:8000/api/auth/verify"
-      : "https://app.resumeroute.com/api/auth/verify";
+      : "https://api.resumeroute.com/api/auth/verify";
 
   try {
-    const response = await fetch(verifyUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await fetch(verifyUrl, {
       credentials: "include",
+      headers: { Cookie: `authToken=${token.value}` }, // ⬅️ manually forward token
     });
 
-    if (!response.ok) {
+    if (!res.ok) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth/signin";
       return NextResponse.redirect(url);
     }
 
     return NextResponse.next();
-  } catch (error) {
-    console.error("Token verification failed:", error);
+  } catch {
     const url = req.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
@@ -60,5 +57,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*"], // ✅ enables protection
 };
