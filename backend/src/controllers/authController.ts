@@ -151,6 +151,7 @@ export const googleCallback = (req: Request, res: Response) => {
 
       console.log("Setting cookie with token:", userAuth.token.substring(0, 20) + "...");
       
+      // Set the cookie first
       res.cookie("authToken", userAuth.token, {
         httpOnly: true,
         secure: false, // Set to false for development (localhost)
@@ -172,7 +173,12 @@ export const verifyAuth = async (req: Request, res: Response) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      console.log("❌ User not found in database");
+      throw new Error("User not found");
+    }
+    
+    console.log("✅ User verified successfully:", user.email);
     res.json({ user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });

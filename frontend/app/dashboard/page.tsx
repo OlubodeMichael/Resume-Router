@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
   Plus, 
@@ -18,7 +20,52 @@ import {
   Square
 } from 'lucide-react';
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
 export default function Dashboard() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/auth/verify', {
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          router.push('/auth/signin');
+          return;
+        }
+        
+        const data = await response.json();
+        setUser(data.user);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth verification failed:', error);
+        router.push('/auth/signin');
+      }
+    };
+
+    verifyAuth();
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-white">
       {/* Left Sidebar */}
@@ -34,6 +81,11 @@ export default function Dashboard() {
             </div>
             <ChevronLeft className="w-5 h-5 text-gray-500" />
           </div>
+          {user && (
+            <div className="mt-2 text-sm text-gray-600">
+              Welcome, {user.name}
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
