@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,81 +11,45 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
-  password  String?   // Nullable for OAuth users
-  phone     String?   // Optional phone field
-  linkedin  String?   // Optional LinkedIn URL
-  address   String?   // Optional address
-  createdAt DateTime  @default(now())
-  updatedAt DateTime?  @updatedAt
-
-  // Relations
+  password  String?  // Nullable for OAuth
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  profile   Profile?
+  resumes   Resume[]
   jobDescriptions JobDescription[]
-  resumes     Resume[]
-  experiences Experience[]
-  education   Education[]
-  skills      Skill[] // Even if 1 record per user, still modeled as an array
 }
 
-
-model Resume {
-  id              String   @id @default(uuid())
-  userId          String
-  jobDescriptionId String?  // ✅ Add this
-  template        String?
-  outputFormat    String?
-  jsonData        Json?
-  aiGeneratedText String?
-  pdfUrl          String?
-  createdAt       DateTime @default(now())
-
-  user            User           @relation(fields: [userId], references: [id])
-  jobDescription  JobDescription? @relation(fields: [jobDescriptionId], references: [id])
-}
-
-
-model Experience {
-  id              String    @id @default(uuid())
-  userId          String
-  title           String
-  company         String
-  description     String?       // short paragraph (1–2 sentences)
-  responsibilities Json?        // bullet points (array of strings)
-  startDate       DateTime
-  endDate         DateTime?
-
-  user            User     @relation(fields: [userId], references: [id])
-}
-
-
-model Education {
-  id           String    @id @default(uuid())
-  userId       String
-  school       String
-  degree       String
-  fieldOfStudy String?
-  startDate    DateTime
-  endDate      DateTime?
-
-  // Relation
-  user User @relation(fields: [userId], references: [id])
-}
-
-model Skill {
-  id       String   @id @default(uuid())
-  userId   String   @unique
-  metadata Json                         // Stores categories and skill arrays
-
-  user     User     @relation(fields: [userId], references: [id])
+model Profile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  skills     String[]
+  experience Json
+  education  Json
+  projects   Json
+  achievements Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime? @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model JobDescription {
-  id         String   @id @default(uuid())
-  userId     String
-  content    String
-  source     String?
-  parsedData Json?
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String   
+  content      String
+  parsedData   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime? @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  resumes      Resume[]
+}
 
-  user     User      @relation(fields: [userId], references: [id])
-  resumes  Resume[]  // ✅ This is the missing reverse relation
+model Resume {
+  id              String   @id @default(uuid())
+  userId          String   
+  jobDescriptionId String?  
+  content         Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime? @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+  jobDescription  JobDescription? @relation(fields: [jobDescriptionId], references: [id])
 }
