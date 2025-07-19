@@ -5,7 +5,7 @@ import { parseJobDescription } from '../services/job.service';
 
 // Create Job Description
 export const createJobDescription = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { content } = req.body;
 
   if (!userId) {
@@ -39,7 +39,7 @@ export const createJobDescription = catchAsync(async (req: Request, res: Respons
 
 // Get All Job Descriptions for User
 export const getJobDescriptions = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -59,7 +59,7 @@ export const getJobDescriptions = catchAsync(async (req: Request, res: Response)
 
 // Get Single Job Description
 export const getJobDescription = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { id } = req.params;
 
   if (!userId) {
@@ -84,7 +84,7 @@ export const getJobDescription = catchAsync(async (req: Request, res: Response):
 
 // Delete Job Description
 export const deleteJobDescription = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { id } = req.params;
 
   if (!userId) {

@@ -5,7 +5,7 @@ import { generateResume } from '../services/resume.service';
 
 // Create Resume
 export const createResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { jobDescriptionId } = req.body;
 
   if (!userId) {
@@ -35,7 +35,7 @@ export const createResume = catchAsync(async (req: Request, res: Response): Prom
 
 // Get All Resumes for User
 export const getResumes = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -55,7 +55,7 @@ export const getResumes = catchAsync(async (req: Request, res: Response): Promis
 
 // Get Single Resume
 export const getResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { id } = req.params;
 
   if (!userId) {
@@ -80,7 +80,7 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
 
 // Delete Resume
 export const deleteResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { id } = req.params;
 
   if (!userId) {

@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useAuth } from "@/context/authProvider";
 
 export default function SignIn() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
+    const { googleLogin } = useAuth();
     const handleGoogleSignIn = async () => {
         try {
             setIsLoading(true);
-            await signIn("google", { callbackUrl: "/dashboard" });
+            await googleLogin();
         } catch (error) {
             console.error("Sign in error:", error);
         } finally {

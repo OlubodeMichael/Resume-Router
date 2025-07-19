@@ -56,11 +56,18 @@ const llm = new ChatOpenAI({
 const prompt = PromptTemplate.fromTemplate(`
   Generate a tailored resume based on the user's profile and job description.
   Output in JSON format with the following structure:
-  use the job description to format your response for the skills, experience, education, projects, and achievements so that it is relevant to the job description and the user can pass the ATS.
-  for each of the experience, tailor the experience to the job description and the user can pass the ATS.
-  tailor the experience in a way that is relevant to the job description and the user can pass the ATS.
-  dont just repeat the experience the user has, tailor it to the job description and the user can pass the ATS.
-  take the experience the user has and tailor it to the job description and the user can pass the ATS.
+
+  Instructions:
+  - Match the user's skills, experience, education, projects, and achievements to the job description's skills, experience level, and responsibilities.
+  - For skills, prioritize exact matches with the job description's skills, including synonyms or related terms (e.g., "JavaScript" and "JS").
+  - For experience, rephrase the user's responsibilities to incorporate keywords from the job description's responsibilities, ensuring alignment without copying verbatim. Highlight measurable outcomes (e.g., "Increased sales by 20%" if relevant).
+  - If the user's experience lacks direct alignment, infer relevant responsibilities based on their skills and the job description.
+  - For education, include only degrees and institutions relevant to the job description's requirements.
+  - For projects and achievements, select those that demonstrate skills or responsibilities from the job description.
+  - Create a concise professional summary (50-100 words) that highlights the user's relevant skills and experience for the role.
+  - Optimize for ATS: Use exact keywords from the job description, avoid abbreviations unless specified, and ensure responsibilities are action-oriented (e.g., "Developed", "Managed").
+  - If profile or job description data is missing, provide defaults (e.g., empty arrays for skills, generic summary).
+  
   {{
     "header": {{
       "name": "string",

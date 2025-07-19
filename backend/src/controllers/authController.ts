@@ -1,17 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../../lib/prisma';
-import { catchAsync } from '../../utils/catchAsync';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+// src/controllers/authController.ts
+import { Request, Response, NextFunction } from "express";
+import { prisma } from "../../lib/prisma";
+import { catchAsync } from "../../utils/catchAsync";
+import bcrypt from "bcryptjs";
+import * as jwt from "jsonwebtoken";
+import passport from "../../config/passport";
 
 // Extend Express Request interface
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+
 
 // JWT payload interface
 interface JWTPayload {
@@ -19,11 +15,11 @@ interface JWTPayload {
   email: string;
 }
 
-const generateToken = (id: string, email: string) => {
+const generateToken = (id: string, email: string): string => {
   if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET is not defined');
+    throw new Error("JWT_SECRET is not defined");
   }
-  return jwt.sign({ id, email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+  return jwt.sign({ id, email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
 // Register
@@ -31,24 +27,23 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   const { email, name, password } = req.body;
 
   if (!email || !password) {
-    res.status(400).json({ message: 'Email and password are required' });
+    res.status(400).json({ message: "Email and password are required" });
     return;
   }
 
-  // Basic email validation
-  if (!email.includes('@')) {
-    res.status(400).json({ message: 'Invalid email format' });
+  if (!email.includes("@")) {
+    res.status(400).json({ message: "Invalid email format" });
     return;
   }
 
   if (password.length < 6) {
-    res.status(400).json({ message: 'Password must be at least 6 characters' });
+    res.status(400).json({ message: "Password must be at least 6 characters" });
     return;
   }
 
   const userExists = await prisma.user.findUnique({ where: { email } });
   if (userExists) {
-    res.status(400).json({ message: 'Email already exists' });
+    res.status(400).json({ message: "Email already exists" });
     return;
   }
 
@@ -66,7 +61,7 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   const token = generateToken(user.id, user.email);
 
   res.status(201).json({
-    message: 'User created successfully',
+    message: "User created successfully",
     user: { id: user.id, email: user.email, name: user.name },
     token,
   });
@@ -77,26 +72,26 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res.status(400).json({ message: 'Email and password are required' });
+    res.status(400).json({ message: "Email and password are required" });
     return;
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.password) {
-    res.status(401).json({ message: 'Invalid credentials' });
+    res.status(401).json({ message: "Invalid credentials" });
     return;
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    res.status(401).json({ message: 'Invalid credentials' });
+    res.status(401).json({ message: "Invalid credentials" });
     return;
   }
 
   const token = generateToken(user.id, user.email);
 
   res.status(200).json({
-    message: 'Login successful',
+    message: "Login successful",
     user: { id: user.id, email: user.email, name: user.name },
     token,
   });
@@ -104,29 +99,86 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
 
 // Protect Middleware
 export const protect = catchAsync(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const token = req.headers.authorization?.split(' ')[1]; // Bearer <token>
+  let token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    token = req.cookies.authToken;
+  }
 
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401).json({ message: "Not authorized, no token" });
     return;
   }
 
   if (!process.env.JWT_SECRET) {
-    res.status(500).json({ message: 'Server configuration error' });
+    res.status(500).json({ message: "Server configuration error" });
     return;
   }
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
-
-  const user = await prisma.user.findUnique({
-    where: { id: decoded.id },
-  });
+  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
 
   if (!user) {
-    res.status(401).json({ message: 'Not authorized, user not found' });
+    res.status(401).json({ message: "Not authorized, user not found" });
     return;
   }
 
-  req.user = user;
+  req.user = user; // This sets req.user as a User object
   next();
 });
+
+// Google Authentication
+export const googleAuth = (req: Request, res: Response) => {
+  passport.authenticate("google", { scope: ["profile", "email"] })(req, res);
+};
+
+export const googleCallback = (req: Request, res: Response) => {
+  passport.authenticate("google", { failureRedirect: "/api/auth/failed" })(
+    req,
+    res,
+    () => {
+      console.log("Google callback - req.user:", req.user); // Debug log
+      
+      if (!req.user) {
+        console.error("No user found in request");
+        return res.redirect("/api/auth/failed");
+      }
+
+      const userAuth = req.user as any;
+      if (!userAuth.token) {
+        console.error("No token found in user object:", userAuth);
+        return res.redirect("/api/auth/failed");
+      }
+
+      console.log("Setting cookie with token:", userAuth.token.substring(0, 20) + "...");
+      
+      res.cookie("authToken", userAuth.token, {
+        httpOnly: true,
+        secure: false, // Set to false for development (localhost)
+        sameSite: "lax", // Allow cross-origin cookies
+        maxAge: 3600000, // 1 hour
+        domain: "localhost" // Ensure cookie is available on both ports
+      });
+      
+      console.log("Cookie set, redirecting to dashboard...");
+      res.redirect("http://localhost:3000/dashboard");
+    }
+  );
+};
+
+export const verifyAuth = async (req: Request, res: Response) => {
+  const token = req.cookies.authToken;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user) throw new Error("User not found");
+    res.json({ user: { id: user.id, email: user.email, name: user.name } });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+export const authFailed = (req: Request, res: Response) => {
+  res.status(401).json({ message: "Authentication failed" });
+};

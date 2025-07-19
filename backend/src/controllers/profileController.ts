@@ -20,7 +20,7 @@ interface Experience {
 
 // Get Profile
 export const getProfile = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
     return;
@@ -43,7 +43,7 @@ export const getProfile = catchAsync(async (req: Request, res: Response): Promis
 
 // Upsert Profile
 export const upsertProfile = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
     return;
@@ -84,7 +84,7 @@ export const upsertProfile = catchAsync(async (req: Request, res: Response): Pro
 
 // Add Education Entry
 export const addEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { school, degree, fieldOfStudy, startDate, endDate } = req.body;
 
   if (!userId) {
@@ -133,7 +133,7 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
 
 // Update Education Entry
 export const updateEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
   const { school, degree, fieldOfStudy, startDate, endDate } = req.body;
 
@@ -182,7 +182,7 @@ export const updateEducationEntry = catchAsync(async (req: Request, res: Respons
 
 // Delete Education Entry
 export const deleteEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
 
   if (!userId) {
@@ -219,7 +219,7 @@ export const deleteEducationEntry = catchAsync(async (req: Request, res: Respons
 
 // Add Experience Entry
 export const addExperienceEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { title, company, responsibilities, startDate, endDate } = req.body;
 
   if (!userId) {
@@ -273,7 +273,7 @@ export const addExperienceEntry = catchAsync(async (req: Request, res: Response)
 
 // Update Experience Entry
 export const updateExperienceEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
   const { title, company, responsibilities, startDate, endDate } = req.body;
 
@@ -327,7 +327,7 @@ export const updateExperienceEntry = catchAsync(async (req: Request, res: Respon
 
 // Delete Experience Entry
 export const deleteExperienceEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
 
   if (!userId) {
@@ -364,7 +364,7 @@ export const deleteExperienceEntry = catchAsync(async (req: Request, res: Respon
 
 // Add Skill
 export const addSkill = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { skill } = req.body;
 
   if (!userId) {
@@ -409,7 +409,7 @@ export const addSkill = catchAsync(async (req: Request, res: Response): Promise<
 
 // Update Skill
 export const updateSkill = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
   const { skill } = req.body;
 
@@ -457,7 +457,7 @@ export const updateSkill = catchAsync(async (req: Request, res: Response): Promi
 
 // Delete Skill
 export const deleteSkill = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
+  const userId = (req.user as any)?.id;
   const { index } = req.params;
 
   if (!userId) {
