@@ -1,13 +1,10 @@
-// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-// Define paths that require authentication
 const protectedRoutes = ["/dashboard"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Skip middleware for API routes, public files, or non-protected routes
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
@@ -18,25 +15,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for authToken cookie
   const token = req.cookies.get("authToken");
 
   if (!token) {
-    // Check if this is a redirect from OAuth (look for OAuth callback URL in referer)
     const referer = req.headers.get("referer");
     if (referer && referer.includes("/api/auth/google/callback")) {
-      // This is likely a redirect from OAuth, allow it to proceed
       console.log("🔍 OAuth redirect detected, allowing access");
       return NextResponse.next();
     }
-    
-    // Redirect to signin page if no token
+
     const url = req.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
   }
 
-  // Verify token with backend
   const verifyUrl =
     process.env.NODE_ENV === "development"
       ? "http://localhost:8000/api/auth/verify"
@@ -44,7 +36,12 @@ export async function middleware(req: NextRequest) {
 
   try {
     const response = await fetch(verifyUrl, {
-      credentials: "include", // Include cookies
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -53,9 +50,9 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // If verified, proceed
     return NextResponse.next();
-  } catch {
+  } catch (error) {
+    console.error("Token verification failed:", error);
     const url = req.nextUrl.clone();
     url.pathname = "/auth/signin";
     return NextResponse.redirect(url);
@@ -63,5 +60,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [], // Temporarily disable middleware
+  matcher: ["/dashboard/:path*"],
 };
