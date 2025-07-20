@@ -18,14 +18,9 @@ import {
   Square
 } from 'lucide-react';
 import { useAuth } from '@/context/authProvider';
-import { useEffect } from 'react';
 
 export default function Dashboard() {
-  const { user, loading, verifyAuth } = useAuth();
-
-  useEffect(() => {
-    verifyAuth();
-  }, [verifyAuth]);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (

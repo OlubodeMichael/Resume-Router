@@ -2,29 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "../../../context/authProvider";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useAuth } from "../../context/authProvider";
 
-export default function SignUp() {
+export default function SignIn() {
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { googleLogin } = useAuth();
-    const handleGoogleSignUp = async () => {
+    const handleGoogleSignIn = async () => {
         try {
             setIsLoading(true);
             await googleLogin();
         } catch (error) {
-            console.error("Sign up error:", error);
+            console.error("Sign in error:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleEmailSignUp = async (e: React.FormEvent) => {
+    const handleEmailSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle email/password sign up logic here
-        console.log("Email sign up");
+        // Handle email/password sign in logic here
+        console.log("Email sign in");
     };
 
     return (
@@ -38,12 +37,12 @@ export default function SignUp() {
                             <span className="text-white font-bold text-2xl">R</span>
                         </div>
                         <h1 className="text-5xl font-medium text-white mb-4 leading-tight font-serif">
-                            Build Your Future
+                            Welcome Back to
                             <br />
-                            <span className="text-blue-200">With AI</span>
+                            <span className="text-blue-200">Your Future</span>
                         </h1>
                         <p className="text-xl text-blue-100 leading-relaxed max-w-md font-sans">
-                            Create professional resumes tailored to your dream job with our AI-powered platform.
+                            Continue building your professional journey with AI-powered resume optimization.
                         </p>
                     </div>
                     
@@ -54,7 +53,7 @@ export default function SignUp() {
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                             </div>
-                            <span className="text-blue-100">AI-powered resume optimization</span>
+                            <span className="text-blue-100">Pick up where you left off</span>
                         </div>
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -62,7 +61,7 @@ export default function SignUp() {
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                             </div>
-                            <span className="text-blue-100">Job-specific tailoring</span>
+                            <span className="text-blue-100">Access your saved resumes</span>
                         </div>
                         <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -70,7 +69,7 @@ export default function SignUp() {
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                             </div>
-                            <span className="text-blue-100">Professional templates</span>
+                            <span className="text-blue-100">Continue optimizing</span>
                         </div>
                     </div>
                 </div>
@@ -80,7 +79,7 @@ export default function SignUp() {
                 <div className="absolute bottom-20 left-20 w-24 h-24 bg-blue-400/20 rounded-full blur-lg"></div>
             </div>
 
-            {/* Right Side - Sign Up Form */}
+            {/* Right Side - Sign In Form */}
             <div className="flex-1 flex items-center justify-center px-4 py-8 bg-gray-50">
                 <div className="w-full max-w-sm">
                     {/* Mobile Logo */}
@@ -89,21 +88,21 @@ export default function SignUp() {
                             <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
                                 <span className="text-white font-bold text-xl">R</span>
                             </div>
-                            <span className="text-2xl font-bold text-gray-900">ResumeRouter</span>
+                            <span className="text-2xl font-bold text-slate-900">ResumeRouter</span>
                         </Link>
                     </div>
 
-                    {/* Sign Up Form Card */}
+                    {/* Sign In Form Card */}
                     <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
                         <div className="text-center mb-6">
-                            <h2 className="text-2xl font-serif font-medium text-slate-900 mb-2">Join ResumeRouter</h2>
-                            <p className="text-slate-600 text-sm font-sans">Start building your professional future today</p>
+                            <h2 className="text-2xl font-serif font-medium text-slate-900 mb-2">Welcome back</h2>
+                            <p className="text-slate-600 text-sm font-sans">Sign in to your account to continue</p>
                         </div>
 
-                        {/* Google Sign Up */}
+                        {/* Google Sign In */}
                         <div className="mb-4">
                             <button
-                                onClick={handleGoogleSignUp}
+                                onClick={handleGoogleSignIn}
                                 disabled={isLoading}
                                 className="w-full flex items-center justify-center space-x-3 bg-white text-slate-700 border border-slate-300 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 py-3 px-4 font-medium text-sm font-sans"
                             >
@@ -128,25 +127,8 @@ export default function SignUp() {
                         </div>
 
                         {/* Email Form */}
-                        <form onSubmit={handleEmailSignUp} className="space-y-4">
+                        <form onSubmit={handleEmailSignIn} className="space-y-4">
                             <div className="space-y-3">
-                                <div>
-                                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
-                                        Full name
-                                    </label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            required
-                                            className="w-full pl-10 pr-3 py-3 border border-slate-300 text-slate-800 rounded-xl shadow-sm placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition font-sans"
-                                            placeholder="Enter your full name"
-                                        />
-                                    </div>
-                                </div>
-
                                 <div>
                                     <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
                                         Email address
@@ -176,7 +158,7 @@ export default function SignUp() {
                                             name="password"
                                             required
                                             className="w-full pl-10 pr-10 py-3 border border-slate-300 text-slate-800 rounded-xl shadow-sm placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition font-sans"
-                                            placeholder="Create a strong password"
+                                            placeholder="Enter your password"
                                         />
                                         <button
                                             type="button"
@@ -187,50 +169,26 @@ export default function SignUp() {
                                         </button>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
-                                        Confirm password
-                                    </label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type={showConfirmPassword ? "text" : "password"}
-                                            id="confirmPassword"
-                                            name="confirmPassword"
-                                            required
-                                            className="w-full pl-10 pr-10 py-3 border border-slate-300 text-slate-800 rounded-xl shadow-sm placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition font-sans"
-                                            placeholder="Confirm your password"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                        >
-                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
-                            <div className="flex items-start space-x-2">
-                                <input
-                                    id="agree-terms"
-                                    name="agree-terms"
-                                    type="checkbox"
-                                    required
-                                    className="h-4 w-4 text-blue-800 focus:ring-blue-900 border-slate-300 rounded mt-0.5"
-                                />
-                                <label htmlFor="agree-terms" className="block text-xs text-slate-600 leading-relaxed font-sans">
-                                    I agree to the{" "}
-                                    <Link href="/terms" className="text-blue-800 hover:text-blue-900 font-medium underline">
-                                        Terms
-                                    </Link>{" "}
-                                    and{" "}
-                                    <Link href="/privacy" className="text-blue-800 hover:text-blue-900 font-medium underline">
-                                        Privacy Policy
-                                    </Link>
-                                </label>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <input
+                                        id="remember-me"
+                                        name="remember-me"
+                                        type="checkbox"
+                                        className="h-4 w-4 text-blue-800 focus:ring-blue-900 border-slate-300 rounded"
+                                    />
+                                    <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 font-sans">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <Link
+                                    href="/auth/forgot-password"
+                                    className="text-sm text-blue-800 hover:text-blue-900 font-medium underline font-sans"
+                                >
+                                    Forgot password?
+                                </Link>
                             </div>
 
                             <button
@@ -242,23 +200,23 @@ export default function SignUp() {
                                 {isLoading ? (
                                     <div className="flex items-center justify-center space-x-2">
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>Creating account...</span>
+                                        <span>Signing in...</span>
                                     </div>
                                 ) : (
-                                    "Create your account"
+                                    "Sign in"
                                 )}
                             </button>
                         </form>
 
-                        {/* Sign In Link */}
+                        {/* Sign Up Link */}
                         <div className="mt-6 text-center">
                             <p className="text-sm text-slate-600 font-sans">
-                                Already have an account?{" "}
+                                Don&apos;t have an account?{" "}
                                 <Link
-                                    href="/auth/signin"
+                                    href="/auth/signup"
                                     className="font-medium text-blue-800 hover:text-blue-900 underline"
                                 >
-                                    Sign in here
+                                    Sign up for free
                                 </Link>
                             </p>
                         </div>
@@ -267,7 +225,7 @@ export default function SignUp() {
                     {/* Footer */}
                     <div className="mt-4 text-center">
                         <p className="text-xs text-slate-500 font-sans">
-                            By creating an account, you agree to our{" "}
+                            By signing in, you agree to our{" "}
                             <Link href="/terms" className="text-blue-800 hover:text-blue-900 underline">
                                 Terms
                             </Link>{" "}
@@ -281,4 +239,4 @@ export default function SignUp() {
             </div>
         </div>
     );
-} 
+}

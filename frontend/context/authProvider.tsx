@@ -1,7 +1,6 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -17,7 +16,6 @@ interface AuthContextType {
   signup: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   googleLogin: () => void;
-  verifyAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,28 +28,36 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  console.log(API_BASE_URL);
 
-
-  const verifyAuth = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        router.push('/auth/signin');
-        return;
+  // Initial auth check when component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Initial auth check failed:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      
-      const data = await response.json();
-      setUser(data.user);
-    } catch (error) {
-      console.error('Auth verification failed:', error);
-      router.push('/auth/signin');
-    }
-  }
+    };
+
+    checkAuth();
+  }, [API_BASE_URL]);
+
+
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
@@ -130,7 +136,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, login, signup, logout, googleLogin, verifyAuth }}
+      value={{ user, loading, error, login, signup, logout, googleLogin }}
     >
       {children}
     </AuthContext.Provider>
