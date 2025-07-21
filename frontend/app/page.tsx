@@ -69,7 +69,7 @@ function Navbar() {
           {/* Join Waitlist Button */}
           <div className="hidden md:block">
             <a
-              href="/auth/signin"
+              href="/signin"
               className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
             >
               Login

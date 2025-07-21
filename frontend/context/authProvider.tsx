@@ -28,34 +28,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  console.log(API_BASE_URL);
 
+  // Initial auth check when component mounts
   useEffect(() => {
-    const verifyUrl =
-      "http://localhost:8000/api/auth/verify";
-
-    fetch(verifyUrl, {
-      credentials: "include", // Include cookies
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Token verification failed");
-        return response.json();
-      })
-      .then((data: { user: User }) => {
-        setUser(data.user);
-      })
-      .catch((err: Error) => {
-        Cookies.remove("authToken");
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Initial auth check failed:', error);
         setUser(null);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [API_BASE_URL]);
+
+
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     setError(null);
     const url =
-      "http://localhost:8000/api/auth/login";
+      `${API_BASE_URL}/api/auth/login`;
 
     try {
       const response = await fetch(url, {
@@ -81,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoading(true);
     setError(null);
     const url =
-      "http://localhost:8000/api/auth/register";
+      `${API_BASE_URL}/api/auth/register`;
 
     try {
       const response = await fetch(url, {
@@ -108,7 +116,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       setError(null);
       const authUrl =
-        "http://localhost:8000/api/auth/google";
+        `${API_BASE_URL}/api/auth/google`;
       window.location.href = authUrl;
     } catch (error) {
       setError((error as Error).message);

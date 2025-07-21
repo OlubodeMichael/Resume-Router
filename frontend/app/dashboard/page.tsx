@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
   Plus, 
@@ -19,43 +17,12 @@ import {
   Eye,
   Square
 } from 'lucide-react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { useAuth } from '@/context/authProvider';
 
 export default function Dashboard() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/auth/verify', {
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          router.push('/auth/signin');
-          return;
-        }
-        
-        const data = await response.json();
-        setUser(data.user);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Auth verification failed:', error);
-        router.push('/auth/signin');
-      }
-    };
-
-    verifyAuth();
-  }, [router]);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
