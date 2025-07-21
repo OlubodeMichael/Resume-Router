@@ -160,8 +160,8 @@ export const googleCallback = (req: Request, res: Response) => {
         domain: "localhost" // Ensure cookie is available on both ports
       });
       
-      console.log("Cookie set, redirecting to dashboard...");
-      res.redirect("http://localhost:3000/dashboard");
+      const frontendUrl = process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL : "http://localhost:3000";
+      res.redirect(`${frontendUrl}/dashboard`);
     }
   );
 };
@@ -171,15 +171,15 @@ export const verifyAuth = async (req: Request, res: Response) => {
   if (!token) return res.status(401).json({ message: "Not authenticated" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; picture: string };
     const user = await prisma.user.findUnique({ where: { id: decoded.id } });
     if (!user) {
-      console.log("❌ User not found in database");
+      console.log("User not found in database");
       throw new Error("User not found");
     }
     
-    console.log("✅ User verified successfully:", user.email);
-    res.json({ user: { id: user.id, email: user.email, name: user.name } });
+    console.log("User verified successfully:", user.email);
+    res.json({ user: { id: user.id, email: user.email, name: user.name, picture: decoded.picture } });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
   }

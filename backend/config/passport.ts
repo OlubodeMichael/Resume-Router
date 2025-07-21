@@ -7,6 +7,7 @@ import passport from "passport";
 interface Profile extends passport.Profile {
   email: string;
   displayName: string;
+  picture: string;
 }
 
 interface UserAuth {
@@ -14,6 +15,7 @@ interface UserAuth {
   token: string;
   email: string;
   name: string;
+  picture: string;
 }
 
 
@@ -48,12 +50,12 @@ passport.use(
         }
 
         const token = jwt.sign(
-          { id: user.id, email: user.email, name: user.name },
+          { id: user.id, email: user.email, name: user.name, picture: profile.picture },
           process.env.JWT_SECRET!,
           { expiresIn: "1h" }
         );
 
-        const userAuth = { id: user.id, token, email: user.email, name: user.name } as UserAuth;
+        const userAuth = { id: user.id, token, email: user.email, name: user.name, picture: profile.picture } as UserAuth;
         console.log("Returning user auth object:", userAuth);
         
         return done(null, userAuth);
