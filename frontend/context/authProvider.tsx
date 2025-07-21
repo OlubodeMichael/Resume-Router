@@ -6,6 +6,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  picture?: string;
 }
 
 interface AuthContextType {
@@ -30,7 +31,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [error, setError] = useState<string | null>(null);
   
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  console.log(API_BASE_URL);
 
   // Initial auth check when component mounts
   useEffect(() => {
@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         if (response.ok) {
           const data = await response.json();
+          console.log(data.user);
           setUser(data.user);
         } else {
           setUser(null);

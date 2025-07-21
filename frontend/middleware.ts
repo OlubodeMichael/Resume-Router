@@ -10,7 +10,8 @@ export async function middleware(req: NextRequest) {
   if (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
-    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/signin") ||
+    pathname.startsWith("/signup") ||
     pathname === "/" ||
     !protectedRoutes.includes(pathname)
   ) {
@@ -27,7 +28,7 @@ export async function middleware(req: NextRequest) {
     }
 
     const url = req.nextUrl.clone();
-    url.pathname = "/auth/signin";
+    url.pathname = "/signin";
     return NextResponse.redirect(url);
   }
 
@@ -44,14 +45,14 @@ export async function middleware(req: NextRequest) {
 
     if (!res.ok) {
       const url = req.nextUrl.clone();
-      url.pathname = "/auth/signin";
+      url.pathname = "/signin";
       return NextResponse.redirect(url);
     }
 
     return NextResponse.next();
   } catch {
     const url = req.nextUrl.clone();
-    url.pathname = "/auth/signin";
+    url.pathname = "/signin";
     return NextResponse.redirect(url);
   }
 }
