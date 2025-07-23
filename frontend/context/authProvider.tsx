@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
-
+import { useRouter } from "next/navigation";
 interface User {
   id: string;
   email: string;
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const router = useRouter();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   // Initial auth check when component mounts
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     checkAuth();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, router]);
 
 
 
@@ -130,6 +130,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     setLoading(true);
     Cookies.remove("authToken");
+    router.push("/signin");
     setUser(null);
     setError(null);
     setLoading(false);
