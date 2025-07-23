@@ -52,7 +52,7 @@ passport.use(
         const token = jwt.sign(
           { id: user.id, email: user.email, name: user.name, picture: profile.picture },
           process.env.JWT_SECRET!,
-          { expiresIn: "1h" }
+          { expiresIn: "1d" }
         );
 
         const userAuth = { id: user.id, token, email: user.email, name: user.name, picture: profile.picture } as UserAuth;

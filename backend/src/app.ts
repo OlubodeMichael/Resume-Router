@@ -19,7 +19,11 @@ import resumeRoute from "./routes/resumeRoute"
 const app = express();
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: [
+        "https://resumerouter.app",
+        "https://www.resumerouter.app",
+        "http://localhost:3000", // For local development
+      ],
     credentials: true,
 }));
 app.use(express.json());

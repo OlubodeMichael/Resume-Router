@@ -154,14 +154,14 @@ export const googleCallback = (req: Request, res: Response) => {
       // Set the cookie first
       res.cookie("authToken", userAuth.token, {
         httpOnly: true,
-        secure: false, // Set to false for development (localhost)
+        secure:  false, // Set to false for development (localhost)
         sameSite: "lax", // Allow cross-origin cookies
         maxAge: 3600000, // 1 hour
         domain: "localhost" // Ensure cookie is available on both ports
       });
       
-      const frontendUrl = process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL : "http://localhost:3000";
-      res.redirect(`${frontendUrl}/dashboard`);
+      
+      res.redirect(`http://localhost:3000/dashboard`);
     }
   );
 };
