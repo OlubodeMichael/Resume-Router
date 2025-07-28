@@ -6,10 +6,10 @@ interface Profile {
   name: string;
   email: string;
   picture: string;
-  skills?: string[]; // Adjust based on your Prisma schema
+  skills?: string[]; // Changed back to string[]
   education?: Education[];
   experience?: Experience[];
-  projects?: string[];
+  projects?: Project[];
   achievements?: string[];
 }
 
@@ -29,9 +29,13 @@ interface Experience {
   endDate?: string | null;
 }
 
-interface Skill {
+interface Project {
   name: string;
-  level: string;
+  description: string;
+  technologies: string[];
+  url?: string;
+  startDate: string;
+  endDate?: string | null;
 }
 
 interface ProfileContextType {
@@ -49,9 +53,12 @@ interface ProfileContextType {
   postExperience: (experience: Experience) => void;
   updateExperience: (index: number, experience: Experience) => void;
   deleteExperience: (index: number) => void;
-  postSkill: (skill: Skill) => void;
-  updateSkill: (index: number, skill: Skill) => void;
+  postSkill: (skill: string) => void;
+  updateSkill: (index: number, skill: string) => void;
   deleteSkill: (index: number) => void;
+  postProject: (project: Project) => void;
+  updateProject: (index: number, project: Project) => void;
+  deleteProject: (index: number) => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -235,12 +242,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const postSkill = async (skill: Skill) => {
+  const postSkill = async (skill: string) => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/profile/skills`, {
         method: "POST",
-        body: JSON.stringify(skill),
+        body: JSON.stringify({ skill }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -256,12 +263,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateSkill = async (index: number, skill: Skill) => {
+  const updateSkill = async (index: number, skill: string) => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/profile/skills/${index}`, {
         method: "PUT",
-        body: JSON.stringify(skill),
+        body: JSON.stringify({ skill }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -297,6 +304,68 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const postProject = async (project: Project) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/profile/projects`, {
+        method: "POST",
+        body: JSON.stringify(project),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add project");
+      await getProfile();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProject = async (index: number, project: Project) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/profile/projects/${index}`, {
+        method: "PUT",
+        body: JSON.stringify(project),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update project");
+      await getProfile();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteProject = async (index: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/profile/projects/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete project");
+      await getProfile();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ProfileContext.Provider
       value={{
@@ -317,6 +386,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         postSkill,
         updateSkill,
         deleteSkill,
+        postProject,
+        updateProject,
+        deleteProject,
       }}
     >
       {children}

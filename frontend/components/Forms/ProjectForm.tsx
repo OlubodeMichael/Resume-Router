@@ -3,11 +3,12 @@ import { useState } from "react";
 import { useProfile } from "@/context/profileProvider";
 import { X, Plus, Minus } from "lucide-react";
 
-interface ExperienceFormProps {
+interface ProjectFormProps {
   initial?: {
-    title: string;
-    company: string;
-    responsibilities: string[];
+    name: string;
+    description: string;
+    technologies: string[];
+    url?: string;
     startDate: string;
     endDate?: string | null;
   };
@@ -15,33 +16,34 @@ interface ExperienceFormProps {
   editIndex?: number | null;
 }
 
-export default function ExperienceForm({ initial, onClose, editIndex }: ExperienceFormProps) {
-  const { postExperience, updateExperience } = useProfile();
+export default function ProjectForm({ initial, onClose, editIndex }: ProjectFormProps) {
+  const { postProject, updateProject } = useProfile();
   const [form, setForm] = useState({
-    title: initial?.title || "",
-    company: initial?.company || "",
-    responsibilities: initial?.responsibilities || [""],
+    name: initial?.name || "",
+    description: initial?.description || "",
+    technologies: initial?.technologies || [""],
+    url: initial?.url || "",
     startDate: initial?.startDate || "",
     endDate: initial?.endDate || "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const addResponsibility = () => {
-    setForm(f => ({ ...f, responsibilities: [...f.responsibilities, ""] }));
+  const addTechnology = () => {
+    setForm(f => ({ ...f, technologies: [...f.technologies, ""] }));
   };
 
-  const removeResponsibility = (index: number) => {
+  const removeTechnology = (index: number) => {
     setForm(f => ({ 
       ...f, 
-      responsibilities: f.responsibilities.filter((_, i) => i !== index) 
+      technologies: f.technologies.filter((_, i) => i !== index) 
     }));
   };
 
-  const updateResponsibility = (index: number, value: string) => {
+  const updateTechnology = (index: number, value: string) => {
     setForm(f => ({
       ...f,
-      responsibilities: f.responsibilities.map((r, i) => i === index ? value : r)
+      technologies: f.technologies.map((t, i) => i === index ? value : t)
     }));
   };
 
@@ -52,26 +54,27 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
     try {
       const payload = {
         ...form,
-        responsibilities: form.responsibilities.filter(r => r.trim() !== ""),
+        technologies: form.technologies.filter(t => t.trim() !== ""),
       };
       
-      if (!payload.title || !payload.company || !payload.startDate || payload.responsibilities.length === 0) {
-        setError("Please fill all required fields and add at least one responsibility.");
+      if (!payload.name || !payload.description || !payload.startDate || payload.technologies.length === 0) {
+        setError("Please fill all required fields and add at least one technology.");
         setLoading(false);
         return;
       }
 
       if (editIndex !== undefined && editIndex !== null) {
-        await updateExperience(editIndex, payload);
+        await updateProject(editIndex, payload);
       } else {
-        await postExperience(payload);
+        await postProject(payload);
       }
       
       if (onClose) onClose();
       setForm({
-        title: "",
-        company: "",
-        responsibilities: [""],
+        name: "",
+        description: "",
+        technologies: [""],
+        url: "",
         startDate: "",
         endDate: "",
       });
@@ -86,7 +89,7 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
     <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-full max-w-md">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-700">
-          {editIndex !== undefined && editIndex !== null ? "Edit" : "Add"} Experience
+          {editIndex !== undefined && editIndex !== null ? "Edit" : "Add"} Project
         </h3>
         {onClose && (
           <button
@@ -108,44 +111,52 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
       <form onSubmit={handleSubmit} className="space-y-3">
         <input
           className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-          placeholder="Job Title"
-          value={form.title}
-          onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+          placeholder="Project Name"
+          value={form.name}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          required
+        />
+        
+        <textarea
+          className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500 resize-none"
+          placeholder="Project Description"
+          value={form.description}
+          onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+          rows={3}
           required
         />
         
         <input
           className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-          placeholder="Company"
-          value={form.company}
-          onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-          required
+          placeholder="Project URL (optional)"
+          value={form.url}
+          onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
         />
         
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-700">Responsibilities</label>
+            <label className="text-xs font-medium text-gray-700">Technologies</label>
             <button
               type="button"
-              onClick={addResponsibility}
+              onClick={addTechnology}
               className="text-blue-600 hover:text-blue-700 text-xs"
             >
               <Plus className="w-3 h-3" />
             </button>
           </div>
-          {form.responsibilities.map((responsibility, idx) => (
+          {form.technologies.map((technology, idx) => (
             <div key={idx} className="flex gap-2">
               <input
                 className="flex-1 px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-                placeholder={`Responsibility ${idx + 1}`}
-                value={responsibility}
-                onChange={e => updateResponsibility(idx, e.target.value)}
+                placeholder={`Technology ${idx + 1}`}
+                value={technology}
+                onChange={e => updateTechnology(idx, e.target.value)}
                 required
               />
-              {form.responsibilities.length > 1 && (
+              {form.technologies.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => removeResponsibility(idx)}
+                  onClick={() => removeTechnology(idx)}
                   className="text-red-500 hover:text-red-600"
                 >
                   <Minus className="w-3 h-3" />

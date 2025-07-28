@@ -2,67 +2,267 @@
 import { useState } from "react";
 import { useProfile } from "@/context/profileProvider";
 import ExperienceForm from "../Forms/ExperienceForm";
+import EducationForm from "../Forms/EducationForm";
+import ProjectForm from "../Forms/ProjectForm";
+import SkillForm from "../Forms/SkillForm";
 import { Plus } from "lucide-react";
+import ExperienceCard from "../Cards/ExperienceCard";
+import EducationCard from "../Cards/EducationCard";
+import ProjectCard from "../Cards/ProjectCard";
+import SkillCard from "../Cards/SkillCard";
 
 export default function Profile() {
   const { profile, loading, error } = useProfile();
   const [showExpForm, setShowExpForm] = useState(false);
+  const [showEduForm, setShowEduForm] = useState(false);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showSkillForm, setShowSkillForm] = useState(false);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading profile</p>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6 p-4">
-      <h2 className="text-2xl font-bold text-black mb-2">Your profile is used to create your resume</h2>
-
-      {/* Experience Section */}
-      <section className="bg-white rounded-md p-4 shadow flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-black">Experience</h3>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2"
-            onClick={() => setShowExpForm(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
-        </div>
-        {/* List Experience Entries */}
-        <div className="flex flex-col gap-4">
-          {profile?.experience && profile.experience.length > 0 ? (
-            profile.experience.map((exp, idx) => (
-              <div
-                key={idx}
-                className="  rounded-lg shadow-sm p-5 flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-semibold text-lg text-blue-900">{exp.title}</span>
-                    <span className="text-gray-600 font-medium ml-2">@ {exp.company}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    {/* Add edit/delete buttons here, e.g. <button>✏️</button> <button>🗑️</button> */}
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  {exp.startDate} - {exp.endDate || "Present"}
-                </div>
-                <ul className="list-disc ml-5 text-gray-700 text-sm">
-                  {exp.responsibilities?.map((r, i) => <li key={i}>{r}</li>)}
-                </ul>
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-400 text-center py-8">No experience added yet.</div>
-          )}
-        </div>
-        {/* Show Form Modal */}
-        {showExpForm && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <ExperienceForm onClose={() => setShowExpForm(false)} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Full Width Profile Editor */}
+      <div className="w-full px-3 sm:px-6 md:px-8 lg:px-12">
+        {/* Profile Content */}
+        <div className="py-6 sm:py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Profile</h1>
+            <p className="text-sm sm:text-base text-gray-600">Build your professional profile by adding your experience, education, skills, and projects.</p>
           </div>
-        )}
-      </section>
+
+          {/* Experience Section */}
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h2>
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                onClick={() => setShowExpForm(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Add 
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {profile?.experience && profile.experience.length > 0 ? (
+                profile.experience.map((exp, idx) => (
+                  <ExperienceCard
+                    key={idx}
+                    title={exp.title}
+                    company={exp.company}
+                    startDate={exp.startDate}
+                    endDate={exp.endDate}
+                    responsibilities={exp.responsibilities || []}
+                    onEdit={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit experience:', idx);
+                    }}
+                    onDelete={() => {
+                      // TODO: Implement delete functionality
+                      console.log('Delete experience:', idx);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No work experience added yet</p>
+                  <button
+                    onClick={() => setShowExpForm(true)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Add your first experience →
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Education Section */}
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                onClick={() => setShowEduForm(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Add
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {profile?.education && profile.education.length > 0 ? (
+                profile.education.map((edu, idx) => (
+                  <EducationCard
+                    key={idx}
+                    school={edu.school}
+                    degree={edu.degree}
+                    fieldOfStudy={edu.fieldOfStudy}
+                    startDate={edu.startDate}
+                    endDate={edu.endDate}
+                    onEdit={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit education:', idx);
+                    }}
+                    onDelete={() => {
+                      // TODO: Implement delete functionality
+                      console.log('Delete education:', idx);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No education added yet</p>
+                  <button
+                    onClick={() => setShowEduForm(true)}
+                    className="text-green-600 hover:text-green-700 text-sm font-medium"
+                  >
+                    Add your first education →
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Skills Section */}
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Skills</h2>
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                onClick={() => setShowSkillForm(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Add
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {profile?.skills && profile.skills.length > 0 ? (
+                profile.skills.map((skill, idx) => (
+                  <SkillCard
+                    key={idx}
+                    name={skill}
+                    onEdit={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit skill:', idx);
+                    }}
+                    onDelete={() => {
+                      // TODO: Implement delete functionality
+                      console.log('Delete skill:', idx);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12 w-full">
+                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No skills added yet</p>
+                  <button
+                    onClick={() => setShowSkillForm(true)}
+                    className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                  >
+                    Add your first skill →
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Projects Section */}
+          <section className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Projects</h2>
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                onClick={() => setShowProjectForm(true)}
+              >
+                <Plus className="w-4 h-4" />
+                Add
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {profile?.projects && profile.projects.length > 0 ? (
+                profile.projects.map((project, idx) => (
+                  <ProjectCard
+                    key={idx}
+                    name={project.name}
+                    description={project.description}
+                    technologies={project.technologies || []}
+                    url={project.url}
+                    startDate={project.startDate}
+                    endDate={project.endDate}
+                    onEdit={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit project:', idx);
+                    }}
+                    onDelete={() => {
+                      // TODO: Implement delete functionality
+                      console.log('Delete project:', idx);
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No projects added yet</p>
+                  <button
+                    onClick={() => setShowProjectForm(true)}
+                    className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                  >
+                    Add your first project →
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showExpForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
+          <ExperienceForm onClose={() => setShowExpForm(false)} />
+        </div>
+      )}
+      
+      {showEduForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
+          <EducationForm onClose={() => setShowEduForm(false)} />
+        </div>
+      )}
+      
+      {showSkillForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
+          <SkillForm onClose={() => setShowSkillForm(false)} />
+        </div>
+      )}
+      
+      {showProjectForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
+          <ProjectForm onClose={() => setShowProjectForm(false)} />
+        </div>
+      )}
     </div>
   );
 }
