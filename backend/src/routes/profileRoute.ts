@@ -11,6 +11,9 @@ import {
   addSkill,
   updateSkill,
   deleteSkill,
+  addProject,
+  updateProject,
+  deleteProject,
 } from '../controllers/profileController';
 import { protect } from '../controllers/authController';
 
@@ -30,5 +33,9 @@ router.delete('/experience/:index', protect, deleteExperienceEntry);
 router.post('/skills', protect, addSkill);
 router.patch('/skills/:index', protect, updateSkill);
 router.delete('/skills/:index', protect, deleteSkill);
+
+router.post('/projects', protect, addProject);
+router.patch('/projects/:index', protect, updateProject);
+router.delete('/projects/:index', protect, deleteProject);
 
 export default router;

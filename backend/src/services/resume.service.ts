@@ -172,6 +172,22 @@ export const generateResume = async (
   const education = Array.isArray(profile.education) ? profile.education : [];
   const projects = Array.isArray(profile.projects) ? profile.projects : [];
   const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
+  
+  // Handle skills - extract skill names from database
+  const skills = Array.isArray(profile.skills) 
+    ? profile.skills.map(skill => {
+        if (typeof skill === 'string') {
+          // Handle legacy string format
+          return skill;
+        } else if (skill && typeof skill === 'object' && 'name' in skill) {
+          // Handle new Skill object format - extract just the name
+          return (skill as any).name;
+        } else {
+          // Handle invalid format
+          return 'Unknown Skill';
+        }
+      })
+    : [];
 
   // Default resume content
   let resumeContent: ResumeContent = {
@@ -181,7 +197,7 @@ export const generateResume = async (
       phone: '',
       summary: 'Professional with relevant skills and experience.',
     },
-    skills: profile.skills || [],
+    skills: skills,
     experience: experience as any,
     education: education as any,
     projects: projects as any,

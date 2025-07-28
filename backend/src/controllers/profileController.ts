@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../lib/prisma';
 import { catchAsync } from '../../utils/catchAsync';
+import { formatDate } from '../../utils/formateDate';
 
 interface Education {
   school: string;
@@ -16,6 +17,20 @@ interface Experience {
   responsibilities: string[];
   startDate: string;
   endDate?: string | null;
+}
+
+interface Project {
+  name: string;
+  description: string;
+  technologies: string[];
+  url?: string;
+  startDate: string;
+  endDate?: string | null;
+}
+
+interface Skill {
+  name: string;
+  level: string;
 }
 
 // Get Profile
@@ -106,8 +121,8 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
       school,
       degree,
       fieldOfStudy,
-      startDate: new Date(startDate).toISOString(),
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      startDate: formatDate(startDate),
+      endDate: endDate ? formatDate(endDate) : null,
     },
   ];
 
@@ -165,8 +180,8 @@ export const updateEducationEntry = catchAsync(async (req: Request, res: Respons
     school,
     degree,
     fieldOfStudy,
-    startDate: new Date(startDate).toISOString(),
-    endDate: endDate ? new Date(endDate).toISOString() : null,
+    startDate: formatDate(startDate),
+    endDate: endDate ? formatDate(endDate) : null,
   };
 
   const updatedProfile = await prisma.profile.update({
@@ -246,8 +261,8 @@ export const addExperienceEntry = catchAsync(async (req: Request, res: Response)
       title,
       company,
       responsibilities,
-      startDate: new Date(startDate).toISOString(),
-      endDate: endDate ? new Date(endDate).toISOString() : null,
+      startDate: formatDate(startDate),
+      endDate: endDate ? formatDate(endDate) : null,
     },
   ];
 
@@ -310,8 +325,8 @@ export const updateExperienceEntry = catchAsync(async (req: Request, res: Respon
     title,
     company,
     responsibilities,
-    startDate: new Date(startDate).toISOString(),
-    endDate: endDate ? new Date(endDate).toISOString() : null,
+    startDate: formatDate(startDate),
+    endDate: endDate ? formatDate(endDate) : null,
   };
 
   const updatedProfile = await prisma.profile.update({
@@ -378,8 +393,9 @@ export const addSkill = catchAsync(async (req: Request, res: Response): Promise<
   }
 
   const profile = await prisma.profile.findUnique({ where: { userId } });
-  const currentSkills = profile?.skills || [];
+  const currentSkills = Array.isArray(profile?.skills) ? profile.skills : [];
 
+  // Check if skill already exists
   if (currentSkills.includes(skill)) {
     res.status(400).json({ message: 'Skill already exists' });
     return;
@@ -389,10 +405,10 @@ export const addSkill = catchAsync(async (req: Request, res: Response): Promise<
 
   const updatedProfile = await prisma.profile.upsert({
     where: { userId },
-    update: { skills: newSkills },
+    update: { skills: newSkills as any },
     create: {
       userId,
-      skills: newSkills,
+      skills: newSkills as any,
       experience: [],
       education: [],
       projects: [],
@@ -429,7 +445,7 @@ export const updateSkill = catchAsync(async (req: Request, res: Response): Promi
     return;
   }
 
-  const currentSkills = profile.skills || [];
+  const currentSkills = Array.isArray(profile.skills) ? profile.skills : [];
   const skillIndex = parseInt(index, 10);
 
   if (isNaN(skillIndex) || skillIndex < 0 || skillIndex >= currentSkills.length) {
@@ -437,7 +453,9 @@ export const updateSkill = catchAsync(async (req: Request, res: Response): Promi
     return;
   }
 
-  if (currentSkills.includes(skill)) {
+  // Check if skill already exists (excluding current skill)
+  const existingSkill = currentSkills.find((s, i) => s === skill && i !== skillIndex);
+  if (existingSkill) {
     res.status(400).json({ message: 'Skill already exists' });
     return;
   }
@@ -446,7 +464,7 @@ export const updateSkill = catchAsync(async (req: Request, res: Response): Promi
 
   const updatedProfile = await prisma.profile.update({
     where: { userId },
-    data: { skills: currentSkills },
+    data: { skills: currentSkills as any },
   });
 
   res.status(200).json({
@@ -471,7 +489,7 @@ export const deleteSkill = catchAsync(async (req: Request, res: Response): Promi
     return;
   }
 
-  const currentSkills = profile.skills || [];
+  const currentSkills = Array.isArray(profile.skills) ? profile.skills : [];
   const skillIndex = parseInt(index, 10);
 
   if (isNaN(skillIndex) || skillIndex < 0 || skillIndex >= currentSkills.length) {
@@ -483,7 +501,7 @@ export const deleteSkill = catchAsync(async (req: Request, res: Response): Promi
 
   const updatedProfile = await prisma.profile.update({
     where: { userId },
-    data: { skills: updatedSkills },
+    data: { skills: updatedSkills as any },
   });
 
   res.status(200).json({
@@ -491,3 +509,148 @@ export const deleteSkill = catchAsync(async (req: Request, res: Response): Promi
     profile: updatedProfile,
   });
 });
+
+export const addProject = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { name, description, technologies, url, startDate, endDate } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  if (!name || !description || !technologies || !startDate) {
+    res.status(400).json({ message: 'Name, description, technologies, and startDate are required' });
+    return;
+  }
+
+  if (!Array.isArray(technologies)) {
+    res.status(400).json({ message: 'Technologies must be an array' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  const currentProjects = Array.isArray(profile?.projects) ? (profile.projects as unknown as Project[]) : [];
+
+  const newProject: Project[] = [
+    ...currentProjects,
+    {
+      name,
+      description,
+      technologies,
+      url,
+      startDate: formatDate(startDate),
+      endDate: endDate ? formatDate(endDate) : null,
+    },
+  ];
+
+  const updatedProfile = await prisma.profile.upsert({
+    where: { userId },
+    update: { projects: newProject as any },
+    create: {
+      userId,
+      skills: [],
+      experience: [],
+      education: [],
+      projects: newProject as any,
+      achievements: [],
+      createdAt: new Date(),
+    },
+  });
+
+  res.status(200).json({
+    message: 'Project added successfully',
+    profile: updatedProfile,
+  });
+});
+
+export const updateProject = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { index } = req.params;
+  const { name, description, technologies, url, startDate, endDate } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  if (!name || !description || !technologies || !startDate) {
+    res.status(400).json({ message: 'Name, description, technologies, and startDate are required' });
+    return;
+  }
+
+  if (!Array.isArray(technologies)) {
+    res.status(400).json({ message: 'Technologies must be an array' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  if (!profile) {
+    res.status(404).json({ message: 'Profile not found' });
+    return;
+  }
+
+  const currentProjects = Array.isArray(profile.projects) ? (profile.projects as unknown as Project[]) : [];
+  const projectIndex = parseInt(index, 10);
+
+  if (isNaN(projectIndex) || projectIndex < 0 || projectIndex >= currentProjects.length) {
+    res.status(400).json({ message: 'Invalid project index' });
+    return;
+  }
+
+  currentProjects[projectIndex] = {
+    name,
+    description,
+    technologies,
+    url,
+    startDate: formatDate(startDate),
+    endDate: endDate ? formatDate(endDate) : null,
+  };
+
+  const updatedProfile = await prisma.profile.update({
+    where: { userId },
+    data: { projects: currentProjects as any },
+  });
+
+  res.status(200).json({
+    message: 'Project updated successfully',
+    profile: updatedProfile,
+  });
+});
+
+export const deleteProject = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { index } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  if (!profile) {
+    res.status(404).json({ message: 'Profile not found' });
+    return;
+  }
+
+  const currentProjects = Array.isArray(profile.projects) ? (profile.projects as unknown as Project[]) : [];
+  const projectIndex = parseInt(index, 10);
+
+  if (isNaN(projectIndex) || projectIndex < 0 || projectIndex >= currentProjects.length) {
+    res.status(400).json({ message: 'Invalid project index' });
+    return;
+  }
+
+  const updatedProjects = currentProjects.filter((_, i) => i !== projectIndex);
+
+  const updatedProfile = await prisma.profile.update({
+    where: { userId },
+    data: { projects: updatedProjects as any },
+  });
+
+  res.status(200).json({
+    message: 'Project deleted successfully',
+    profile: updatedProfile,
+  });
+});
+
