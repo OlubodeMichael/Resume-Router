@@ -4,6 +4,7 @@ import SideBar from "@/components/Ui/SideBar";
 import { UserIcon } from "lucide-react";
 import { useState } from "react";
 import Profile from "@/components/Ui/Profile";
+import PersonalInfo from "@/components/Ui/PersonalInfo";
 
 function ProfileLayout() {
   const { user } = useAuth();
@@ -20,8 +21,8 @@ function ProfileLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col sm:flex-row ">
-      <div className="w-80 flex-shrink-0 p-6">
+    <div className="min-h-screen bg-gray-50 flex flex-col sm:flex-row">
+      <div className="w-96 flex-shrink-0 p-6">
         <SideBar
           name={user?.name || ""}
           navItems={navItems}
@@ -31,9 +32,7 @@ function ProfileLayout() {
         />
       </div>
       <div className="flex-1 p-6">
-        <div className=" rounded-2xl shadow p-6 min-h-[calc(100vh-3rem)]">
-          {activeTab === "Profile" ? <Profile /> : <PersonalInfo />}
-        </div>
+        {activeTab === "Profile" ? <Profile /> : <PersonalInfo />}
       </div>
     </div>
   );
@@ -41,12 +40,3 @@ function ProfileLayout() {
 
 export default ProfileLayout;
 
-
-function PersonalInfo() {
-  return (
-    <div className="flex flex-col items-center justify-center text-black">
-      <h1>Personal Info</h1>
-      {/* Add personal info-specific content here */}
-    </div>
-  );
-}

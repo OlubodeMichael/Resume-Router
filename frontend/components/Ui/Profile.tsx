@@ -10,6 +10,7 @@ import ExperienceCard from "../Cards/ExperienceCard";
 import EducationCard from "../Cards/EducationCard";
 import ProjectCard from "../Cards/ProjectCard";
 import SkillCard from "../Cards/SkillCard";
+import Loading from "../loading";
 
 export default function Profile() {
   const { profile, loading, error } = useProfile();
@@ -19,14 +20,7 @@ export default function Profile() {
   const [showSkillForm, setShowSkillForm] = useState(false);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="Loading profile..." />;
   }
 
   if (error) {
@@ -54,186 +48,192 @@ export default function Profile() {
 
           {/* Experience Section */}
           <section className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h2>
-              <button
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                onClick={() => setShowExpForm(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add 
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {profile?.experience && profile.experience.length > 0 ? (
-                profile.experience.map((exp, idx) => (
-                  <ExperienceCard
-                    key={idx}
-                    title={exp.title}
-                    company={exp.company}
-                    startDate={exp.startDate}
-                    endDate={exp.endDate}
-                    responsibilities={exp.responsibilities || []}
-                    onEdit={() => {
-                      // TODO: Implement edit functionality
-                      console.log('Edit experience:', idx);
-                    }}
-                    onDelete={() => {
-                      // TODO: Implement delete functionality
-                      console.log('Delete experience:', idx);
-                    }}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No work experience added yet</p>
-                  <button
-                    onClick={() => setShowExpForm(true)}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                  >
-                    Add your first experience →
-                  </button>
-                </div>
-              )}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h2>
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                  onClick={() => setShowExpForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {profile?.experience && profile.experience.length > 0 ? (
+                  profile.experience.map((exp, idx) => (
+                    <ExperienceCard
+                      key={idx}
+                      title={exp.title}
+                      company={exp.company}
+                      startDate={exp.startDate}
+                      endDate={exp.endDate}
+                      responsibilities={exp.responsibilities || []}
+                      onEdit={() => {
+                        // TODO: Implement edit functionality
+                        console.log('Edit experience:', idx);
+                      }}
+                      onDelete={() => {
+                        // TODO: Implement delete functionality
+                        console.log('Delete experience:', idx);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No work experience added yet</p>
+                    <button
+                      onClick={() => setShowExpForm(true)}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      No experience added yet
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
           {/* Education Section */}
           <section className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
-              <button
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                onClick={() => setShowEduForm(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {profile?.education && profile.education.length > 0 ? (
-                profile.education.map((edu, idx) => (
-                  <EducationCard
-                    key={idx}
-                    school={edu.school}
-                    degree={edu.degree}
-                    fieldOfStudy={edu.fieldOfStudy}
-                    startDate={edu.startDate}
-                    endDate={edu.endDate}
-                    onEdit={() => {
-                      // TODO: Implement edit functionality
-                      console.log('Edit education:', idx);
-                    }}
-                    onDelete={() => {
-                      // TODO: Implement delete functionality
-                      console.log('Delete education:', idx);
-                    }}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No education added yet</p>
-                  <button
-                    onClick={() => setShowEduForm(true)}
-                    className="text-green-600 hover:text-green-700 text-sm font-medium"
-                  >
-                    Add your first education →
-                  </button>
-                </div>
-              )}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                  onClick={() => setShowEduForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {profile?.education && profile.education.length > 0 ? (
+                  profile.education.map((edu, idx) => (
+                    <EducationCard
+                      key={idx}
+                      school={edu.school}
+                      degree={edu.degree}
+                      fieldOfStudy={edu.fieldOfStudy}
+                      startDate={edu.startDate}
+                      endDate={edu.endDate}
+                      onEdit={() => {
+                        // TODO: Implement edit functionality
+                        console.log('Edit education:', idx);
+                      }}
+                      onDelete={() => {
+                        // TODO: Implement delete functionality
+                        console.log('Delete education:', idx);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No education added yet</p>
+                    <button
+                      onClick={() => setShowEduForm(true)}
+                      className="text-green-600 hover:text-green-700 text-sm font-medium"
+                    >
+                      No education added yet
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
           {/* Skills Section */}
           <section className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Skills</h2>
-              <button
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                onClick={() => setShowSkillForm(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {profile?.skills && profile.skills.length > 0 ? (
-                profile.skills.map((skill, idx) => (
-                  <SkillCard
-                    key={idx}
-                    name={skill}
-                    onEdit={() => {
-                      // TODO: Implement edit functionality
-                      console.log('Edit skill:', idx);
-                    }}
-                    onDelete={() => {
-                      // TODO: Implement delete functionality
-                      console.log('Delete skill:', idx);
-                    }}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12 w-full">
-                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No skills added yet</p>
-                  <button
-                    onClick={() => setShowSkillForm(true)}
-                    className="text-orange-600 hover:text-orange-700 text-sm font-medium"
-                  >
-                    Add your first skill →
-                  </button>
-                </div>
-              )}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Skills</h2>
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                  onClick={() => setShowSkillForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {profile?.skills && profile.skills.length > 0 ? (
+                  profile.skills.map((skill, idx) => {
+                    // Handle both string and object skills for backward compatibility
+                    const skillName = typeof skill === 'string' ? skill : (skill as {name: string})?.name || 'Unknown Skill';
+                    return (
+                      <SkillCard
+                        key={idx}
+                        name={skillName}
+                        onEdit={() => {
+                          // TODO: Implement edit functionality
+                          console.log('Edit skill:', idx);
+                        }}
+                        onDelete={() => {
+                          // TODO: Implement delete functionality
+                          console.log('Delete skill:', idx);
+                        }}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12 w-full">
+                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No skills added yet</p>
+                    <button
+                      onClick={() => setShowSkillForm(true)}
+                      className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                    >
+                      Add your first skill →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
           {/* Projects Section */}
           <section className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Projects</h2>
-              <button
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                onClick={() => setShowProjectForm(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {profile?.projects && profile.projects.length > 0 ? (
-                profile.projects.map((project, idx) => (
-                  <ProjectCard
-                    key={idx}
-                    name={project.name}
-                    description={project.description}
-                    technologies={project.technologies || []}
-                    url={project.url}
-                    startDate={project.startDate}
-                    endDate={project.endDate}
-                    onEdit={() => {
-                      // TODO: Implement edit functionality
-                      console.log('Edit project:', idx);
-                    }}
-                    onDelete={() => {
-                      // TODO: Implement delete functionality
-                      console.log('Delete project:', idx);
-                    }}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 mb-3 text-sm sm:text-base">No projects added yet</p>
-                  <button
-                    onClick={() => setShowProjectForm(true)}
-                    className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-                  >
-                    Add your first project →
-                  </button>
-                </div>
-              )}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Projects</h2>
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                  onClick={() => setShowProjectForm(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {profile?.projects && profile.projects.length > 0 ? (
+                  profile.projects.map((project, idx) => (
+                    <ProjectCard
+                      key={idx}
+                      name={project.name}
+                      description={project.description}
+                      technologies={project.technologies || []}
+                      url={project.url}
+                      startDate={project.startDate}
+                      endDate={project.endDate}
+                      onEdit={() => {
+                        // TODO: Implement edit functionality
+                        console.log('Edit project:', idx);
+                      }}
+                      onDelete={() => {
+                        // TODO: Implement delete functionality
+                        console.log('Delete project:', idx);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No projects added yet</p>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </div>

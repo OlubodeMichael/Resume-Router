@@ -25,12 +25,12 @@ export default function EducationCard({
   const formattedEndDate = formatDate(endDate);
 
   return (
-    <div className="bg-white hover:bg-gray-50 transition-all duration-200 rounded-xl shadow-sm border border-gray-100 p-6 group">
+    <div className=" transition-all duration-200 rounded-xl group">
       {/* Header with degree, school, and actions */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <GraduationCap className="w-5 h-5 text-green-600" />
+            <GraduationCap className="w-6 h-6 text-blue-600" />
             <h3 className="text-lg font-bold text-gray-900">{degree}</h3>
           </div>
           <p className="text-gray-600 font-medium">{school}</p>
@@ -47,7 +47,7 @@ export default function EducationCard({
               className="p-2 hover:bg-green-100 rounded-lg transition-colors"
               title="Edit education"
             >
-              <Pencil className="w-4 h-4 text-green-600" />
+              <Pencil className="w-4 h-4 text-gray-600" />
             </button>
           )}
           {onDelete && (
@@ -56,7 +56,7 @@ export default function EducationCard({
               className="p-2 hover:bg-red-100 rounded-lg transition-colors"
               title="Delete education"
             >
-              <Trash2 className="w-4 h-4 text-red-500" />
+              <Trash2 className="w-4 h-4 text-gray-500" />
             </button>
           )}
         </div>

@@ -73,7 +73,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      if (!response.ok) throw new Error("Login failed");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Login failed" }));
+        throw new Error(errorData.message || "Login failed");
+      }
+      
       const data = await response.json();
       setUser(data.user);
       Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
@@ -81,6 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError((err as Error).message);
       Cookies.remove("authToken");
       setUser(null);
+      throw err; // Re-throw to allow components to handle
     } finally {
       setLoading(false);
     }
@@ -99,7 +105,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         credentials: "include",
         body: JSON.stringify({ email, name, password }),
       });
-      if (!response.ok) throw new Error("Signup failed");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Signup failed" }));
+        throw new Error(errorData.message || "Signup failed");
+      }
+      
       const data = await response.json();
       setUser(data.user);
       Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
@@ -107,6 +118,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError((err as Error).message);
       Cookies.remove("authToken");
       setUser(null);
+      throw err; // Re-throw to allow components to handle
     } finally {
       setLoading(false);
     }
@@ -127,13 +139,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setLoading(true);
-    Cookies.remove("authToken");
-    router.push("/signin");
-    setUser(null);
     setError(null);
-    setLoading(false);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Logout failed" }));
+        throw new Error(errorData.message || "Logout failed");
+      }
+      
+      // Clear local state regardless of server response
+      Cookies.remove("authToken");
+      setUser(null);
+      setError(null);
+      
+      // Redirect to signin page
+      router.push("/signin");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if server logout fails, clear local state
+      Cookies.remove("authToken");
+      setUser(null);
+      setError(null);
+      router.push("/signin");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

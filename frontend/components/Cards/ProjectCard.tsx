@@ -27,12 +27,12 @@ export default function ProjectCard({
   const formattedEndDate = formatDate(endDate);
 
   return (
-    <div className="bg-white hover:bg-gray-50 transition-all duration-200 rounded-xl shadow-sm border border-gray-100 p-6 group">
+    <div className=" transition-all duration-200 rounded-xl group">
       {/* Header with project name and actions */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <Code className="w-5 h-5 text-purple-600" />
+            <Code className="w-5 h-5 text-blue-600" />
             <h3 className="text-lg font-bold text-gray-900">{name}</h3>
             {url && (
               <a
@@ -42,7 +42,7 @@ export default function ProjectCard({
                 className="p-1 hover:bg-purple-100 rounded transition-colors"
                 title="View Project"
               >
-                <ExternalLink className="w-4 h-4 text-purple-600" />
+                <ExternalLink className="w-4 h-4 text-blue-600" />
               </a>
             )}
           </div>
@@ -56,7 +56,7 @@ export default function ProjectCard({
               className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
               title="Edit project"
             >
-              <Pencil className="w-4 h-4 text-purple-600" />
+              <Pencil className="w-4 h-4 text-gray-600" />
             </button>
           )}
           {onDelete && (
@@ -65,7 +65,7 @@ export default function ProjectCard({
               className="p-2 hover:bg-red-100 rounded-lg transition-colors"
               title="Delete project"
             >
-              <Trash2 className="w-4 h-4 text-red-500" />
+              <Trash2 className="w-4 h-4 text-gray-500" />
             </button>
           )}
         </div>
@@ -82,7 +82,7 @@ export default function ProjectCard({
             {technologies.map((tech, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full"
+                className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
               >
                 {tech}
               </span>

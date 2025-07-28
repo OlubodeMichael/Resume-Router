@@ -140,24 +140,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User avatar at the bottom */}
-        {user?.picture && (
+        {user && (
           <div className="relative">
             <div 
               className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors cursor-pointer`}
               onClick={handleUserClick}
             >
               <div className="flex items-center w-full">
-                <Image
-                  src={user.picture}
-                  alt={user.name || user.email || 'User'}
-                  className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover shadow-sm flex-shrink-0"
-                  width={40}
-                  height={40}
-                  unoptimized
-                />
+                {user.picture ? (
+                  <Image
+                    src={user.picture}
+                    alt={user.name || user.email || 'User'}
+                    className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover shadow-sm flex-shrink-0"
+                    width={40}
+                    height={40}
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border-2 border-gray-200 bg-blue-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-sm font-semibold">
+                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 {sidebarOpen && (
                   <div className="flex flex-col ml-3 min-w-0 flex-1">
-                    <span className="text-sm font-medium text-gray-900 truncate">{user.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">{user.name || user.email}</span>
                   </div>
                 )}
               </div>

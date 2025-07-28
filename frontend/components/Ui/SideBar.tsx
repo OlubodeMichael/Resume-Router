@@ -32,7 +32,7 @@ export default function SideBar({
   activeTab,
 }: SideBarProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 w-full flex flex-col h-full">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 w-full flex flex-col">
       {/* Dashboard Navigation */}
       <div className="mb-6">
         <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
@@ -100,7 +100,7 @@ export default function SideBar({
       <div className="border-t border-gray-100 mb-6" />
 
       {/* Navigation Section */}
-      <div className="flex-1">
+      <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">My Career Hub</h3>
         
         <div className="space-y-2">

@@ -27,7 +27,7 @@ export default function ExperienceCard({
   const formattedEndDate = formatDate(endDate);
 
   return (
-    <div className="bg-white hover:bg-gray-50 transition-all duration-200 rounded-xl shadow-sm border border-gray-100 p-6 group">
+    <div className=" transition-all duration-200 rounded-xl group">
       {/* Header with title, company, and actions */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -46,7 +46,7 @@ export default function ExperienceCard({
               className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
               title="Edit experience"
             >
-              <Pencil className="w-4 h-4 text-blue-600" />
+              <Pencil className="w-4 h-4 text-gray-600" />
             </button>
           )}
           {onDelete && (
@@ -55,7 +55,7 @@ export default function ExperienceCard({
               className="p-2 hover:bg-red-100 rounded-lg transition-colors"
               title="Delete experience"
             >
-              <Trash2 className="w-4 h-4 text-red-500" />
+              <Trash2 className="w-4 h-4 text-gray-500" />
             </button>
           )}
         </div>
