@@ -41,14 +41,14 @@ export default function Profile() {
         {/* Profile Content */}
         <div className="py-6 sm:py-8">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-8 bg-white rounded-xl border-[1px] p-6">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Profile</h1>
             <p className="text-sm sm:text-base text-gray-600">Build your professional profile by adding your experience, education, skills, and projects.</p>
           </div>
 
           {/* Experience Section */}
           <section className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl border-[1px] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h2>
                 <button
@@ -97,7 +97,7 @@ export default function Profile() {
 
           {/* Education Section */}
           <section className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl border-[1px] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
                 <button
@@ -146,7 +146,7 @@ export default function Profile() {
 
           {/* Skills Section */}
           <section className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl border-[1px] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Skills</h2>
                 <button
@@ -195,7 +195,7 @@ export default function Profile() {
 
           {/* Projects Section */}
           <section className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl border-[1px] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Projects</h2>
                 <button

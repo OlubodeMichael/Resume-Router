@@ -27,13 +27,13 @@ export default function ExperienceCard({
   const formattedEndDate = formatDate(endDate);
 
   return (
-    <div className=" transition-all duration-200 rounded-xl group">
+    <div className=" transition-all duration-200 rounded-xl group pb-6">
       {/* Header with title, company, and actions */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between pb-2">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 pb-1">
             <Building className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+            <h3 className="text-xl font-medium text-gray-900">{title}</h3>
           </div>
           <p className="text-gray-600 font-medium">{company}</p>
         </div>

@@ -32,7 +32,7 @@ export default function SideBar({
   activeTab,
 }: SideBarProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 w-full flex flex-col">
+    <div className="bg-white rounded-xl border-[1px]  p-6 w-full flex flex-col">
       {/* Dashboard Navigation */}
       <div className="mb-6">
         <Link href="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
@@ -57,12 +57,6 @@ export default function SideBar({
               className="rounded-full object-cover w-20 h-20 border-4 border-gray-50 shadow-sm"
               unoptimized
             />
-            <button className="absolute -bottom-1 -right-1 bg-white rounded-full p-2 shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-gray-600">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
-              </svg>
-            </button>
           </div>
         ) : (
           <div className="relative mb-4">

@@ -17,6 +17,7 @@ interface AuthContextType {
   signup: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   googleLogin: () => void;
+  
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
