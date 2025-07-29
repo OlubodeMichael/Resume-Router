@@ -12,6 +12,8 @@ model User {
   email     String   @unique
   name      String?
   password  String?  // Nullable for OAuth
+  resetCode      String?  // 6-digit code for password reset
+  resetCodeExpires DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime? @updatedAt
   profile   Profile?
