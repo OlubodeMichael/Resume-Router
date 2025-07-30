@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { useAuth } from "@/context/authProvider";
@@ -10,7 +10,7 @@ interface ForgotPasswordResponse {
   message: string;
 }
 
-export default function ForgotPassword() {
+function ForgotPasswordForm() {
   const { forgotPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -170,5 +170,20 @@ export default function ForgotPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ForgotPassword() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

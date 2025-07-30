@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { useAuth } from "@/context/authProvider";
@@ -10,7 +10,7 @@ interface ResetPasswordResponse {
   message: string;
 }
 
-export default function ResetPassword() {
+function ResetPasswordForm() {
   const { resetPassword } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,5 +193,20 @@ export default function ResetPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
