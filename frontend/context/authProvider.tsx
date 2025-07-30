@@ -17,13 +17,28 @@ interface AuthContextType {
   signup: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   googleLogin: () => void;
-  
+  forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
+  verifyResetCode: (email: string, resetCode: string) => Promise<VerifyResetCodeResponse>;
+  resetPassword: (resetToken: string, newPassword: string) => Promise<ResetPasswordResponse>;
+}
+
+interface ForgotPasswordResponse {
+  message: string;
+}
+
+interface VerifyResetCodeResponse {
+  message: string;
+  resetToken: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 interface AuthProviderProps {
   children: ReactNode;
+}
+
+interface ResetPasswordResponse {
+  message: string;
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -174,9 +189,93 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Forgot password failed' }));
+        throw new Error(errorData.message || 'Forgot password failed');
+      }
+  
+      const data = await response.json() as ForgotPasswordResponse;
+  
+      return data;
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+    
+  }
+
+  const verifyResetCode = async (email: string, resetCode: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, resetCode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Verify reset code failed' }));
+        throw new Error(errorData.message || 'Verify reset code failed');
+      }
+
+      const data = await response.json() as VerifyResetCodeResponse;
+      return data;
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const resetPassword = async (resetToken: string, newPassword: string): Promise<ResetPasswordResponse> => {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ resetToken, newPassword }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to reset password' }));
+        throw new Error(errorData.message || 'Failed to reset password');
+      }
+  
+      const data = await response.json() as ResetPasswordResponse;
+  
+      return data; // Return success response for the caller to handle
+    } catch (error) {
+      setError((error as Error).message || 'An unexpected error occurred. Please try again.');
+      throw error; // Re-throw for the caller to handle (e.g., display error)
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, login, signup, logout, googleLogin }}
+      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword }}
     >
       {children}
     </AuthContext.Provider>

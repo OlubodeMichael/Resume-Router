@@ -2,34 +2,37 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useAuth } from "@/context/authProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 
-interface ForgotPasswordResponse {
+interface ResetPasswordResponse {
   message: string;
 }
 
-export default function ForgotPassword() {
-  const { forgotPassword } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+export default function ResetPassword() {
+  const { resetPassword } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const prefilledEmail = searchParams.get("email");
+  const resetToken = searchParams.get("resetToken");
 
-  // Prefill email from sign-in page if provided
+  const [isLoading, setIsLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   useEffect(() => {
-    if (prefilledEmail) {
-      setEmail(decodeURIComponent(prefilledEmail));
+    if (!resetToken) {
+      setFormError("No reset token provided. Please start the reset process again.");
+      setTimeout(() => router.push("/forgot-password"), 2000);
     }
-  }, [prefilledEmail]);
+  }, [resetToken, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    // Clear error and success when user starts typing
+    const { name, value } = e.target;
+    if (name === "newPassword") setNewPassword(value);
+    if (name === "confirmPassword") setConfirmPassword(value);
     if (formError) setFormError(null);
     if (successMessage) setSuccessMessage(null);
   };
@@ -38,12 +41,20 @@ export default function ForgotPassword() {
     e.preventDefault();
 
     // Validation
-    if (!email || typeof email !== "string") {
-      setFormError("Please enter your email address");
+    if (!newPassword || !confirmPassword) {
+      setFormError("Both password fields are required");
       return;
     }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      setFormError("Please enter a valid email address");
+    if (newPassword.length < 8) {
+      setFormError("Password must be at least 8 characters long");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setFormError("Passwords do not match");
+      return;
+    }
+    if (!resetToken) {
+      setFormError("Invalid reset token");
       return;
     }
 
@@ -52,22 +63,24 @@ export default function ForgotPassword() {
       setFormError(null);
       setSuccessMessage(null);
 
-      const response = await forgotPassword(email) as ForgotPasswordResponse;
+      const response = await resetPassword(resetToken, newPassword) as ResetPasswordResponse;
 
       setSuccessMessage(response.message);
-      // Do not clear email here; pass it to the next step
-
-      // Navigate to verify-code page with email after a short delay
+      // Redirect to sign-in after success
       setTimeout(() => {
-        router.push(`/verify-code?email=${encodeURIComponent(email)}`);
-      }, 2000); // 2-second delay for user to see success message
+        router.push("/signin");
+      }, 2000);
     } catch (error) {
-      console.error("Forgot password error:", error);
-      setFormError((error as Error).message || "Something went wrong. Please try again.");
+      console.error("Reset password error:", error);
+      setFormError((error as Error).message || "Failed to reset password. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!resetToken) {
+    return <p>Redirecting to forgot password...</p>;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
@@ -82,12 +95,12 @@ export default function ForgotPassword() {
           </Link>
         </div>
 
-        {/* Forgot Password Form Card */}
+        {/* Reset Password Form Card */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-serif font-medium text-slate-900 mb-2">Forgot your password?</h2>
+            <h2 className="text-2xl font-serif font-medium text-slate-900 mb-2">Reset your password</h2>
             <p className="text-slate-600 text-sm font-sans">
-              Enter your email address and we&apos;ll send you a code to reset your password.
+              Create a new password for your account.
             </p>
           </div>
 
@@ -105,23 +118,43 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          {/* Email Form */}
+          {/* Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
-                Email address
+              <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
+                New password
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={email}
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  value={newPassword}
                   onChange={handleInputChange}
                   required
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 text-slate-800 rounded-xl shadow-sm placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition font-sans"
-                  placeholder="Enter your email"
+                  placeholder="Enter new password"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1.5 font-sans">
+                Confirm password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full pl-10 pr-3 py-3 border border-slate-300 text-slate-800 rounded-xl shadow-sm placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition font-sans"
+                  placeholder="Confirm new password"
                   disabled={isLoading}
                 />
               </div>
@@ -129,36 +162,26 @@ export default function ForgotPassword() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !newPassword || !confirmPassword}
               className="w-full bg-blue-800 text-white py-3 px-4 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-sm font-sans disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ boxShadow: "0 2px 16px 0 rgba(60, 120, 255, 0.10)" }}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Sending reset code...</span>
+                  <span>Resetting...</span>
                 </div>
               ) : (
-                "Send reset code"
+                "Reset Password"
               )}
             </button>
           </form>
-
-          {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600 font-sans">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="font-medium text-blue-800 hover:text-blue-900 underline">
-                Sign up for free
-              </Link>
-            </p>
-          </div>
         </div>
 
         {/* Footer */}
         <div className="mt-4 text-center">
           <p className="text-xs text-slate-500 font-sans">
-            By requesting a password reset, you agree to our{" "}
+            By resetting your password, you agree to our{" "}
             <Link href="/terms" className="text-blue-800 hover:text-blue-900 underline">
               Terms
             </Link>{" "}
