@@ -1,8 +1,10 @@
 import { prisma } from '../../lib/prisma';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { z } from 'zod';
+import { llm } from '../../lib/langchain';
 
 // Define schema for resume content
 export const ResumeContentSchema = z.object({
@@ -46,11 +48,7 @@ export const ResumeContentSchema = z.object({
 export type ResumeContent = z.infer<typeof ResumeContentSchema>;
 
 // Initialize LLM
-const llm = new ChatOpenAI({
-  modelName: 'gpt-3.5-turbo', // Replace with xAI's model when available
-  openAIApiKey: process.env.OPENAI_API_KEY,
-  temperature: 0.2,
-});
+
 
 // Prompt for resume generation
 const prompt = PromptTemplate.fromTemplate(`
@@ -228,3 +226,126 @@ export const generateResume = async (
 
   return resumeContent;
 };
+
+
+
+
+export async function extractProfileDataWithLangChain(text: string) {
+  try {
+    // Limit text length to prevent memory issues (max 30,000 characters for better memory management)
+    const limitedText =
+      text.length > 30000 ? text.substring(0, 30000) + "..." : text;
+
+    // Initialize OpenAI model with memory optimization
+    const model = new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-4o-mini", // Use smaller model for efficiency
+      temperature: 0,
+      maxTokens: 2000,
+    });
+
+    // Create a simple prompt template without complex schema
+    const prompt = ChatPromptTemplate.fromTemplate(
+      `Extract the following information from the provided resume text and return it as a valid JSON object.
+      
+      Return a JSON object with this structure:
+      {{
+        "fullName": "string or null",
+        "email": "string or null", 
+        "phone": "string or null",
+        "location": "string or null",
+        "linkedIn": "string or null",
+        "portfolio": "string or null",
+        "jobTitle": "string or null",
+        "pronouns": "string or null",
+        "experience": [
+          {{
+            "title": "string",
+            "company": "string or null",
+            "startDate": "string or null",
+            "endDate": "string or null",
+            "description": ["string"] or null
+          }}
+        ] or [],
+        "education": [
+          {{
+            "institution": "string",
+            "degree": "string or null",
+            "startDate": "string or null", 
+            "endDate": "string or null",
+            "gpa": "string or null"
+          }}
+        ] or [],
+        "skills": ["string"] or [],
+        "summary": "string or null"
+      }}
+
+      Resume text:
+      {resume_text}
+
+      Return only the JSON object, no additional text.`
+    );
+
+    // Use StringOutputParser instead of StructuredOutputParser
+    const chain = prompt.pipe(model).pipe(new StringOutputParser());
+
+    // Invoke the chain
+    const response = await chain.invoke({
+      resume_text: limitedText,
+    });
+
+    // Parse the JSON response manually
+    try {
+      let jsonString = response.trim();
+      
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = jsonString.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[1];
+      }
+      
+      // Remove any leading/trailing whitespace and non-JSON content
+      jsonString = jsonString.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+      
+      const parsedResponse = JSON.parse(jsonString);
+      
+      // Validate and return the parsed data
+      return {
+        fullName: parsedResponse.fullName || "",
+        email: parsedResponse.email || "",
+        phone: parsedResponse.phone || "",
+        location: parsedResponse.location || "",
+        linkedIn: parsedResponse.linkedIn || "",
+        portfolio: parsedResponse.portfolio || "",
+        jobTitle: parsedResponse.jobTitle || "",
+        pronouns: parsedResponse.pronouns || "",
+        experience: Array.isArray(parsedResponse.experience) ? parsedResponse.experience : [],
+        education: Array.isArray(parsedResponse.education) ? parsedResponse.education : [],
+        skills: Array.isArray(parsedResponse.skills) ? parsedResponse.skills : [],
+        summary: parsedResponse.summary || "",
+      };
+    } catch (parseError) {
+      console.error("Error parsing JSON response:", parseError);
+      console.error("Raw response:", response);
+      throw new Error("Failed to parse AI response");
+    }
+
+  } catch (error) {
+    console.error("Error extracting profile data:", error);
+    // Return a default structure if processing fails
+    return {
+      fullName: "",
+      email: "",
+      phone: "",
+      location: "",
+      linkedIn: "",
+      portfolio: "",
+      jobTitle: "",
+      pronouns: "",
+      experience: [],
+      education: [],
+      skills: [],
+      summary: "",
+    };
+  }
+}

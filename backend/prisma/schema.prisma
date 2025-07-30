@@ -55,3 +55,7 @@ model Resume {
   user            User     @relation(fields: [userId], references: [id])
   jobDescription  JobDescription? @relation(fields: [jobDescriptionId], references: [id])
 }
+
+model PersonalInformation {
+  
+}

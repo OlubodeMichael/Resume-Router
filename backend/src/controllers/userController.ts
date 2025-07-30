@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma";
 import { catchAsync } from "../../utils/catchAsync";
-import { User } from "@prisma/client"; // Import Prisma User type
+import AppError from "../../utils/appError";
 
 // Extend Express Request interface with Prisma User type
 declare global {
@@ -92,3 +92,4 @@ export const deleteUser = catchAsync(async (req: Request, res: Response): Promis
 
   res.status(200).json({ message: "User deleted successfully" });
 });
+

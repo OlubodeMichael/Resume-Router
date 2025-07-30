@@ -266,7 +266,7 @@ export const verifyResetCode = catchAsync(async (req: Request, res: Response, ne
   }
 
   // Generate a temporary resetToken (not stored in DB)
-  const resetToken = jwt.sign({ userId: user.id, email }, process.env.JWT_RESET_SECRET!, { expiresIn: '10m' });
+  const resetToken = jwt.sign({ userId: user.id, email }, process.env.JWT_SECRET!, { expiresIn: '10m' });
 
   res.status(200).json({
     message: 'Reset code verified successfully. Please set your new password.',
@@ -289,7 +289,7 @@ export const resetPassword = catchAsync(async (req: Request, res: Response, next
   // Verify resetToken
   let decoded;
   try {
-    decoded = jwt.verify(resetToken, process.env.JWT_RESET_SECRET!) as { userId: string, email: string };
+    decoded = jwt.verify(resetToken, process.env.JWT_SECRET!) as { userId: string, email: string };
   } catch (error) {
     return next(new AppError('Invalid or expired reset token', 400));
   }
