@@ -56,7 +56,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="flex h-screen bg-white smooth-transition overflow-hidden">
+    <div className="flex min-h-screen bg-white smooth-transition overflow-x-hidden">
+      <style jsx global>{`
+        html, body {
+          background-color: white;
+          overscroll-behavior: none;
+        }
+        body {
+          overflow-x: hidden;
+        }
+      `}</style>
       {/* Sidebar */}
       <div
         className={`transition-all duration-300 smooth-transition ${

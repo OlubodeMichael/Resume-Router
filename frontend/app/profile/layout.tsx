@@ -22,6 +22,15 @@ function ProfileLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col sm:flex-row">
+      <style jsx global>{`
+        html, body {
+          background-color: white;
+          overscroll-behavior: none;
+        }
+        body {
+          overflow-x: hidden;
+        }
+      `}</style>
       <div className="w-full sm:w-96 flex-shrink-0 p-6 pt-14">
         <SideBar
           name={user?.name || ""}

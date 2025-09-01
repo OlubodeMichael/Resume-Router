@@ -16,3 +16,44 @@ const formatDate = (dateString: string | null | undefined): string => {
   };
 
 export default formatDate;
+
+export const convertDateForInput = (dateString: string): string => {
+  if (!dateString) return "";
+  
+  // If already in yyyy-MM format, return as is
+  if (/^\d{4}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  
+  // Convert from "MMM yyyy" format to "yyyy-MM" - direct conversion without Date objects
+  const months: { [key: string]: string } = {
+    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+  };
+  
+  const match = dateString.match(/^(\w{3})\s+(\d{4})$/);
+  if (match) {
+    const month = months[match[1]];
+    const year = match[2];
+    if (month) {
+      return `${year}-${month}`;
+    }
+  }
+  
+  // Handle ISO date strings (e.g., "2021-07-15T00:00:00.000Z")
+  if (dateString.includes('-') && dateString.includes('T')) {
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+      }
+    } catch (error) {
+      console.error("Date conversion error:", error);
+    }
+  }
+  
+  return "";
+};

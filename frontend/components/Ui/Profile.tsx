@@ -5,19 +5,186 @@ import ExperienceForm from "../Forms/ExperienceForm";
 import EducationForm from "../Forms/EducationForm";
 import ProjectForm from "../Forms/ProjectForm";
 import SkillForm from "../Forms/SkillForm";
-import { Plus } from "lucide-react";
-import ExperienceCard from "../Cards/ExperienceCard";
-import EducationCard from "../Cards/EducationCard";
-import ProjectCard from "../Cards/ProjectCard";
-import SkillCard from "../Cards/SkillCard";
+import Experience from "../Profile/Experience";
+import Education from "../Profile/Education";
+import Project from "../Profile/Project";
+import Skill from "../Profile/Skill";
 import Loading from "../loading";
+import ResumeForm from "../Resume/ResumeForm";
 
 export default function Profile() {
-  const { profile, loading, error } = useProfile();
+  const { profile, loading, error, deleteEducation, deleteExperience, deleteProject, deleteSkill } = useProfile();
   const [showExpForm, setShowExpForm] = useState(false);
   const [showEduForm, setShowEduForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showSkillForm, setShowSkillForm] = useState(false);
+  
+  // Education edit state
+  const [editingEducation, setEditingEducation] = useState<{
+    index: number;
+    data: {
+      school: string;
+      degree: string;
+      fieldOfStudy: string;
+      startDate: string;
+      endDate?: string | null;
+    };
+  } | null>(null);
+
+  // Experience edit state
+  const [editingExperience, setEditingExperience] = useState<{
+    index: number;
+    data: {
+      title: string;
+      company: string;
+      responsibilities: string[];
+      startDate: string;
+      endDate?: string | null;
+    };
+  } | null>(null);
+
+  // Project edit state
+  const [editingProject, setEditingProject] = useState<{
+    index: number;
+    data: {
+      name: string;
+      description: string;
+      technologies: string[];
+      url?: string;
+      startDate: string;
+      endDate?: string | null;
+    };
+  } | null>(null);
+  // Skill edit state
+  const [editingSkill, setEditingSkill] = useState<{
+    index: number;
+    data: {
+      name: string;
+    };
+  } | null>(null);
+
+  const handleEditEducation = (index: number) => {
+    if (profile?.education && profile.education[index]) {
+      const education = profile.education[index];
+      setEditingEducation({
+        index,
+        data: {
+          school: education.school,
+          degree: education.degree,
+          fieldOfStudy: education.fieldOfStudy || "",
+          startDate: education.startDate,
+          endDate: education.endDate,
+        },
+      });
+      setShowEduForm(true);
+    }
+  };
+
+  const handleDeleteEducation = async (index: number) => {
+    if (confirm("Are you sure you want to delete this education entry?")) {
+      try {
+        await deleteEducation(index);
+      } catch (error) {
+        console.error("Failed to delete education:", error);
+      }
+    }
+  };
+
+  const handleCloseEducationForm = () => {
+    setShowEduForm(false);
+    setEditingEducation(null);
+  };
+
+  const handleEditExperience = (index: number) => {
+    if (profile?.experience && profile.experience[index]) {
+      const experience = profile.experience[index];
+      setEditingExperience({
+        index,
+        data: {
+          title: experience.title,
+          company: experience.company,
+          responsibilities: experience.responsibilities || [],
+          startDate: experience.startDate,
+          endDate: experience.endDate,
+        },
+      });
+      setShowExpForm(true);
+    }
+  };
+
+  const handleDeleteExperience = async (index: number) => {
+    if (confirm("Are you sure you want to delete this experience entry?")) {
+      try {
+        await deleteExperience(index);
+      } catch (error) {
+        console.error("Failed to delete experience:", error);
+      }
+    }
+  };
+
+  const handleCloseExperienceForm = () => {
+    setShowExpForm(false);
+    setEditingExperience(null);
+  };
+
+  const handleEditProject = (index: number) => {
+    if (profile?.projects && profile.projects[index]) {
+      const project = profile.projects[index];
+      setEditingProject({
+        index,
+        data: {
+          name: project.name,
+          description: project.description,
+          technologies: project.technologies || [],
+          url: project.url,
+          startDate: project.startDate,
+          endDate: project.endDate,
+        },
+      });
+      setShowProjectForm(true);
+    }
+  };
+
+  const handleDeleteProject = async (index: number) => {
+    if (confirm("Are you sure you want to delete this project entry?")) {
+      try {
+        await deleteProject(index);
+      } catch (error) {
+        console.error("Failed to delete project:", error);
+      }
+    }
+  };
+  const handleEditSkill = (index: number) => {
+    if (profile?.skills && profile.skills[index]) {
+      const skill = profile.skills[index];
+      setEditingSkill({
+        index,
+        data: {
+          name: skill,
+        },
+      });
+      setShowSkillForm(true);
+    }
+  };
+  const handleDeleteSkill = async (index: number) => {
+    if (confirm("Are you sure you want to delete this skill entry?")) {
+      try {
+        await deleteSkill(index);
+      } catch (error) {
+        console.error("Failed to delete skill:", error);
+      }
+    }
+  };
+
+  const handleCloseProjectForm = () => {
+    setShowProjectForm(false);
+    setEditingProject(null);
+  };
+
+  const handleCloseSkillForm = () => {
+    setShowSkillForm(false);
+    setEditingSkill(null);
+  };
 
   if (loading) {
     return <Loading message="Loading profile..." />;
@@ -37,6 +204,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Full Width Profile Editor */}
+      
       <div className="w-full px-3 sm:px-6 md:px-8 lg:px-12">
         {/* Profile Content */}
         <div className="py-6 sm:py-8">
@@ -46,221 +214,82 @@ export default function Profile() {
             <p className="text-sm sm:text-base text-gray-600">Build your professional profile by adding your experience, education, skills, and projects.</p>
           </div>
 
+          <div className="w-full mb-8">
+            <ResumeForm />
+          </div>
+
           {/* Experience Section */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl border-[1px] p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Work Experience</h2>
-                <button
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                  onClick={() => setShowExpForm(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {profile?.experience && profile.experience.length > 0 ? (
-                  profile.experience.map((exp, idx) => (
-                    <ExperienceCard
-                      key={idx}
-                      title={exp.title}
-                      company={exp.company}
-                      startDate={exp.startDate}
-                      endDate={exp.endDate}
-                      responsibilities={exp.responsibilities || []}
-                      onEdit={() => {
-                        // TODO: Implement edit functionality
-                        console.log('Edit experience:', idx);
-                      }}
-                      onDelete={() => {
-                        // TODO: Implement delete functionality
-                        console.log('Delete experience:', idx);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No work experience added yet</p>
-                    <button
-                      onClick={() => setShowExpForm(true)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      No experience added yet
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          <Experience
+            profile={profile}
+            setShowExpForm={setShowExpForm}
+            handleEditExperience={handleEditExperience}
+            handleDeleteExperience={handleDeleteExperience}
+          />
 
           {/* Education Section */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl border-[1px] p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
-                <button
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                  onClick={() => setShowEduForm(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {profile?.education && profile.education.length > 0 ? (
-                  profile.education.map((edu, idx) => (
-                    <EducationCard
-                      key={idx}
-                      school={edu.school}
-                      degree={edu.degree}
-                      fieldOfStudy={edu.fieldOfStudy}
-                      startDate={edu.startDate}
-                      endDate={edu.endDate}
-                      onEdit={() => {
-                        // TODO: Implement edit functionality
-                        console.log('Edit education:', idx);
-                      }}
-                      onDelete={() => {
-                        // TODO: Implement delete functionality
-                        console.log('Delete education:', idx);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No education added yet</p>
-                    <button
-                      onClick={() => setShowEduForm(true)}
-                      className="text-green-600 hover:text-green-700 text-sm font-medium"
-                    >
-                      No education added yet
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          <Education
+            profile={profile}
+            setShowEduForm={setShowEduForm}
+            handleEditEducation={handleEditEducation}
+            handleDeleteEducation={handleDeleteEducation}
+          />
 
           {/* Skills Section */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl border-[1px] p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Skills</h2>
-                <button
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                  onClick={() => setShowSkillForm(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {profile?.skills && profile.skills.length > 0 ? (
-                  profile.skills.map((skill, idx) => {
-                    // Handle both string and object skills for backward compatibility
-                    const skillName = typeof skill === 'string' ? skill : (skill as {name: string})?.name || 'Unknown Skill';
-                    return (
-                      <SkillCard
-                        key={idx}
-                        name={skillName}
-                        onEdit={() => {
-                          // TODO: Implement edit functionality
-                          console.log('Edit skill:', idx);
-                        }}
-                        onDelete={() => {
-                          // TODO: Implement delete functionality
-                          console.log('Delete skill:', idx);
-                        }}
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-12 w-full">
-                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No skills added yet</p>
-                    <button
-                      onClick={() => setShowSkillForm(true)}
-                      className="text-orange-600 hover:text-orange-700 text-sm font-medium"
-                    >
-                      Add your first skill →
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          <Skill
+            profile={profile}
+            setShowSkillForm={setShowSkillForm}
+            handleEditSkill={handleEditSkill}
+            handleDeleteSkill={handleDeleteSkill}
+          />
 
           {/* Projects Section */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl border-[1px] p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Projects</h2>
-                <button
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-                  onClick={() => setShowProjectForm(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                {profile?.projects && profile.projects.length > 0 ? (
-                  profile.projects.map((project, idx) => (
-                    <ProjectCard
-                      key={idx}
-                      name={project.name}
-                      description={project.description}
-                      technologies={project.technologies || []}
-                      url={project.url}
-                      startDate={project.startDate}
-                      endDate={project.endDate}
-                      onEdit={() => {
-                        // TODO: Implement edit functionality
-                        console.log('Edit project:', idx);
-                      }}
-                      onDelete={() => {
-                        // TODO: Implement delete functionality
-                        console.log('Delete project:', idx);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-3 text-sm sm:text-base">No projects added yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          <Project
+            profile={profile}
+            setShowProjectForm={setShowProjectForm}
+            handleEditProject={handleEditProject}
+            handleDeleteProject={handleDeleteProject}
+          />
         </div>
       </div>
 
       {/* Modals */}
       {showExpForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <ExperienceForm onClose={() => setShowExpForm(false)} />
+          <ExperienceForm 
+            onClose={handleCloseExperienceForm}
+            initial={editingExperience?.data}
+            editIndex={editingExperience?.index ?? null}
+          />
         </div>
       )}
       
       {showEduForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <EducationForm onClose={() => setShowEduForm(false)} />
+          <EducationForm 
+            onClose={handleCloseEducationForm}
+            initial={editingEducation?.data}
+            editIndex={editingEducation?.index ?? null}
+          />
         </div>
       )}
       
       {showSkillForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <SkillForm onClose={() => setShowSkillForm(false)} />
+          <SkillForm 
+            onClose={handleCloseSkillForm}
+            initial={editingSkill?.data}
+            editIndex={editingSkill?.index ?? null}
+          />
         </div>
       )}
       
       {showProjectForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <ProjectForm onClose={() => setShowProjectForm(false)} />
+          <ProjectForm 
+            onClose={handleCloseProjectForm}
+            initial={editingProject?.data}
+            editIndex={editingProject?.index ?? null}
+          />
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useProfile } from "@/context/profileProvider";
-import { X } from "lucide-react";
+import { X, GraduationCap, Calendar, Building2, BookOpen, Loader2 } from "lucide-react";
+import { convertDateForInput } from "@/lib/formateDate";
 
 interface EducationFormProps {
   initial?: {
@@ -15,14 +16,16 @@ interface EducationFormProps {
   editIndex?: number | null;
 }
 
+
+
 export default function EducationForm({ initial, onClose, editIndex }: EducationFormProps) {
   const { postEducation, updateEducation } = useProfile();
   const [form, setForm] = useState({
     school: initial?.school || "",
     degree: initial?.degree || "",
     fieldOfStudy: initial?.fieldOfStudy || "",
-    startDate: initial?.startDate || "",
-    endDate: initial?.endDate || "",
+    startDate: convertDateForInput(initial?.startDate || ""),
+    endDate: initial?.endDate ? convertDateForInput(initial.endDate) : "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,94 +63,152 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-full max-w-md">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-700">
-          {editIndex !== undefined && editIndex !== null ? "Edit" : "Add"} Education
-        </h3>
+    <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-lg">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <GraduationCap className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">
+              {editIndex !== undefined && editIndex !== null ? "Edit" : "Add"} Education
+            </h3>
+            <p className="text-sm text-slate-500">Enter your educational background</p>
+          </div>
+        </div>
         {onClose && (
           <button
             type="button"
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
             onClick={onClose}
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>
       
+      {/* Error Message */}
       {error && (
-        <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-xs">
-          {error}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+          <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+            <X className="w-3 h-3 text-red-600" />
+          </div>
+          <p className="text-red-700 text-sm font-medium">{error}</p>
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-          placeholder="School/University"
-          value={form.school}
-          onChange={e => setForm(f => ({ ...f, school: e.target.value }))}
-          required
-        />
-        
-        <select
-          className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700"
-          value={form.degree}
-          onChange={e => setForm(f => ({ ...f, degree: e.target.value }))}
-          required
-        >
-          <option value="" className="text-gray-500">Select Degree</option>
-          <option value="High School Diploma" className="text-gray-700">High School Diploma</option>
-          <option value="Associate&apos;s Degree" className="text-gray-700">Associate&apos;s Degree</option>
-          <option value="Bachelor&apos;s Degree" className="text-gray-700">Bachelor&apos;s Degree</option>
-          <option value="Master&apos;s Degree" className="text-gray-700">Master&apos;s Degree</option>
-          <option value="Doctorate" className="text-gray-700">Doctorate</option>
-          <option value="Certificate" className="text-gray-700">Certificate</option>
-          <option value="Other" className="text-gray-700">Other</option>
-        </select>
-        
-        <input
-          className="w-full px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-          placeholder="Field of Study"
-          value={form.fieldOfStudy}
-          onChange={e => setForm(f => ({ ...f, fieldOfStudy: e.target.value }))}
-          required
-        />
-        
-        <div className="flex gap-2">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Institution */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <Building2 className="inline w-4 h-4 mr-2" />
+            Institution *
+          </label>
           <input
-            className="flex-1 px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-            type="month"
-            placeholder="Start Date"
-            value={form.startDate}
-            onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900 placeholder-slate-500"
+            placeholder="e.g., Stanford University"
+            value={form.school}
+            onChange={e => setForm(f => ({ ...f, school: e.target.value }))}
             required
-          />
-          <input
-            className="flex-1 px-3 py-2 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100 transition rounded text-sm text-gray-700 placeholder-gray-500"
-            type="month"
-            placeholder="End Date"
-            value={form.endDate || ""}
-            onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
           />
         </div>
         
-        <div className="flex gap-2 pt-2">
+        {/* Degree Type */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <GraduationCap className="inline w-4 h-4 mr-2" />
+            Degree Type *
+          </label>
+          <select
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900 bg-white"
+            value={form.degree}
+            onChange={e => setForm(f => ({ ...f, degree: e.target.value }))}
+            required
+          >
+            <option value="" className="text-slate-500">Select your degree</option>
+            <option value="High School Diploma" className="text-slate-700">High School Diploma</option>
+            <option value="Associate&apos;s Degree" className="text-slate-700">Associate&apos;s Degree</option>
+            <option value="Bachelor&apos;s Degree" className="text-slate-700">Bachelor&apos;s Degree</option>
+            <option value="Master&apos;s Degree" className="text-slate-700">Master&apos;s Degree</option>
+            <option value="Doctorate" className="text-slate-700">Doctorate</option>
+            <option value="Certificate" className="text-slate-700">Certificate</option>
+            <option value="Other" className="text-slate-700">Other</option>
+          </select>
+        </div>
+        
+        {/* Field of Study */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <BookOpen className="inline w-4 h-4 mr-2" />
+            Field of Study *
+          </label>
+          <input
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900 placeholder-slate-500"
+            placeholder="e.g., Computer Science, Business Administration"
+            value={form.fieldOfStudy}
+            onChange={e => setForm(f => ({ ...f, fieldOfStudy: e.target.value }))}
+            required
+          />
+        </div>
+        
+        {/* Date Range */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <Calendar className="inline w-4 h-4 mr-2" />
+            Duration *
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-slate-600 mb-1">Start Date</label>
+              <input
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900"
+                type="month"
+                value={form.startDate}
+                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600 mb-1">End Date (Optional)</label>
+              <input
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900"
+                type="month"
+                value={form.endDate || ""}
+                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                placeholder="Leave empty if current"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Leave end date empty if you&apos;re currently studying
+          </p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex space-x-3 pt-4 border-t border-slate-200">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-3 py-2 text-xs border border-gray-200 text-gray-700 rounded hover:bg-gray-50 transition"
+            className="flex-1 px-4 py-3 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition font-medium"
             disabled={loading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="flex-1 px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             disabled={loading}
           >
-            {loading ? "Saving..." : (editIndex !== undefined && editIndex !== null ? "Update" : "Add")}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <span>{editIndex !== undefined && editIndex !== null ? "Update" : "Add"} Education</span>
+            )}
           </button>
         </div>
       </form>
