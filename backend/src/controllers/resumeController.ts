@@ -247,7 +247,12 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
       await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
     }
     
-    res.status(500).json({ message: "Failed to process resume" });
+    // Return more specific error message
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process resume';
+    res.status(500).json({ 
+      message: "Failed to process resume",
+      error: errorMessage 
+    });
   }
 });
 
