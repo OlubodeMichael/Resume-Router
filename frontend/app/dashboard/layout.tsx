@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}</style>
       {/* Sidebar */}
       <div
-        className={`transition-all duration-300 smooth-transition ${
+        className={`fixed left-0 top-0 h-screen transition-all duration-300 smooth-transition ${
           isMobile ? "w-16" : sidebarOpen ? "w-64" : "w-16 cursor-pointer"
         } bg-white border-r border-gray-200 flex flex-col overflow-hidden group`}
         onClick={!sidebarOpen && !isMobile ? () => setSidebarOpen(true) : undefined}
@@ -217,7 +217,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       </div>
       {/* Main Content Area */}
-      <div className="flex-1 flex min-w-0 justify-center">
+      <div 
+        className="flex-1 flex justify-center min-h-screen overflow-y-auto"
+        style={{ 
+          marginLeft: isMobile ? '64px' : sidebarOpen ? '256px' : '64px',
+          transition: 'margin-left 300ms ease-in-out',
+          '--sidebar-width': isMobile ? '64px' : sidebarOpen ? '256px' : '64px'
+        } as React.CSSProperties}
+      >
         {children}
       </div>
     </div>

@@ -1,16 +1,28 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { useAuth } from "./authProvider";
 
 interface PersonalInfo {
   fullName: string;
-  email: string;
   phone: string;
   location: string;
   linkedIn: string;
   portfolio: string;
   jobTitle: string;
   pronouns: string;
+  email: string; // Email is auto-populated from User table into PersonalInformation
+}
+
+interface PersonalInfoFormData {
+  fullName: string;
+  phone: string;
+  location: string;
+  linkedIn: string;
+  portfolio: string;
+  jobTitle: string;
+  pronouns: string;
+  email: string;
 }
 
 interface PersonalInfoContextType {
@@ -21,7 +33,7 @@ interface PersonalInfoContextType {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   getPersonalInfo: () => void;
-  updatePersonalInfo: (personalInfo: PersonalInfo) => Promise<void>;
+  updatePersonalInfo: (personalInfo: PersonalInfoFormData) => Promise<void>;
 }
 
 const PersonalInfoContext = createContext<PersonalInfoContextType | null>(null);
@@ -30,6 +42,7 @@ export const PersonalInfoProvider = ({ children }: { children: ReactNode }) => {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   const getPersonalInfo = useCallback(async () => {
@@ -53,14 +66,19 @@ export const PersonalInfoProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [API_URL]);
 
-  // Load personal info when component mounts
+  // Load personal info when user is authenticated and auth loading is complete
   useEffect(() => {
-    getPersonalInfo();
-  }, [getPersonalInfo]);
+    if (user && !authLoading) {
+      getPersonalInfo();
+    } else if (!authLoading && !user) {
+      // If auth is complete but no user, set loading to false
+      setLoading(false);
+    }
+  }, [user, authLoading, getPersonalInfo]);
 
   
 
-  const updatePersonalInfo = async (personalInfo: PersonalInfo) => {
+  const updatePersonalInfo = async (personalInfo: PersonalInfoFormData) => {
     try {
       setLoading(true);
       setError(null);

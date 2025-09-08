@@ -10,7 +10,6 @@ import Education from "../Profile/Education";
 import Project from "../Profile/Project";
 import Skill from "../Profile/Skill";
 import Loading from "../loading";
-import ResumeForm from "../Resume/ResumeForm";
 
 export default function Profile() {
   const { profile, loading, error, deleteEducation, deleteExperience, deleteProject, deleteSkill } = useProfile();
@@ -214,9 +213,6 @@ export default function Profile() {
             <p className="text-sm sm:text-base text-gray-600">Build your professional profile by adding your experience, education, skills, and projects.</p>
           </div>
 
-          <div className="w-full mb-8">
-            <ResumeForm />
-          </div>
 
           {/* Experience Section */}
           <Experience

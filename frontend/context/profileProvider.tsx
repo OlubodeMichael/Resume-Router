@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useAuth } from "./authProvider";
 
 interface Profile {
   id: string;
@@ -67,6 +68,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -91,11 +93,17 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const loadProfile = async () => {
-      await getProfile();
+    // Only fetch profile when user is authenticated and auth loading is complete
+    if (user && !authLoading) {
+      const loadProfile = async () => {
+        await getProfile();
+      }
+      loadProfile();
+    } else if (!authLoading && !user) {
+      // If auth is complete but no user, set loading to false
+      setLoading(false);
     }
-    loadProfile();
-  }, []);
+  }, [user, authLoading]);
 
   const updateProfile = async (profile: Profile) => {
     try {

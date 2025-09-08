@@ -27,3 +27,10 @@ body {
 
 
 @import url('https://fonts.googleapis.com/css2?family=Amsterdamer+Garamond&display=swap');
+@media print {
+  @page { size: Letter; margin: 0.5in; }
+  .no-print { display: none !important; }
+  .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.small-caps { font-variant: small-caps; letter-spacing: .06em; }
+.hr-thin { height: 1px; background: #111; opacity: .6; }

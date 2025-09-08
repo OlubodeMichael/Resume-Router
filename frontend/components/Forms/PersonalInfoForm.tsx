@@ -3,16 +3,28 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { usePersonalInfo } from "../../context/personalInfoProvider";
+import { useAuth } from "../../context/authProvider";
 
 interface PersonalInfoData {
   fullName: string;
-  email: string;
   phone: string;
   location: string;
   linkedIn: string;
   portfolio: string;
   jobTitle: string;
   pronouns: string;
+  email: string; // email field is now included in the form
+}
+
+interface PersonalInfoFormData {
+  fullName: string;
+  phone: string;
+  location: string;
+  linkedIn: string;
+  portfolio: string;
+  jobTitle: string;
+  pronouns: string;
+  email: string;
 }
 
 interface PersonalInfoFormProps {
@@ -23,25 +35,36 @@ interface PersonalInfoFormProps {
 
 export default function PersonalInfoForm({ onClose, initial, editIndex }: PersonalInfoFormProps) {
   const { updatePersonalInfo } = usePersonalInfo();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<PersonalInfoData>({
-    fullName: "",
-    email: "",
+    fullName: user?.name || "",
     phone: "",
     location: "",
     linkedIn: "",
     portfolio: "",
     jobTitle: "",
     pronouns: "",
+    email: user?.email || "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data if editing
+  // Load initial data if editing, but always use user's name and email as fallback
   useEffect(() => {
     if (initial) {
-      setFormData(initial);
+      setFormData({
+        ...initial,
+        fullName: initial.fullName || user?.name || "",
+        email: initial.email || user?.email || ""
+      });
+    } else if (user?.name || user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: user?.name || prev.fullName,
+        email: user?.email || prev.email
+      }));
     }
-  }, [initial]);
+  }, [initial, user?.name, user?.email]);
 
   const handleInputChange = (field: keyof PersonalInfoData, value: string) => {
     setFormData(prev => ({
@@ -60,7 +83,7 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
       setError("Email is required");
       return false;
     }
-    if (!formData.email.includes('@')) {
+    if (!formData.email.includes("@")) {
       setError("Please enter a valid email address");
       return false;
     }
@@ -75,7 +98,18 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
     setError(null);
     
     try {
-      await updatePersonalInfo(formData);
+      // Send all form data including email
+      const dataToSend: PersonalInfoFormData = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        location: formData.location,
+        linkedIn: formData.linkedIn,
+        portfolio: formData.portfolio,
+        jobTitle: formData.jobTitle,
+        pronouns: formData.pronouns,
+        email: formData.email
+      };
+      await updatePersonalInfo(dataToSend);
       onClose();
     } catch (err) {
       setError((err as Error).message || "Failed to update personal information");
@@ -128,7 +162,7 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
           {/* Email */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address <span className="text-red-500">*</span>
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"

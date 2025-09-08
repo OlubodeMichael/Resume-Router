@@ -2,150 +2,128 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-interface ParsedResumeData {
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  location?: string;
-  linkedIn?: string;
-  portfolio?: string;
-  jobTitle?: string;
-  pronouns?: string;
-  experience?: Array<{
-    title: string;
-    company?: string;
-    startDate?: string;
-    endDate?: string;
-    description?: string[];
-  }>;
-  education?: Array<{
-    institution: string;
-    degree?: string;
-    startDate?: string;
-    endDate?: string;
-    gpa?: string;
-  }>;
-  skills?: string[];
-  summary?: string;
+interface GeneratedResume {
+  id?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
+interface JobDescription {
+  id: string;
+  content: string;
+  parsedData: Record<string, unknown>;
+  createdAt: string;
+  userId: string;
 }
 
 interface ResumeContextType {
   resume: File | null;
   setResume: (resume: File | null) => void;
-  parsedResume: ParsedResumeData | null;
-  setParsedResume: (data: ParsedResumeData | null) => void;
   isLoading: boolean;
+  setIsLoading: (isLoading: boolean) => void;
+  jobDescription: JobDescription | null;
+  setJobDescription: (jobDescription: JobDescription | null) => void;
   error: string | null;
-  parseResume: (file: File) => Promise<void>;
-  clearResume: () => void;
-  clearError: () => void;
+  setError: (error: string | null) => void;
+  generatedResumeContent: GeneratedResume | null;
+  setGeneratedResumeContent: (generatedResumeContent: GeneratedResume | null) => void;
+  parseJobDescription: (jobDescription: string) => Promise<void>;
+  generateResume: (jobDescriptionId: string) => Promise<void>;
 }
 
-const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
+const ResumeContext = createContext<ResumeContextType | null>(null);
+
+
 
 export const ResumeProvider = ({ children }: { children: ReactNode }) => {
-  const [resume, setResume] = useState<File | null>(null);
-  const [parsedResume, setParsedResume] = useState<ParsedResumeData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const [resume, setResume] = useState<File | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [jobDescription, setJobDescription] = useState<JobDescription | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  const parseResume = async (file: File) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      setResume(file);
 
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error('Please upload a PDF or DOCX file');
-      }
-
-      // Validate file size (10MB limit)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-      if (file.size > maxSize) {
-        throw new Error('File size must be less than 10MB');
-      }
-
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('resume', file);
-
-      // Get auth token from cookies or localStorage
-      //const token = localStorage.getItem('authToken') || '';
-      
-      const response = await fetch(`${API_BASE_URL}/api/resumes/parse`, {
-        method: "POST",
-        headers: {
-          'Accept': 'application/json',
-        },
-        credentials: "include",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to parse resume' }));
-        console.error(errorData);
-        throw new Error(errorData.message || 'Failed to parse resume');
-      }
-
-      const data = await response.json();
-      
-      if (data.data) {
-        setParsedResume(data.data);
-      } else {
-        throw new Error('No data received from server');
-      }
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      console.error(errorMessage);
-      setError(errorMessage);
-      setParsedResume(null);
-    } finally {
-      setIsLoading(false);
+    const parseJobDescription = async (jobDescription: string) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/job-description`, {
+                method: 'POST',
+                body: JSON.stringify({ content: jobDescription }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+            
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.jobDescription) {
+                setJobDescription(data.jobDescription);
+            } else {
+                throw new Error('Invalid response format');
+            }
+        } catch (err) {
+            console.error('Parse job description error:', err);
+            setError((err as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
     }
-  };
 
-  const clearResume = () => {
-    setResume(null);
-    setParsedResume(null);
-    setError(null);
-  };
+    const generateResume = async (jobDescriptionId: string) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            
+            const response = await fetch(`${API_BASE_URL}/api/resumes`, {
+                method: 'POST',
+                body: JSON.stringify({ jobDescriptionId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Resume generation error response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.resume) {
+                setGeneratedResumeContent(data.resume);
+            } else {
+                throw new Error('Invalid response format');
+            }
+        } catch (err) {
+            console.error('Generate resume error:', err);
+            setError((err as Error).message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    return (
+        <ResumeContext.Provider value={{ resume, setResume, isLoading, setIsLoading, jobDescription, setJobDescription, error, setError, setGeneratedResumeContent, generatedResumeContent, parseJobDescription, generateResume }}>
+            {children}
+        </ResumeContext.Provider>
+    )
+}
 
-  const clearError = () => {
-    setError(null);
-  };
-
-  const value: ResumeContextType = {
-    resume,
-    setResume,
-    parsedResume,
-    setParsedResume,
-    isLoading,
-    error,
-    parseResume,
-    clearResume,
-    clearError,
-  };
-
-  return (
-    <ResumeContext.Provider value={value}>
-      {children}
-    </ResumeContext.Provider>
-  );
-};
-
-export const useResume = (): ResumeContextType => {
-  const context = useContext(ResumeContext);
-  if (context === undefined) {
-    throw new Error('useResume must be used within a ResumeProvider');
-  }
-  return context;
-};
+export const useResume = () => {
+    const context = useContext(ResumeContext);
+    if (!context) {
+        throw new Error('useResume must be used within a ResumeProvider');
+    }
+    return context;
+}
