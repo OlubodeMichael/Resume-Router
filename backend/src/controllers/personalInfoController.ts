@@ -20,15 +20,40 @@ export const getPersonalInfo = catchAsync(async (req: Request, res: Response): P
     }
 
     const personalInfo = await prisma.personalInformation.findUnique({
-        where: { id: profile.id },
+        where: { profileId: profile.id },
+    });
+
+    // Get user data to include name and email
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true }
     });
 
     if (!personalInfo) {
-        res.status(404).json({ message: 'Personal information not found' });
+        // Return user data even if personal info doesn't exist
+        res.status(200).json({ 
+            data: {
+                fullName: user?.name || null,
+                phone: null,
+                location: null,
+                linkedIn: null,
+                portfolio: null,
+                jobTitle: null,
+                pronouns: null,
+                email: user?.email || null
+            }
+        });
         return;
     }
 
-    res.status(200).json({ data: personalInfo });
+    // Return personal info with user's email if personal info email is empty
+    res.status(200).json({ 
+        data: {
+            ...personalInfo,
+            fullName: personalInfo.fullName || user?.name || null,
+            email: (personalInfo as any).email || user?.email || null
+        }
+    });
 });
 
 export const upsertPersonalInfo = catchAsync(async (req: Request, res: Response): Promise<void> => {
@@ -47,26 +72,47 @@ export const upsertPersonalInfo = catchAsync(async (req: Request, res: Response)
         return;
     }
 
-    const { fullName, phone, location, linkedIn, portfolio, jobTitle, pronouns } = req.body;
+    // Get user data to use as fallback for name
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true }
+    });
+
+    const { fullName, phone, location, linkedIn, portfolio, jobTitle, pronouns, email } = req.body;
+
+    // Use provided fullName or fallback to user's name
+    const finalFullName = fullName || user?.name || null;
+    // Use provided email or fallback to user's email
+    const finalEmail = email || user?.email || null;
 
     const personalInfo = await prisma.personalInformation.upsert({
         where: { profileId: profile.id },
-        update: { fullName, phone, location, linkedIn, portfolio, jobTitle, pronouns },
-        create: { 
-            profileId: profile.id,
-            fullName, 
+        update: { 
+            fullName: finalFullName, 
             phone, 
             location, 
             linkedIn, 
+            email: finalEmail,
             portfolio, 
             jobTitle, 
             pronouns 
-        },
+        } as any,
+        create: { 
+            profileId: profile.id,
+            fullName: finalFullName, 
+            phone, 
+            location, 
+            linkedIn, 
+            email: finalEmail,
+            portfolio, 
+            jobTitle, 
+            pronouns 
+        } as any,
     });
 
     res.status(200).json({ 
         message: 'Personal information updated successfully',
-        data: personalInfo 
+        data: personalInfo
     });
 });
 

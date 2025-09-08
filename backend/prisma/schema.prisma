@@ -49,6 +49,7 @@ model PersonalInformation {
   phone     String?
   location  String?
   linkedIn  String?
+  email     String?
   portfolio String?
   jobTitle  String?
   pronouns  String?
