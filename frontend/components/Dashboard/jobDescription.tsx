@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useResume } from '@/context/resumeProvider';
 
 
 export default function JobDescription() {
   const [content, setContent] = useState("");
   const [shouldGenerateResume, setShouldGenerateResume] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { generateResume, parseJobDescription, isLoading, error, jobDescription, generatedResumeContent } = useResume();
 
   // Effect to generate resume when job description is parsed
@@ -16,10 +17,26 @@ export default function JobDescription() {
             await generateResume(jobDescription.id as string);
         }
         generateResumeFunction();
-        console.log('generatedResumeContent', generatedResumeContent);
+        setShouldGenerateResume(false);
+    }
+  }, [jobDescription, shouldGenerateResume, generateResume]);
+
+  // Effect to log generated content when it's available and clear the form
+  useEffect(() => {
+    if (generatedResumeContent) {
+      console.log('Generated resume content:', generatedResumeContent);
+      // Clear the content and reset the form after successful generation
+      setContent("");
       setShouldGenerateResume(false);
     }
-  }, [jobDescription, shouldGenerateResume, generateResume, generatedResumeContent]);
+  }, [generatedResumeContent]);
+
+  // Effect to reset textarea height when content is cleared
+  useEffect(() => {
+    if (!content && textareaRef.current) {
+      textareaRef.current.style.height = '44px';
+    }
+  }, [content]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +63,19 @@ export default function JobDescription() {
       <form onSubmit={handleSubmit} className="relative">
         <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-gray-300 focus-within:shadow-sm transition-all duration-200 p-2">
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="flex-1 px-3 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-32"
+            className="flex-1 px-3 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-40"
             placeholder="Paste job description here to generate a tailored resume..."
             required
             disabled={isLoading}
             rows={1}
+            style={{ height: '44px' }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 128) + 'px';
+              target.style.height = '44px'; // Reset to normal height
+              target.style.height = Math.min(target.scrollHeight, 160) + 'px'; // Expand up to max-h-40 (160px)
             }}
           />
           

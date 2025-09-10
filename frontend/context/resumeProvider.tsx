@@ -114,7 +114,22 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         }
     }
     return (
-        <ResumeContext.Provider value={{ resume, setResume, isLoading, setIsLoading, jobDescription, setJobDescription, error, setError, setGeneratedResumeContent, generatedResumeContent, parseJobDescription, generateResume }}>
+        <ResumeContext.Provider 
+            value={{ 
+                resume, 
+                setResume, 
+                isLoading, 
+                setIsLoading, 
+                jobDescription, 
+                setJobDescription, 
+                error, 
+                setError, 
+                setGeneratedResumeContent, 
+                generatedResumeContent, 
+                parseJobDescription, 
+                generateResume 
+            }}
+        >
             {children}
         </ResumeContext.Provider>
     )

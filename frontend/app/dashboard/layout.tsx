@@ -5,7 +5,7 @@ import {
   Plus,
   FileText,
   BookOpen,
-  MessageCircle,
+  LayoutTemplate,
   HelpCircle,
   Settings,
   User,
@@ -14,12 +14,13 @@ import {
 import { useAuth } from "@/context/authProvider";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
-  { icon: Plus, label: "New", active: true, href: "/dashboard/" },
+  { icon: Plus, label: "New", href: "/dashboard/" },
   { icon: FileText, label: "Documents", href: "/dashboard/documents" },
   { icon: BookOpen, label: "Library", href: "/dashboard/library" },
-  { icon: MessageCircle, label: "All Chat", href: "/dashboard/all-chat" },
+  { icon: LayoutTemplate, label: "Templates", href: "/dashboard/templates" },
 ];
 const bottomNavItems = [
   { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
@@ -27,6 +28,7 @@ const bottomNavItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
@@ -97,11 +99,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="space-y-1 mt-2">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.label}
                   className={`flex items-center w-full p-2 rounded-lg transition-colors duration-200 group/nav relative
-                    ${item.active ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}
+                    ${isActive ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}
                     ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
                   `}
                   aria-label={item.label}
