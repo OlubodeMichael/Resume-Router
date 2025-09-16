@@ -9,11 +9,13 @@ interface Education {
   fieldOfStudy?: string;
   startDate: string;
   endDate?: string | null;
+  gpa?: string;
 }
 
 interface Experience {
   title: string;
   company: string;
+  location?: string;
   responsibilities: string[];
   startDate: string;
   endDate?: string | null;
@@ -100,7 +102,7 @@ export const upsertProfile = catchAsync(async (req: Request, res: Response): Pro
 // Add Education Entry
 export const addEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
-  const { school, degree, fieldOfStudy, startDate, endDate } = req.body;
+  const { school, degree, fieldOfStudy, startDate, endDate, gpa } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -123,6 +125,7 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
       fieldOfStudy,
       startDate: formatDate(startDate),
       endDate: endDate ? formatDate(endDate) : null,
+      gpa,
     },
   ];
 
@@ -150,7 +153,7 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
 export const updateEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
   const { index } = req.params;
-  const { school, degree, fieldOfStudy, startDate, endDate } = req.body;
+  const { school, degree, fieldOfStudy, startDate, endDate, gpa } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -182,6 +185,7 @@ export const updateEducationEntry = catchAsync(async (req: Request, res: Respons
     fieldOfStudy,
     startDate: formatDate(startDate),
     endDate: endDate ? formatDate(endDate) : null,
+    gpa,
   };
 
   const updatedProfile = await prisma.profile.update({
@@ -235,7 +239,7 @@ export const deleteEducationEntry = catchAsync(async (req: Request, res: Respons
 // Add Experience Entry
 export const addExperienceEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
-  const { title, company, responsibilities, startDate, endDate } = req.body;
+  const { title, company, location, responsibilities, startDate, endDate } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -260,6 +264,7 @@ export const addExperienceEntry = catchAsync(async (req: Request, res: Response)
     {
       title,
       company,
+      location,
       responsibilities,
       startDate: formatDate(startDate),
       endDate: endDate ? formatDate(endDate) : null,
@@ -290,7 +295,7 @@ export const addExperienceEntry = catchAsync(async (req: Request, res: Response)
 export const updateExperienceEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
   const { index } = req.params;
-  const { title, company, responsibilities, startDate, endDate } = req.body;
+  const { title, company, location, responsibilities, startDate, endDate } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -324,6 +329,7 @@ export const updateExperienceEntry = catchAsync(async (req: Request, res: Respon
   currentExperience[experienceIndex] = {
     title,
     company,
+    location,
     responsibilities,
     startDate: formatDate(startDate),
     endDate: endDate ? formatDate(endDate) : null,
