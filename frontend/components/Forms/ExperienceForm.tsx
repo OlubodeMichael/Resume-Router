@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useProfile } from "@/context/profileProvider";
-import { X, Plus, Briefcase, Building2, Calendar, FileText, Loader2, Trash2 } from "lucide-react";
+import { X, Plus, Briefcase, Building2, Calendar, FileText, Loader2, Trash2, MapPin } from "lucide-react";
 import { convertDateForInput } from "@/lib/formateDate";
 
 interface ExperienceFormProps {
   initial?: {
     title: string;
     company: string;
+    location?: string;
     responsibilities: string[];
     startDate: string;
     endDate?: string | null;
@@ -21,6 +22,7 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
   const [form, setForm] = useState({
     title: initial?.title || "",
     company: initial?.company || "",
+    location: initial?.location || "",
     responsibilities: initial?.responsibilities || [""],
     startDate: convertDateForInput(initial?.startDate || ""),
     endDate: initial?.endDate ? convertDateForInput(initial.endDate) : "",
@@ -33,6 +35,7 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
     setForm({
       title: initial?.title || "",
       company: initial?.company || "",
+      location: initial?.location || "",
       responsibilities: initial?.responsibilities || [""],
       startDate: convertDateForInput(initial?.startDate || ""),
       endDate: initial?.endDate ? convertDateForInput(initial.endDate) : "",
@@ -83,6 +86,7 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
       setForm({
         title: "",
         company: "",
+        location: "",
         responsibilities: [""],
         startDate: "",
         endDate: "",
@@ -162,6 +166,23 @@ export default function ExperienceForm({ initial, onClose, editIndex }: Experien
             onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
             required
           />
+        </div>
+
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <MapPin className="inline w-4 h-4 mr-2" />
+            Location (Optional)
+          </label>
+          <input
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900 placeholder-slate-500"
+            placeholder="e.g., San Francisco, CA or Remote"
+            value={form.location}
+            onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Enter city, state format (e.g., &quot;New York, NY&quot;) or &quot;Remote&quot;
+          </p>
         </div>
         
         {/* Responsibilities */}

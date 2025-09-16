@@ -11,6 +11,7 @@ import type { ResumeData } from '@/types/resume'
 import { ResumeRecordSchema } from '@/types/resume-record.schema'
 import { mapRecordToTemplateData } from '@/utils/mapRecordToTemplateData'
 
+
 const DEFAULT_RESUME: ResumeData = {
   name: 'Your Name',
   contacts: [],
@@ -52,12 +53,14 @@ export default function Dashboard() {
     <div className="min-h-screen w-full bg-gray-50">
       <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200"
               style={{ left: 'var(--sidebar-width, 64px)' }}>
-        <div className="mx-auto max-w-5xl px-4 py-3 overflow-x-auto overflow-y-scroll" >
-          <Toolbar editorRef={editorRef} />
+        <div className="mx-auto max-w-5xl px-4 py-3">
+          <div className="overflow-x-auto">
+            <Toolbar editorRef={editorRef} />
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pt-24 pb-32">
+      <main className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10">
         <div className="mt-6">
           <Ryan data={resumeData} editorRef={editorRef} />
         </div>

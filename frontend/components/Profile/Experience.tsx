@@ -4,6 +4,7 @@ import ExperienceCard from "../Cards/ExperienceCard";
 interface Experience {
   title: string;
   company: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   responsibilities?: string[];
@@ -41,6 +42,7 @@ export default function Experience( { profile, setShowExpForm, handleEditExperie
             key={idx}
             title={exp.title}
             company={exp.company}
+            location={exp.location}
             startDate={exp.startDate}
             endDate={exp.endDate}
             responsibilities={exp.responsibilities || []}

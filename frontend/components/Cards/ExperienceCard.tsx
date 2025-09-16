@@ -1,10 +1,11 @@
 "use client";
-import { Pencil, Trash2, Calendar, Building } from "lucide-react";
+import { Pencil, Trash2, Calendar, Building, MapPin } from "lucide-react";
 import formatDate from "@/lib/formateDate";
 
 interface ExperienceCardProps {
   title: string;
   company: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   responsibilities: string[];
@@ -17,6 +18,7 @@ interface ExperienceCardProps {
 export default function ExperienceCard({
   title,
   company,
+  location,
   startDate,
   endDate,
   responsibilities,
@@ -35,7 +37,15 @@ export default function ExperienceCard({
             <Building className="w-5 h-5 text-blue-600" />
             <h3 className="sm:text-lg text-md font-medium text-gray-900 w-full">{title}</h3>
           </div>
-          <p className="text-gray-600 font-medium">{company}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-gray-600 font-medium">{company}</p>
+            {location && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-gray-400" />
+                <p className="text-gray-500 text-sm">{location}</p>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Action buttons */}

@@ -102,7 +102,7 @@ export default function Ryan({ data, className, editorRef }: Props) {
               />
               <SubRowLine
                 left={ed.degree}
-                right={ed.location}
+                right={ed.gpa ? `${ed.location ? ed.location + ' • ' : ''}GPA: ${ed.gpa}` : ed.location}
               />
             </div>
           ))}
@@ -185,7 +185,7 @@ export default function Ryan({ data, className, editorRef }: Props) {
           <SectionTitle>Technical Skills</SectionTitle>
           <div className="skills-content">
             {skills.map((s, i) => (
-              <div key={i} className="indent">
+              <div key={i} className="indent text-sm font-normal text-black">
                 <strong>{s}</strong>
               </div>
             ))}

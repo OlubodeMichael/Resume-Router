@@ -58,7 +58,7 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
@@ -67,7 +67,7 @@ const Modal: React.FC<ModalProps> = ({
       
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-lg shadow-xl w-full mx-4 ${sizeClasses[size]} ${className}`}
+        className={`relative bg-white rounded-lg shadow-xl w-full max-h-full ${sizeClasses[size]} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -89,7 +89,7 @@ const Modal: React.FC<ModalProps> = ({
         )}
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto max-h-[calc(100vh-8rem)]">
           {children}
         </div>
       </div>

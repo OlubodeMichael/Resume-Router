@@ -16,6 +16,7 @@ export type EducationItem = {
   location?: string
   start?: string
   end?: string
+  gpa?: string
 }
 
 export type ProjectItem = {

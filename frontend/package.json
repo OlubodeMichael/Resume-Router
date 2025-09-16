@@ -19,6 +19,7 @@
     "@tiptap/react": "^3.4.1",
     "@tiptap/starter-kit": "^3.4.1",
     "@types/js-cookie": "^3.0.6",
+    "@vercel/blob": "^1.1.1",
     "clsx": "^2.1.1",
     "cookie": "^1.0.2",
     "isomorphic-dompurify": "^2.26.0",
@@ -29,6 +30,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-google-button": "^0.8.0",
+    "swr": "^2.3.6",
     "zod": "^4.1.5"
   },
   "devDependencies": {

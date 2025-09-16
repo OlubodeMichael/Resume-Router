@@ -1,5 +1,5 @@
 "use client";
-import { Pencil, Trash2, Calendar, GraduationCap } from "lucide-react";
+import { Pencil, Trash2, Calendar, GraduationCap, Award } from "lucide-react";
 import formatDate from "@/lib/formateDate";
 
 interface EducationCardProps {
@@ -8,6 +8,7 @@ interface EducationCardProps {
   fieldOfStudy?: string;
   startDate: string;
   endDate?: string | null;
+  gpa?: string;
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -18,6 +19,7 @@ export default function EducationCard({
   fieldOfStudy,
   startDate,
   endDate,
+  gpa,
   onEdit,
   onDelete,
 }: EducationCardProps) {
@@ -36,6 +38,12 @@ export default function EducationCard({
           <p className="text-gray-600 font-medium">{school}</p>
           {fieldOfStudy && (
             <p className="text-gray-500 text-sm mt-1">{fieldOfStudy}</p>
+          )}
+          {gpa && (
+            <div className="flex items-center gap-1 mt-1">
+              <Award className="w-4 h-4 text-amber-500" />
+              <p className="text-amber-600 text-sm font-medium">GPA: {gpa}</p>
+            </div>
           )}
         </div>
         

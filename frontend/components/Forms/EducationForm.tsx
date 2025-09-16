@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useProfile } from "@/context/profileProvider";
-import { X, GraduationCap, Calendar, Building2, BookOpen, Loader2 } from "lucide-react";
+import { X, GraduationCap, Calendar, Building2, BookOpen, Loader2, Award } from "lucide-react";
 import { convertDateForInput } from "@/lib/formateDate";
 
 interface EducationFormProps {
@@ -11,6 +11,7 @@ interface EducationFormProps {
     fieldOfStudy: string;
     startDate: string;
     endDate?: string | null;
+    gpa?: string;
   };
   onClose?: () => void;
   editIndex?: number | null;
@@ -26,6 +27,7 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
     fieldOfStudy: initial?.fieldOfStudy || "",
     startDate: convertDateForInput(initial?.startDate || ""),
     endDate: initial?.endDate ? convertDateForInput(initial.endDate) : "",
+    gpa: initial?.gpa || "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
         fieldOfStudy: "",
         startDate: "",
         endDate: "",
+        gpa: "",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -151,6 +154,23 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
             onChange={e => setForm(f => ({ ...f, fieldOfStudy: e.target.value }))}
             required
           />
+        </div>
+
+        {/* GPA */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            <Award className="inline w-4 h-4 mr-2" />
+            GPA (Optional)
+          </label>
+          <input
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-slate-900 placeholder-slate-500"
+            placeholder="e.g., 3.8, 4.0, 3.5/4.0"
+            value={form.gpa}
+            onChange={e => setForm(f => ({ ...f, gpa: e.target.value }))}
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Include your GPA if it&apos;s 3.5 or higher, or if it&apos;s relevant to the position
+          </p>
         </div>
         
         {/* Date Range */}

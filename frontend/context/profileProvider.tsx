@@ -20,11 +20,13 @@ interface Education {
   fieldOfStudy?: string;
   startDate: string;
   endDate?: string | null;
+  gpa?: string;
 }
 
 interface Experience {
   title: string;
   company: string;
+  location?: string;
   responsibilities: string[];
   startDate: string;
   endDate?: string | null;

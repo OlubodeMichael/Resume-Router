@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import Logo from '@/components/logo';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -54,10 +55,7 @@ function Navbar() {
           {/* Logo */}
           <div className="flex items-center space-x-2">
           <Link className="flex justify-center items-center space-x-2" href="/" >
-            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
-              RR
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
+            <Logo />
           </Link>
           </div>
           {/* Desktop Links */}
@@ -547,10 +545,7 @@ function Footer() {
     <footer className="bg-slate-100 text-white py-10 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto text-center space-y-4">
         <div className="flex justify-center items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
-            RR
-          </div>
-          <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
+          <Logo />
         </div>
 
         <div className="flex justify-center space-x-6 text-slate-700 text-sm font-medium font-sans">

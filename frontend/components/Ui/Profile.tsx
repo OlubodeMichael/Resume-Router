@@ -36,6 +36,7 @@ export default function Profile() {
     data: {
       title: string;
       company: string;
+      location?: string;
       responsibilities: string[];
       startDate: string;
       endDate?: string | null;
@@ -102,6 +103,7 @@ export default function Profile() {
         data: {
           title: experience.title,
           company: experience.company,
+          location: experience.location,
           responsibilities: experience.responsibilities || [],
           startDate: experience.startDate,
           endDate: experience.endDate,
@@ -250,42 +252,50 @@ export default function Profile() {
 
       {/* Modals */}
       {showExpForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <ExperienceForm 
-            onClose={handleCloseExperienceForm}
-            initial={editingExperience?.data}
-            editIndex={editingExperience?.index ?? null}
-          />
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <ExperienceForm 
+              onClose={handleCloseExperienceForm}
+              initial={editingExperience?.data}
+              editIndex={editingExperience?.index ?? null}
+            />
+          </div>
         </div>
       )}
       
       {showEduForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <EducationForm 
-            onClose={handleCloseEducationForm}
-            initial={editingEducation?.data}
-            editIndex={editingEducation?.index ?? null}
-          />
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <EducationForm 
+              onClose={handleCloseEducationForm}
+              initial={editingEducation?.data}
+              editIndex={editingEducation?.index ?? null}
+            />
+          </div>
         </div>
       )}
       
       {showSkillForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <SkillForm 
-            onClose={handleCloseSkillForm}
-            initial={editingSkill?.data}
-            editIndex={editingSkill?.index ?? null}
-          />
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <SkillForm 
+              onClose={handleCloseSkillForm}
+              initial={editingSkill?.data}
+              editIndex={editingSkill?.index ?? null}
+            />
+          </div>
         </div>
       )}
       
       {showProjectForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4">
-          <ProjectForm 
-            onClose={handleCloseProjectForm}
-            initial={editingProject?.data}
-            editIndex={editingProject?.index ?? null}
-          />
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <ProjectForm 
+              onClose={handleCloseProjectForm}
+              initial={editingProject?.data}
+              editIndex={editingProject?.index ?? null}
+            />
+          </div>
         </div>
       )}
     </div>

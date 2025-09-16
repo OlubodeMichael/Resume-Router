@@ -7,6 +7,7 @@ interface Education {
   fieldOfStudy?: string;
   startDate: string;
   endDate?: string | null;
+  gpa?: string;
 }
 
 interface Profile {
@@ -45,6 +46,7 @@ export default function Education( { profile, setShowEduForm, handleEditEducatio
                 fieldOfStudy={edu.fieldOfStudy}
                 startDate={edu.startDate}
                 endDate={edu.endDate}
+                gpa={edu.gpa}
                 onEdit={() => handleEditEducation(idx)}
                 onDelete={() => handleDeleteEducation(idx)}
               />

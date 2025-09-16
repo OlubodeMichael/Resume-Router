@@ -77,11 +77,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ zIndex: 40 }}
       >
         {/* Logo & Toggle */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
-            </div>
+            <Image src="/symbol.svg" alt="ResumeRouter" width={32} height={32} />
             {sidebarOpen && <span className="font-semibold text-gray-900">ResumeRouter</span>}
           </div>
           {sidebarOpen && !isMobile && (
