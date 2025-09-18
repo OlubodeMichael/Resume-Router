@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { useAuth } from "./authProvider";
 
 interface Profile {
@@ -59,6 +59,7 @@ interface ProfileContextType {
   postSkill: (skill: string) => void;
   updateSkill: (index: number, skill: string) => void;
   deleteSkill: (index: number) => void;
+  postBulkSkills: (skills: string[]) => void;
   postProject: (project: Project) => void;
   updateProject: (index: number, project: Project) => void;
   deleteProject: (index: number) => void;
@@ -74,7 +75,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  const getProfile = async () => {
+  const getProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/profile`, {
@@ -92,7 +93,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
 
   useEffect(() => {
     // Only fetch profile when user is authenticated and auth loading is complete
@@ -105,7 +106,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       // If auth is complete but no user, set loading to false
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, getProfile]);
 
   const updateProfile = async (profile: Profile) => {
     try {
@@ -368,6 +369,31 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const postBulkSkills = async (skills: string[]) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/skills/bulk`, {
+        method: "POST",
+        body: JSON.stringify({ skills }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add skills");
+      
+      // Update local state instead of refetching
+      if (profile) {
+        setProfile({
+          ...profile,
+          skills: [...(profile.skills || []), ...skills]
+        });
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   const postProject = async (project: Project) => {
     try {
       // Don't set global loading state for individual operations
@@ -468,6 +494,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         postSkill,
         updateSkill,
         deleteSkill,
+        postBulkSkills,
         postProject,
         updateProject,
         deleteProject,

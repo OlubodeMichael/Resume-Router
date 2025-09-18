@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="flex min-h-screen bg-white smooth-transition overflow-x-hidden">
+    <div className="flex min-h-screen bg-white overflow-x-hidden">
       <style jsx global>{`
         html, body {
           background-color: white;
@@ -70,11 +70,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}</style>
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-screen transition-all duration-300 smooth-transition ${
+        className={`fixed left-0 top-0 h-screen transition-all duration-200 ease-out ${
           isMobile ? "w-16" : sidebarOpen ? "w-64" : "w-16 cursor-pointer"
         } bg-white border-r border-gray-200 flex flex-col overflow-hidden group`}
         onClick={!sidebarOpen && !isMobile ? () => setSidebarOpen(true) : undefined}
-        style={{ zIndex: 40 }}
+        style={{ zIndex: 40, willChange: 'width' }}
       >
         {/* Logo & Toggle */}
         <div className="p-4 flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <Link
                   key={item.label}
-                  className={`flex items-center w-full p-2 rounded-lg transition-colors duration-200 group/nav relative
+                  className={`flex items-center w-full p-2 rounded-lg transition-colors duration-150 group/nav relative
                     ${isActive ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}
                     ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
                   `}
@@ -128,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     href={item.href}
                     key={item.label}
-                    className={`flex items-center w-full p-2 rounded-lg transition-colors duration-200 group/nav relative
+                    className={`flex items-center w-full p-2 rounded-lg transition-colors duration-150 group/nav relative
                       hover:bg-gray-100 text-gray-700
                       ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
                     `}
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {user && (
           <div className="relative">
             <div 
-              className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors cursor-pointer`}
+              className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors duration-150 cursor-pointer`}
               onClick={handleUserClick}
             >
               <div className="flex items-center w-full">
@@ -191,21 +191,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <nav className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 cursor-pointer min-w-48 w-auto">
                   <Link
                     href="/profile"
-                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                   >
                     <User className="w-4 h-4 mr-3 flex-shrink-0" />
                     <span>Profile</span>
                   </Link>
                   <Link
                     href="/dashboard/settings"
-                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                   >
                     <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
                     <span>Settings</span>
                   </Link>
                   <div className="border-t border-gray-100 my-1"></div>
                   <button 
-                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
@@ -222,7 +222,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className="flex-1 flex justify-center min-h-screen overflow-y-auto"
         style={{ 
           marginLeft: isMobile ? '64px' : sidebarOpen ? '256px' : '64px',
-          transition: 'margin-left 300ms ease-in-out',
+          transition: 'margin-left 200ms ease-out',
+          willChange: 'margin-left',
           '--sidebar-width': isMobile ? '64px' : sidebarOpen ? '256px' : '64px'
         } as React.CSSProperties}
       >

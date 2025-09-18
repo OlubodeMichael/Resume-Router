@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import SkillCard from "../Cards/SkillCard";
 
+
 interface Profile {
   skills?: string[];
 }
@@ -23,7 +24,7 @@ export default function Skill({ profile, setShowSkillForm, handleEditSkill, hand
             onClick={() => setShowSkillForm(true)}
           >
             <Plus className="w-4 h-4" />
-            Add
+            Add Skills
           </button>
         </div>
         
@@ -44,7 +45,7 @@ export default function Skill({ profile, setShowSkillForm, handleEditSkill, hand
                 onClick={() => setShowSkillForm(true)}
                 className="text-orange-600 hover:text-orange-700 text-sm font-medium"
               >
-                Add your first skill →
+                Add your first skills →
               </button>
             </div>
           )}

@@ -5,6 +5,7 @@ import ExperienceForm from "../Forms/ExperienceForm";
 import EducationForm from "../Forms/EducationForm";
 import ProjectForm from "../Forms/ProjectForm";
 import SkillForm from "../Forms/SkillForm";
+import MultiSkillForm from "../Forms/MultiSkillForm";
 import Experience from "../Profile/Experience";
 import Education from "../Profile/Education";
 import Project from "../Profile/Project";
@@ -278,11 +279,18 @@ export default function Profile() {
       {showSkillForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
           <div className="w-full max-h-full flex items-center justify-center min-h-full">
-            <SkillForm 
-              onClose={handleCloseSkillForm}
-              initial={editingSkill?.data}
-              editIndex={editingSkill?.index ?? null}
-            />
+            {editingSkill ? (
+              <SkillForm 
+                onClose={handleCloseSkillForm}
+                initial={editingSkill?.data}
+                editIndex={editingSkill?.index ?? null}
+              />
+            ) : (
+              <MultiSkillForm 
+                onClose={handleCloseSkillForm}
+                existingSkills={profile?.skills || []}
+              />
+            )}
           </div>
         </div>
       )}

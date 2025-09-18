@@ -1,5 +1,5 @@
 "use client";
-import { X } from "lucide-react";
+import { X, Edit3 } from "lucide-react";
 
 interface SkillCardProps {
   name: string;
@@ -13,30 +13,33 @@ export default function SkillCard({
   onDelete,
 }: SkillCardProps) {
   return (
-    <div className="group relative inline-flex items-center justify-center text-center gap-2 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors">
-      <span>{name}</span>
+    <div className="group relative inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 text-blue-900 px-4 py-2.5 rounded-xl text-sm font-medium hover:from-blue-100 hover:to-indigo-100 hover:border-blue-200 transition-all duration-200 cursor-default">
+      {/* Skill name with better typography */}
+      <span className="text-blue-900 font-semibold tracking-wide">{name}</span>
       
-      {/* Action buttons - appear on hover */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+      {/* Action buttons - appear on hover with smooth animation */}
+      <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center gap-1 ml-1">
         {onEdit && (
           <button
             onClick={onEdit}
-            className="w-4 h-4 bg-blue-200 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+            className="w-6 h-6 bg-white/80 hover:bg-blue-200 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105"
             title="Edit skill"
           >
-            <span className="text-xs">✏️</span>
+            <Edit3 className="w-3 h-3 text-blue-600" />
           </button>
         )}
         {onDelete && (
           <button
             onClick={onDelete}
-            className="w-4 h-4 bg-blue-200 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+            className="w-6 h-6 bg-white/80 hover:bg-red-100 rounded-lg flex items-center justify-center transition-all duration-150 hover:scale-105"
             title="Delete skill"
           >
-            <X className="w-3 h-3 text-red-600" />
+            <X className="w-3 h-3 text-red-500" />
           </button>
         )}
       </div>
+      
+     
     </div>
   );
 }
