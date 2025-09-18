@@ -516,6 +516,62 @@ export const deleteSkill = catchAsync(async (req: Request, res: Response): Promi
   });
 });
 
+// Add Bulk Skills
+export const addBulkSkills = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { skills } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  if (!skills || !Array.isArray(skills) || skills.length === 0) {
+    res.status(400).json({ message: 'Skills array is required and must not be empty' });
+    return;
+  }
+
+  // Validate all skills are strings
+  const invalidSkills = skills.filter(skill => typeof skill !== 'string' || !skill.trim());
+  if (invalidSkills.length > 0) {
+    res.status(400).json({ message: 'All skills must be non-empty strings' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  const currentSkills = Array.isArray(profile?.skills) ? profile.skills : [];
+
+  // Filter out duplicates and trim skills
+  const trimmedSkills = skills.map(skill => skill.trim());
+  const newSkills = trimmedSkills.filter(skill => !currentSkills.includes(skill));
+  
+  if (newSkills.length === 0) {
+    res.status(400).json({ message: 'All skills already exist' });
+    return;
+  }
+
+  const updatedSkills = [...currentSkills, ...newSkills];
+
+  const updatedProfile = await prisma.profile.upsert({
+    where: { userId },
+    update: { skills: updatedSkills as any },
+    create: {
+      userId,
+      skills: updatedSkills as any,
+      experience: [],
+      education: [],
+      projects: [],
+      achievements: [],
+      createdAt: new Date(),
+    },
+  });
+
+  res.status(200).json({
+    message: `${newSkills.length} skills added successfully`,
+    profile: updatedProfile,
+  });
+});
+
 export const addProject = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
   const { name, description, technologies, url, startDate, endDate } = req.body;

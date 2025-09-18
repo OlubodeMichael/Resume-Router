@@ -9,6 +9,7 @@ import {
   updateExperienceEntry,
   deleteExperienceEntry,
   addSkill,
+  addBulkSkills,
   updateSkill,
   deleteSkill,
   addProject,
@@ -31,6 +32,7 @@ router.patch('/experience/:index', protect, updateExperienceEntry);
 router.delete('/experience/:index', protect, deleteExperienceEntry);
 
 router.post('/skills', protect, addSkill);
+router.post('/skills/bulk', protect, addBulkSkills);
 router.patch('/skills/:index', protect, updateSkill);
 router.delete('/skills/:index', protect, deleteSkill);
 
