@@ -8,6 +8,15 @@ import Image from 'next/image';
 export default function Home() {
   return (
     <div className="min-h-screen ">
+      <style jsx global>{`
+        html, body {
+          background-color: white;
+          overscroll-behavior: none;
+        }
+        body {
+          overflow-x: hidden;
+        }
+      `}</style>
       {/* Professional Navbar */}
       <Navbar />
 
@@ -161,9 +170,9 @@ function Hero() {
         <Image
           src="/RRDashboard.png"
           alt="Dashboard preview"
-          width={1000}
-          height={400}
-          className="rounded-2xl shadow-lg border"
+          width={1050}
+          height={450}
+          className="rounded-2xl "
           priority
         />
       </div>
