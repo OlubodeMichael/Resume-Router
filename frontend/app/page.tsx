@@ -159,7 +159,7 @@ function Hero() {
 
       <div className="w-full flex justify-center mt-6">
         <Image
-          src="/dashboardImage.png"
+          src="/RRDashboard.png"
           alt="Dashboard preview"
           width={1000}
           height={400}
