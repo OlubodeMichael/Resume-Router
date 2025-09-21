@@ -8,7 +8,7 @@ export default function JobDescription() {
   const [content, setContent] = useState("");
   const [shouldGenerateResume, setShouldGenerateResume] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { generateResume, parseJobDescription, isLoading, error, jobDescription, generatedResumeContent } = useResume();
+  const { generateResume, parseJobDescription, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent } = useResume();
 
   // Effect to generate resume when job description is parsed
   useEffect(() => {
@@ -43,12 +43,32 @@ export default function JobDescription() {
     if (!content.trim()) return;
 
     try {
+      // Clear any existing resume content before starting new generation
+      setGeneratedResumeContent(null);
+      
       // First parse the job description
       await parseJobDescription(content);
       // Set flag to generate resume once job description is parsed
       setShouldGenerateResume(true);
     } catch (error) {
       console.error('Error processing job description:', error);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isLoading && content.trim()) {
+        // Create a synthetic form event for handleSubmit
+        const syntheticEvent = {
+          ...e,
+          preventDefault: () => e.preventDefault(),
+          stopPropagation: () => e.stopPropagation(),
+          target: e.target,
+          currentTarget: e.currentTarget,
+        } as React.FormEvent;
+        handleSubmit(syntheticEvent);
+      }
     }
   };
 
@@ -66,6 +86,7 @@ export default function JobDescription() {
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="flex-1 px-3 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-40"
             placeholder="Paste job description here to generate a tailored resume..."
             required

@@ -4,11 +4,14 @@
 import type { ResumeData } from '@/types/resume'
 import clsx from 'clsx'
 import formatDate from '@/lib/formateDate'
+import { useEffect } from 'react'
 
 type Props = {
   data: ResumeData
   className?: string
   editorRef: React.RefObject<HTMLDivElement | null>
+  editedContent?: string | null
+  onContentChange?: () => void
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -49,7 +52,7 @@ function SubRowLine({
   )
 }
 
-export default function Ryan({ data, className, editorRef }: Props) {
+export default function Ryan({ data, className, editorRef, editedContent, onContentChange }: Props) {
   const {
     name,
     contacts = [],
@@ -60,6 +63,15 @@ export default function Ryan({ data, className, editorRef }: Props) {
     skills = [],
   } = data
 
+  // Load edited content from localStorage when component mounts
+  useEffect(() => {
+    if (editorRef.current && editedContent && !editorRef.current.innerHTML.includes(name)) {
+      // Only load if the current content doesn't match the data (i.e., it's a fresh load)
+      editorRef.current.innerHTML = editedContent
+    }
+  }, [editedContent, name, editorRef])
+
+  // Always render the JSX structure to maintain consistent DOM and cursor position
   return (
     <div
       className={clsx(
@@ -69,6 +81,8 @@ export default function Ryan({ data, className, editorRef }: Props) {
       ref={editorRef}
       contentEditable
       suppressContentEditableWarning={true}
+      onInput={onContentChange}
+      onBlur={onContentChange}
     >
       {/* Header */}
       <header>
@@ -93,16 +107,17 @@ export default function Ryan({ data, className, editorRef }: Props) {
               <RowLine
                 left={ed.school}
                 right={
-                  ed.start || ed.end ? (
-                    <>
-                      {ed.start ? `${formatDate(ed.start)}` : ''}{ed.start && ed.end ? ' – ' : ''}{ed.end || ''}
-                    </>
-                  ) : undefined
+                  ed.location && (ed.start || ed.end) ? 
+                    `${ed.location} • ${ed.start ? formatDate(ed.start) : ''}${ed.start && ed.end ? ' – ' : ''}${ed.end || ''}` :
+                  ed.location ? ed.location :
+                  (ed.start || ed.end) ? 
+                    `${ed.start ? formatDate(ed.start) : ''}${ed.start && ed.end ? ' – ' : ''}${ed.end || ''}` :
+                    undefined
                 }
               />
               <SubRowLine
-                left={ed.degree}
-                right={ed.gpa ? `${ed.location ? ed.location + ' • ' : ''}GPA: ${ed.gpa}` : ed.location}
+                left={ed.fieldOfStudy ? `${ed.degree.replace(/\s*\([^)]*\)\s*/g, '')} in ${ed.fieldOfStudy}` : ed.degree.replace(/\s*\([^)]*\)\s*/g, '')}
+                right={ed.gpa ? `GPA: ${ed.gpa}` : undefined}
               />
             </div>
           ))}
@@ -121,7 +136,7 @@ export default function Ryan({ data, className, editorRef }: Props) {
               />
               <SubRowLine
                 left={ex.company}
-                right={ex.location}
+                right={ex.location || 'Remote'}
               />
               {ex.bullets && ex.bullets.length > 0 && (
                 <ul>

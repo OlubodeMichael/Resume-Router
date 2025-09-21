@@ -18,6 +18,7 @@ interface Education {
   school: string;
   degree: string;
   fieldOfStudy?: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   gpa?: string;

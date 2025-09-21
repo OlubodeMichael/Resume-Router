@@ -75,12 +75,14 @@ function Navbar() {
           </div>
           {/* Join Waitlist Button */}
           <div className="hidden md:block">
-            <a
+            {process.env.NEXT_PUBLIC_APP_ENV === 'production' ? <a href="#join-waitlist">
+              Join Waitlist
+            </a> : <a
               href="/signin"
               className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
             >
               Login
-            </a>
+            </a>}
           </div>
           {/* Hamburger Icon */}
           <button

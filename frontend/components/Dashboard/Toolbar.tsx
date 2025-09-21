@@ -19,8 +19,10 @@ import {
   AlignCenter, 
   AlignRight, 
   AlignJustify,
-  ChevronDown
+  ChevronDown,
+  Download
 } from "lucide-react";
+import { exportToPDF, exportVectorPDF, generateFilename } from "@/lib/exportUtils";
 
 interface ToolbarProps {
   editorRef: React.RefObject<HTMLDivElement | null>;
@@ -43,12 +45,23 @@ type ActiveMap = {
   justify: boolean;
 };
 
+// Helper function to round font size to whole number
+const roundFontSize = (fontSize: string): string => {
+  const match = fontSize.match(/^(\d+\.?\d*)px$/);
+  if (match) {
+    const value = parseFloat(match[1]);
+    return `${Math.round(value)}px`;
+  }
+  return fontSize; // Return as-is if not in px format
+};
+
 export default function Toolbar({ editorRef }: ToolbarProps) {
   const [currentFontSize, setCurrentFontSize] = useState<string>("12px");
   const [showFontSizeDropdown, setShowFontSizeDropdown] = useState<boolean>(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const [showTextColorDropdown, setShowTextColorDropdown] = useState<boolean>(false);
   const [showBgColorDropdown, setShowBgColorDropdown] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
   const fontSizeButtonRef = useRef<HTMLButtonElement>(null);
   const textColorButtonRef = useRef<HTMLButtonElement>(null);
   const bgColorButtonRef = useRef<HTMLButtonElement>(null);
@@ -115,31 +128,35 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
 
     const range = sel.getRangeAt(0);
     
-    // Only show active states if there's actual text selected (not just cursor placement)
+    // For collapsed selections (cursor placement), still check current formatting state
+    // This allows toolbar to work when clicking in formatted text like headers
+    const baseEl = closestElement(range.collapsed ? range.startContainer : range.commonAncestorContainer);
+    
+    // If it's a collapsed selection and we're not in any formatted content, clear states
     if (range.collapsed) {
-      // Clear active states when cursor is just placed (no text selected)
-      setIsActive({
-        bold: false,
-        italic: false,
-        underline: false,
-        strikethrough: false,
-        code: false,
-        link: false,
-        superscript: false,
-        subscript: false,
-        bulletList: false,
-        numberedList: false,
-        alignLeft: false,
-        alignCenter: false,
-        alignRight: false,
-        justify: false,
-      });
-      // Reset font size to default when no text is selected
-      setCurrentFontSize("12px");
-      return;
+      const inFormattedContent = baseEl?.closest("h1, h2, h3, h4, h5, h6, strong, b, em, i, u, s, code, a");
+      if (!inFormattedContent) {
+        setIsActive({
+          bold: false,
+          italic: false,
+          underline: false,
+          strikethrough: false,
+          code: false,
+          link: false,
+          superscript: false,
+          subscript: false,
+          bulletList: false,
+          numberedList: false,
+          alignLeft: false,
+          alignCenter: false,
+          alignRight: false,
+          justify: false,
+        });
+        setCurrentFontSize("12px");
+        return;
+      }
     }
 
-    const baseEl = closestElement(range.commonAncestorContainer);
     const inA = baseEl?.closest("a");
     const inCode = baseEl?.closest("code, pre, .code");
 
@@ -165,31 +182,44 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
 
     // Font size: look up computed font-size from nearest element
     if (baseEl) {
-      // Check if the element or its parents have a specific font size set
-      let element = baseEl;
-      let fontSize = null;
+      // For headers and other elements, get the computed font size directly
+      const computedStyle = window.getComputedStyle(baseEl);
+      const currentFontSize = computedStyle.fontSize;
       
-      while (element && element !== editorRef.current) {
-        const computedStyle = window.getComputedStyle(element);
-        const currentFontSize = computedStyle.fontSize;
+      // Check if we're in a header element - these should show their actual font size
+      const headerElement = baseEl.closest("h1, h2, h3, h4, h5, h6");
+      if (headerElement) {
+        const headerStyle = window.getComputedStyle(headerElement);
+        setCurrentFontSize(roundFontSize(headerStyle.fontSize));
+      } else {
+        // For other elements, use the existing logic
+        let element = baseEl;
+        let fontSize = null;
         
-        // If this element has a different font size than its parent, use it
-        if (element.parentElement) {
-          const parentFontSize = window.getComputedStyle(element.parentElement).fontSize;
-          if (currentFontSize !== parentFontSize) {
-            fontSize = currentFontSize;
+        while (element && element !== editorRef.current) {
+          const elementStyle = window.getComputedStyle(element);
+          const elementFontSize = elementStyle.fontSize;
+          
+          // If this element has a different font size than its parent, use it
+          if (element.parentElement) {
+            const parentFontSize = window.getComputedStyle(element.parentElement).fontSize;
+            if (elementFontSize !== parentFontSize) {
+              fontSize = elementFontSize;
+              break;
+            }
+          } else {
+            fontSize = elementFontSize;
             break;
           }
-        } else {
-          fontSize = currentFontSize;
-          break;
+          
+          element = element.parentElement;
         }
         
-        element = element.parentElement;
-      }
-      
-      if (fontSize) {
-        setCurrentFontSize(fontSize);
+        if (fontSize) {
+          setCurrentFontSize(roundFontSize(fontSize));
+        } else {
+          setCurrentFontSize(roundFontSize(currentFontSize));
+        }
       }
     }
   }, [editorRef, selectionInsideEditor]);
@@ -272,19 +302,42 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
           const sel = window.getSelection();
           if (!sel || !sel.rangeCount) break;
           const range = sel.getRangeAt(0);
-          const code = document.createElement("code");
-          code.style.backgroundColor = "#f1f5f9";
-          code.style.padding = "2px 4px";
-          code.style.borderRadius = "3px";
-          code.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-          const content = range.extractContents();
-          code.appendChild(content);
-          range.insertNode(code);
-          // Reselect code so subsequent toggles work
-          sel.removeAllRanges();
-          const newRange = document.createRange();
-          newRange.selectNodeContents(code);
-          sel.addRange(newRange);
+          
+          // Check if we're already in a code element
+          const existingCode = range.commonAncestorContainer.nodeType === Node.TEXT_NODE ? 
+            range.commonAncestorContainer.parentElement?.closest('code') :
+            (range.commonAncestorContainer as Element).closest('code');
+            
+          if (existingCode) {
+            // Remove code formatting
+            const parent = existingCode.parentNode;
+            if (parent) {
+              while (existingCode.firstChild) {
+                parent.insertBefore(existingCode.firstChild, existingCode);
+              }
+              parent.removeChild(existingCode);
+            }
+          } else {
+            // Add code formatting
+            const code = document.createElement("code");
+            code.style.backgroundColor = "#f1f5f9";
+            code.style.padding = "2px 4px";
+            code.style.borderRadius = "3px";
+            code.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+            
+            try {
+              const content = range.extractContents();
+              code.appendChild(content);
+              range.insertNode(code);
+              // Reselect code so subsequent toggles work
+              sel.removeAllRanges();
+              const newRange = document.createRange();
+              newRange.selectNodeContents(code);
+              sel.addRange(newRange);
+            } catch (error) {
+              console.warn('Code formatting failed:', error);
+            }
+          }
           break;
         }
         case "link": {
@@ -332,20 +385,46 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
       if (!editorRef.current) return;
       editorRef.current.focus();
 
-      // Use execCommand for better undo/redo support
-      document.execCommand("fontSize", false, "7");
-      setTimeout(() => {
-        const fontElements = document.querySelectorAll("font[size='7']");
-        fontElements.forEach(font => {
-          const newSpan = document.createElement("span");
-          newSpan.style.fontSize = size;
-          newSpan.style.display = "inline";
-          newSpan.innerHTML = font.innerHTML;
-          if (font.parentNode) {
-            font.parentNode.replaceChild(newSpan, font);
-          }
-        });
-      }, 10);
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+
+      const range = sel.getRangeAt(0);
+      
+      // If nothing is selected, select the current word/element
+      if (range.collapsed) {
+        const startContainer = range.startContainer;
+        const element = startContainer.nodeType === Node.TEXT_NODE ? 
+          startContainer.parentElement : startContainer as Element;
+        
+        if (element && element !== editorRef.current) {
+          range.selectNodeContents(element);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      }
+
+      // Create a single span element with the font size
+      if (!range.collapsed) {
+        const span = document.createElement("span");
+        span.style.fontSize = size;
+        
+        try {
+          // Extract the contents and wrap them in the span
+          const contents = range.extractContents();
+          span.appendChild(contents);
+          range.insertNode(span);
+          
+          // Select the newly created span for consistent behavior
+          const newRange = document.createRange();
+          newRange.selectNodeContents(span);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+        } catch (error) {
+          // Fallback to execCommand if manual manipulation fails
+          console.warn('Font size application failed, using fallback:', error);
+          document.execCommand("fontSize", false, size);
+        }
+      }
 
       setCurrentFontSize(size);
       setShowFontSizeDropdown(false);
@@ -379,10 +458,41 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
     [editorRef, runAndRefresh]
   );
 
+  const handleExportPDF = useCallback(async () => {
+    if (!editorRef.current || isExporting) return;
+    
+    setIsExporting(true);
+    try {
+      const filename = generateFilename('resume', 'pdf');
+      
+      // Try vector PDF first (server-side, smaller, crisp)
+      try {
+        const html = editorRef.current.outerHTML;
+        await exportVectorPDF(html, filename, true);
+      } catch (vectorError) {
+        console.warn('Vector PDF failed, falling back to client-side:', vectorError);
+        // Fallback to client-side export
+        await exportToPDF(editorRef.current, { 
+          filename,
+          quality: 0.7, // Optimized for smaller file size
+          allowUserToChooseLocation: true
+        });
+      }
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, [editorRef, isExporting]);
+
+
   const baseButtonClass =
     "h-9 w-9 flex items-center justify-center rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200";
   const activeButtonClass =
     "h-9 w-9 flex items-center justify-center rounded-lg text-blue-600 bg-blue-50 font-semibold border border-blue-200";
+  const exportButtonClass =
+    "h-9 w-9 flex items-center justify-center rounded-lg text-green-600 hover:text-green-900 hover:bg-green-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed";
   const Divider = () => <div className="w-px h-7 bg-gray-200 mx-2" />;
 
   return (
@@ -391,9 +501,14 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
       <button
         className={baseButtonClass}
         onClick={() => {
-          editorRef.current?.focus();
-          document.execCommand("undo");
-          runAndRefresh();
+          if (!editorRef.current) return;
+          editorRef.current.focus();
+          
+          // Use a small delay to ensure focus is established
+          setTimeout(() => {
+            document.execCommand("undo");
+            runAndRefresh();
+          }, 0);
         }}
         aria-label="Undo"
         title="Undo"
@@ -404,9 +519,14 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
       <button
         className={baseButtonClass}
         onClick={() => {
-          editorRef.current?.focus();
-          document.execCommand("redo");
-          runAndRefresh();
+          if (!editorRef.current) return;
+          editorRef.current.focus();
+          
+          // Use a small delay to ensure focus is established
+          setTimeout(() => {
+            document.execCommand("redo");
+            runAndRefresh();
+          }, 0);
         }}
         aria-label="Redo"
         title="Redo"
@@ -692,6 +812,24 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
       >
         <AlignJustify className="w-4 h-4" />
       </button>
+
+      <Divider />
+
+      {/* Export Buttons */}
+      <button
+        className={exportButtonClass}
+        onClick={handleExportPDF}
+        disabled={isExporting}
+        aria-label="Export as PDF"
+        title="Export as PDF"
+      >
+        {isExporting ? (
+          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
+      </button>
+
     </div>
   );
 }

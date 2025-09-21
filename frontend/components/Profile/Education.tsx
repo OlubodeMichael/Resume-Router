@@ -5,6 +5,7 @@ interface Education {
   school: string;
   degree: string;
   fieldOfStudy?: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   gpa?: string;
@@ -44,6 +45,7 @@ export default function Education( { profile, setShowEduForm, handleEditEducatio
                 school={edu.school}
                 degree={edu.degree}
                 fieldOfStudy={edu.fieldOfStudy}
+                location={edu.location}
                 startDate={edu.startDate}
                 endDate={edu.endDate}
                 gpa={edu.gpa}

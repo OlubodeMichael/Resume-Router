@@ -65,11 +65,11 @@ export const ryanTemplate = `<!doctype html>
     {{#education}}
       <h3>
         <span>{{school}}</span>
-        <span class="normal">{{#location}}{{location}}{{#start}} • {{start}}{{/start}}{{#end}} – {{end}}{{/end}}{{/location}}{{^location}}{{start}} – {{end}}{{/location}}</span>
+        <span class="normal">{{start}} – {{end}}</span>
       </h3>
       <h4>
-        <span>{{degree}}{{#fieldOfStudy}} in {{fieldOfStudy}}{{/fieldOfStudy}}</span>
-        <span>{{#gpa}}GPA: {{gpa}}{{/gpa}}</span>
+        <span>{{degree}}</span>
+        <span>{{location}}</span>
       </h4>
     {{/education}}
   </section>

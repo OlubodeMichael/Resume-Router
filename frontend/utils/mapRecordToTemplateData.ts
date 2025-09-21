@@ -30,9 +30,11 @@ export function mapRecordToTemplateData(rec: ResumeRecord): ResumeData {
     education: (c.education ?? []).map(e => ({
       school: e.school,
       degree: e.degree,
+      fieldOfStudy: e.fieldOfStudy,
       location: e.location,
       start: undefined,
       end: e.graduationYear,
+      gpa: e.gpa,
     })),
 
     experience: (c.experience ?? []).map(x => ({

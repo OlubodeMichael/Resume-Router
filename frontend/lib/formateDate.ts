@@ -6,8 +6,21 @@ const formatDate = (dateString: string | null | undefined): string => {
       return dateString;
     }
     
-    // Handle ISO date format or other date formats
-    const date = new Date(dateString);
+    // Handle yyyy-MM format directly to avoid timezone issues
+    if (/^\d{4}-\d{2}$/.test(dateString)) {
+      const [year, month] = dateString.split('-');
+      const monthNames = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      const monthIndex = parseInt(month) - 1; // Convert 1-indexed to 0-indexed
+      if (monthIndex >= 0 && monthIndex < 12) {
+        return `${monthNames[monthIndex]} ${year}`;
+      }
+    }
+    
+    // Handle ISO date format or other date formats (with timezone safety)
+    const date = new Date(dateString + 'T12:00:00'); // Add noon time to avoid timezone issues
     if (isNaN(date.getTime())) {
       return dateString; // Return original if parsing fails
     }

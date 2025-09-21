@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/authProvider'
 import { useResume } from '@/context/resumeProvider'
 import Toolbar from '@/components/Dashboard/Toolbar'
@@ -26,6 +26,8 @@ export default function Dashboard() {
   const { loading } = useAuth()
   const { generatedResumeContent } = useResume()   // this is your backend JSON
   const editorRef = useRef<HTMLDivElement>(null)
+  const [editedContent, setEditedContent] = useState<string | null>(null)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const resumeData: ResumeData = useMemo(() => {
     if (!generatedResumeContent) return DEFAULT_RESUME
@@ -37,6 +39,51 @@ export default function Dashboard() {
     }
     return mapRecordToTemplateData(parsed.data)
   }, [generatedResumeContent])
+
+  // Save content changes when editor content changes (debounced)
+  const handleContentChange = useCallback(() => {
+    if (editorRef.current) {
+      // Clear existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+      
+      // Set new timeout to save content without changing rendering mode
+      debounceTimeoutRef.current = setTimeout(() => {
+        if (editorRef.current) {
+          // Save content to localStorage without changing rendering mode
+          const content = editorRef.current.innerHTML
+          if (generatedResumeContent?.id) {
+            localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, content)
+          }
+        }
+      }, 1000) // 1 second delay
+    }
+  }, [generatedResumeContent?.id])
+
+  // Reset edited content when new resume is generated
+  useEffect(() => {
+    if (generatedResumeContent) {
+      setEditedContent(null)
+    }
+  }, [generatedResumeContent])
+
+  // Save content to localStorage for persistence across page refreshes
+  useEffect(() => {
+    if (editedContent && generatedResumeContent?.id) {
+      localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, editedContent)
+    }
+  }, [editedContent, generatedResumeContent?.id])
+
+  // Load edited content from localStorage on mount
+  useEffect(() => {
+    if (generatedResumeContent?.id) {
+      const savedContent = localStorage.getItem(`resume-edited-content-${generatedResumeContent.id}`)
+      if (savedContent) {
+        setEditedContent(savedContent)
+      }
+    }
+  }, [generatedResumeContent?.id])
 
   if (loading) {
     return (
@@ -62,7 +109,12 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10">
         <div className="mt-6">
-          <Ryan data={resumeData} editorRef={editorRef} />
+          <Ryan 
+            data={resumeData} 
+            editorRef={editorRef} 
+            editedContent={editedContent}
+            onContentChange={handleContentChange}
+          />
         </div>
       </main>
 

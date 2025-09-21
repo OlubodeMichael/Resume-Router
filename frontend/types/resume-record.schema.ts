@@ -29,8 +29,10 @@ export const ResumeRecordSchema = z.object({
     education: z.array(z.object({
       degree: z.string(),
       school: z.string(),
+      fieldOfStudy: z.string().optional(),
       graduationYear: z.string().optional(),
       location: z.string().optional(),
+      gpa: z.string().optional(),
     })).default([]),
     experience: z.array(z.object({
       title: z.string(),

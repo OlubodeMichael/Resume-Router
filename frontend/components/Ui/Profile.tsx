@@ -26,8 +26,10 @@ export default function Profile() {
       school: string;
       degree: string;
       fieldOfStudy: string;
+      location: string;
       startDate: string;
       endDate?: string | null;
+      gpa: string;
     };
   } | null>(null);
 
@@ -73,8 +75,10 @@ export default function Profile() {
           school: education.school,
           degree: education.degree,
           fieldOfStudy: education.fieldOfStudy || "",
+          location: education.location || "",
           startDate: education.startDate,
           endDate: education.endDate,
+          gpa: education.gpa || "",
         },
       });
       setShowEduForm(true);

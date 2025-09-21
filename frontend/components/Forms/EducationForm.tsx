@@ -9,6 +9,7 @@ interface EducationFormProps {
     school: string;
     degree: string;
     fieldOfStudy: string;
+    location?: string;
     startDate: string;
     endDate?: string | null;
     gpa?: string;
@@ -25,6 +26,7 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
     school: initial?.school || "",
     degree: initial?.degree || "",
     fieldOfStudy: initial?.fieldOfStudy || "",
+    location: initial?.location || "",
     startDate: convertDateForInput(initial?.startDate || ""),
     endDate: initial?.endDate ? convertDateForInput(initial.endDate) : "",
     gpa: initial?.gpa || "",
@@ -54,6 +56,7 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
         school: "",
         degree: "",
         fieldOfStudy: "",
+        location: "",
         startDate: "",
         endDate: "",
         gpa: "",
@@ -129,18 +132,49 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
                 required
               >
                 <option value="" className="text-gray-500">Select your degree</option>
+                
+                {/* High School */}
                 <option value="High School Diploma" className="text-gray-700">High School Diploma</option>
-                <option value="Associate&apos;s Degree" className="text-gray-700">Associate&apos;s Degree</option>
-                <option value="Bachelor&apos;s Degree" className="text-gray-700">Bachelor&apos;s Degree</option>
-                <option value="Master&apos;s Degree" className="text-gray-700">Master&apos;s Degree</option>
-                <option value="Doctorate" className="text-gray-700">Doctorate</option>
-                <option value="Certificate" className="text-gray-700">Certificate</option>
+                
+                {/* Associate's Degrees */}
+                <option value="Associate of Arts (A.A.)" className="text-gray-700">Associate of Arts (A.A.)</option>
+                <option value="Associate of Science (A.S.)" className="text-gray-700">Associate of Science (A.S.)</option>
+                <option value="Associate of Applied Science (A.A.S.)" className="text-gray-700">Associate of Applied Science (A.A.S.)</option>
+                
+                {/* Bachelor's Degrees */}
+                <option value="Bachelor of Arts (B.A.)" className="text-gray-700">Bachelor of Arts (B.A.)</option>
+                <option value="Bachelor of Science (B.S.)" className="text-gray-700">Bachelor of Science (B.S.)</option>
+                <option value="Bachelor of Business Administration (B.B.A.)" className="text-gray-700">Bachelor of Business Administration (B.B.A.)</option>
+                <option value="Bachelor of Engineering (B.Eng.)" className="text-gray-700">Bachelor of Engineering (B.Eng.)</option>
+                <option value="Bachelor of Fine Arts (B.F.A.)" className="text-gray-700">Bachelor of Fine Arts (B.F.A.)</option>
+                <option value="Bachelor of Computer Science (B.C.S.)" className="text-gray-700">Bachelor of Computer Science (B.C.S.)</option>
+                
+                {/* Master's Degrees */}
+                <option value="Master of Arts (M.A.)" className="text-gray-700">Master of Arts (M.A.)</option>
+                <option value="Master of Science (M.S.)" className="text-gray-700">Master of Science (M.S.)</option>
+                <option value="Master of Business Administration (M.B.A.)" className="text-gray-700">Master of Business Administration (M.B.A.)</option>
+                <option value="Master of Engineering (M.Eng.)" className="text-gray-700">Master of Engineering (M.Eng.)</option>
+                <option value="Master of Fine Arts (M.F.A.)" className="text-gray-700">Master of Fine Arts (M.F.A.)</option>
+                <option value="Master of Computer Science (M.C.S.)" className="text-gray-700">Master of Computer Science (M.C.S.)</option>
+                <option value="Master of Education (M.Ed.)" className="text-gray-700">Master of Education (M.Ed.)</option>
+                
+                {/* Doctoral Degrees */}
+                <option value="Doctor of Philosophy (Ph.D.)" className="text-gray-700">Doctor of Philosophy (Ph.D.)</option>
+                <option value="Doctor of Medicine (M.D.)" className="text-gray-700">Doctor of Medicine (M.D.)</option>
+                <option value="Doctor of Law (J.D.)" className="text-gray-700">Doctor of Law (J.D.)</option>
+                <option value="Doctor of Business Administration (D.B.A.)" className="text-gray-700">Doctor of Business Administration (D.B.A.)</option>
+                
+                {/* Professional Certificates */}
+                <option value="Professional Certificate" className="text-gray-700">Professional Certificate</option>
+                <option value="Graduate Certificate" className="text-gray-700">Graduate Certificate</option>
+                
+                {/* Other */}
                 <option value="Other" className="text-gray-700">Other</option>
               </select>
             </div>
           </div>
           
-          {/* Field of Study and GPA */}
+          {/* Field of Study and Location */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -155,6 +189,21 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Location
+              </label>
+              <input
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm text-gray-900 placeholder-gray-400"
+                placeholder="e.g., Stanford, CA"
+                value={form.location}
+                onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* GPA */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 GPA (Optional)

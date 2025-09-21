@@ -13,6 +13,7 @@ export type ExperienceItem = {
 export type EducationItem = {
   school: string
   degree: string
+  fieldOfStudy?: string
   location?: string
   start?: string
   end?: string

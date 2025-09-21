@@ -62,17 +62,24 @@ body {
 }
 
 .resume-template h2 {
-  border-bottom: 1px solid #000000;
   text-transform: uppercase;
   font-size: 11pt;
   font-weight: normal;
   padding: 0;
-  margin-bottom: 5pt;
+  margin-bottom: 8pt;
   margin-top: 5pt;
+  position: relative;
+  padding-bottom: 2pt;
 }
 
-.resume-template h2::first-letter {
-  font-size: 14pt;
+.resume-template h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border-bottom: 1px solid #000000;
 }
 
 .resume-template h3 {
@@ -165,6 +172,19 @@ body {
 
 .resume-template .normal {
   font-weight: normal;
+}
+
+/* Fix cursor jumping in contentEditable h1 */
+.resume-template[contenteditable="true"] h1 {
+  text-align: center;
+  direction: ltr;
+  unicode-bidi: normal;
+  /* Removed -webkit-user-modify to allow rich text formatting */
+}
+
+/* Ensure proper cursor behavior in centered contentEditable */
+.resume-template[contenteditable="true"] h1:focus {
+  outline: none;
 }
 
 /* Legacy classes for backward compatibility */

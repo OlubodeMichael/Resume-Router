@@ -6,6 +6,7 @@ interface EducationCardProps {
   school: string;
   degree: string;
   fieldOfStudy?: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   gpa?: string;
@@ -17,6 +18,7 @@ export default function EducationCard({
   school,
   degree,
   fieldOfStudy,
+  location,
   startDate,
   endDate,
   gpa,
@@ -28,23 +30,13 @@ export default function EducationCard({
 
   return (
     <div className=" transition-all duration-200 rounded-xl group">
-      {/* Header with degree, school, and actions */}
-      <div className="flex items-start justify-between mb-4">
+      {/* Header with school name and actions */}
+      <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <GraduationCap className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-bold text-gray-900">{degree}</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <GraduationCap className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">{school}</h3>
           </div>
-          <p className="text-gray-600 font-medium">{school}</p>
-          {fieldOfStudy && (
-            <p className="text-gray-500 text-sm mt-1">{fieldOfStudy}</p>
-          )}
-          {gpa && (
-            <div className="flex items-center gap-1 mt-1">
-              <Award className="w-4 h-4 text-amber-500" />
-              <p className="text-amber-600 text-sm font-medium">GPA: {gpa}</p>
-            </div>
-          )}
         </div>
         
         {/* Action buttons */}
@@ -70,8 +62,40 @@ export default function EducationCard({
         </div>
       </div>
 
+      {/* Education details in a clean grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Degree</p>
+          <p className="text-gray-900">{degree}</p>
+        </div>
+        
+        {fieldOfStudy && (
+          <div>
+            <p className="text-sm font-medium text-gray-700">Major</p>
+            <p className="text-gray-900">{fieldOfStudy}</p>
+          </div>
+        )}
+        
+        {location && (
+          <div>
+            <p className="text-sm font-medium text-gray-700">Location</p>
+            <p className="text-gray-900">{location}</p>
+          </div>
+        )}
+        
+        {gpa && (
+          <div>
+            <p className="text-sm font-medium text-gray-700">GPA</p>
+            <div className="flex items-center gap-1">
+              <Award className="w-4 h-4 text-amber-500" />
+              <p className="text-amber-600 font-medium">{gpa}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Date range */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-gray-500 pt-2 border-t border-gray-100">
         <Calendar className="w-4 h-4" />
         <span>
           {formattedStartDate} - {formattedEndDate}
