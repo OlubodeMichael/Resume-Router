@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/dashboard"];
+const protectedRoutes = ["/dashboard", "/profile"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -58,5 +58,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"], // ✅ enables protection
+  matcher: ["/dashboard/:path*", "/profile/:path*"], // ✅ enables protection
 };

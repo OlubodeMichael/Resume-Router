@@ -1,12 +1,22 @@
 "use client";
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import Logo from '@/components/logo';
+import Image from 'next/image';
 
 export default function Home() {
   return (
     <div className="min-h-screen ">
+      <style jsx global>{`
+        html, body {
+          background-color: white;
+          overscroll-behavior: none;
+        }
+        body {
+          overflow-x: hidden;
+        }
+      `}</style>
       {/* Professional Navbar */}
       <Navbar />
 
@@ -54,10 +64,7 @@ function Navbar() {
           {/* Logo */}
           <div className="flex items-center space-x-2">
           <Link className="flex justify-center items-center space-x-2" href="/" >
-            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
-              RR
-            </div>
-            <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
+            <Logo />
           </Link>
           </div>
           {/* Desktop Links */}
@@ -68,12 +75,14 @@ function Navbar() {
           </div>
           {/* Join Waitlist Button */}
           <div className="hidden md:block">
-            <a
+            {process.env.NEXT_PUBLIC_APP_ENV === 'production' ? <a href="#join-waitlist">
+              Join Waitlist
+            </a> : <a
               href="/signin"
               className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
             >
               Login
-            </a>
+            </a>}
           </div>
           {/* Hamburger Icon */}
           <button
@@ -161,11 +170,11 @@ function Hero() {
 
       <div className="w-full flex justify-center mt-6">
         <Image
-          src="/dashboardImage.png"
+          src="/RRDashboard.png"
           alt="Dashboard preview"
-          width={1000}
-          height={400}
-          className="rounded-2xl shadow-lg border"
+          width={1050}
+          height={450}
+          className="rounded-2xl "
           priority
         />
       </div>
@@ -547,10 +556,7 @@ function Footer() {
     <footer className="bg-slate-100 text-white py-10 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto text-center space-y-4">
         <div className="flex justify-center items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center font-bold shadow text-white text-sm">
-            RR
-          </div>
-          <span className="text-lg font-semibold tracking-tight text-slate-900 font-sans">ResumeRouter</span>
+          <Logo />
         </div>
 
         <div className="flex justify-center space-x-6 text-slate-700 text-sm font-medium font-sans">

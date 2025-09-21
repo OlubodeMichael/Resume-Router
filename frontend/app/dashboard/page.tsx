@@ -1,67 +1,129 @@
-'use client';
+// app/dashboard/page.tsx
+'use client'
 
-import { 
-  Square
-} from 'lucide-react';
-import { useAuth } from '@/context/authProvider';
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/context/authProvider'
+import { useResume } from '@/context/resumeProvider'
+import Toolbar from '@/components/Dashboard/Toolbar'
+import Ryan from '@/components/Templates/Ryan'
+import JobDescription from '@/components/Dashboard/jobDescription'
+import type { ResumeData } from '@/types/resume'
+import { ResumeRecordSchema } from '@/types/resume-record.schema'
+import { mapRecordToTemplateData } from '@/utils/mapRecordToTemplateData'
+
+
+const DEFAULT_RESUME: ResumeData = {
+  name: 'Your Name',
+  contacts: [],
+  education: [],
+  experience: [],
+  projects: [],
+  skills: [],
+  summaryHTML: undefined,
+}
 
 export default function Dashboard() {
-  const { loading } = useAuth();
+  const { loading } = useAuth()
+  const { generatedResumeContent } = useResume()   // this is your backend JSON
+  const editorRef = useRef<HTMLDivElement>(null)
+  const [editedContent, setEditedContent] = useState<string | null>(null)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const resumeData: ResumeData = useMemo(() => {
+    if (!generatedResumeContent) return DEFAULT_RESUME
+    
+    const parsed = ResumeRecordSchema.safeParse(generatedResumeContent)
+    if (!parsed.success) {
+      console.warn('Invalid resume payload', parsed.error)
+      return DEFAULT_RESUME
+    }
+    return mapRecordToTemplateData(parsed.data)
+  }, [generatedResumeContent])
+
+  // Save content changes when editor content changes (debounced)
+  const handleContentChange = useCallback(() => {
+    if (editorRef.current) {
+      // Clear existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+      
+      // Set new timeout to save content without changing rendering mode
+      debounceTimeoutRef.current = setTimeout(() => {
+        if (editorRef.current) {
+          // Save content to localStorage without changing rendering mode
+          const content = editorRef.current.innerHTML
+          if (generatedResumeContent?.id) {
+            localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, content)
+          }
+        }
+      }, 1000) // 1 second delay
+    }
+  }, [generatedResumeContent?.id])
+
+  // Reset edited content when new resume is generated
+  useEffect(() => {
+    if (generatedResumeContent) {
+      setEditedContent(null)
+    }
+  }, [generatedResumeContent])
+
+  // Save content to localStorage for persistence across page refreshes
+  useEffect(() => {
+    if (editedContent && generatedResumeContent?.id) {
+      localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, editedContent)
+    }
+  }, [editedContent, generatedResumeContent?.id])
+
+  // Load edited content from localStorage on mount
+  useEffect(() => {
+    if (generatedResumeContent?.id) {
+      const savedContent = localStorage.getItem(`resume-edited-content-${generatedResumeContent.id}`)
+      if (savedContent) {
+        setEditedContent(savedContent)
+      }
+    }
+  }, [generatedResumeContent?.id])
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="flex h-screen bg-white justify-center ">
-      {/* Center Column - Resume Editor */}
-      <div className="flex flex-col max-w-3xl w-full px-2 sm:px-4 md:px-8">
-        {/* Resume Content */}
-        <div className="flex-1 p-6 overflow-y-auto justify-center items-center">
-          {/* Professional Summary */}
-          <div className="mb-8">
-            <p className="text-gray-700 leading-relaxed mb-4">
-              A CVBESSECT professionell eaaliytailored maltiing invtleimally qrualifi-cations with accormplishment statements. Extensive excprience leading technical and cross-functional teams in fast-paced, rapidly changing settings, and managing cybersecurity risk assessm-ments for federal clients aligned with NIST and FISMA stand-ards, developed cybersecurity strategies for multiple organizations.
-            </p>
-            <button className="flex items-center space-x-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 transition-colors">
-              <div className="grid grid-cols-3 gap-1">
-                {[...Array(9)].map((_, i) => (
-                  <div key={i} className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                ))}
-              </div>
-              <span>Enhance professional summary to better match this job description</span>
-            </button>
-          </div>
-          {/* Experience Section */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">EXPERIENCE</h2>
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Square className="w-4 h-4 text-blue-600" />
-                    <h3 className="font-semibold text-gray-900">Information Security Analyst</h3>
-                  </div>
-                  <span className="text-sm text-gray-500">Mar 2022 – Present</span>
-                </div>
-                <p className="text-gray-600 mb-2">Federal Contractors</p>
-                <ul className="space-y-1 text-sm text-gray-700">
-                  <li>• Coordinating all aspects of security authorizations, executing security authorization plans in fast-paced, raplitly changing</li>
-                  <li>• Support data collection and security assessment activities px FISMA.</li>
-                  <li>• Increased customer security practices by conducting and documenta-ting a large number of security control assessments annual.</li>
-                </ul>
-              </div>
-            </div>
+    <div className="min-h-screen w-full bg-gray-50">
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200"
+              style={{ left: 'var(--sidebar-width, 64px)' }}>
+        <div className="mx-auto max-w-5xl px-4 py-3">
+          <div className="overflow-x-auto">
+            <Toolbar editorRef={editorRef} />
           </div>
         </div>
-      </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10">
+        <div className="mt-6">
+          <Ryan 
+            data={resumeData} 
+            editorRef={editorRef} 
+            editedContent={editedContent}
+            onContentChange={handleContentChange}
+          />
+        </div>
+      </main>
+
+      <footer className="fixed bottom-0 inset-x-0 z-40 bg-gray-50"
+              style={{ left: 'var(--sidebar-width, 64px)' }}>
+        <div className="mx-auto max-w-4xl p-4">
+          <JobDescription />
+        </div>
+      </footer>
     </div>
-  );
+  )
 }

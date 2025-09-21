@@ -27,3 +27,166 @@ body {
 
 
 @import url('https://fonts.googleapis.com/css2?family=Amsterdamer+Garamond&display=swap');
+@import url('https://www.resume.lol/fonts/cm/fonts.css');
+
+@media print {
+  @page { size: Letter; margin: 0.5in; }
+  .no-print { display: none !important; }
+  .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* Resume Template Styles */
+.resume-template {
+  font-family: "Computer Modern Serif", serif;
+  font-size: 11pt;
+  font-weight: 500;
+}
+
+.resume-template h1, 
+.resume-template h2, 
+.resume-template h3, 
+.resume-template h4, 
+.resume-template p, 
+.resume-template a, 
+.resume-template li {
+  color: black;
+}
+
+.resume-template h1 {
+  color: black;
+  text-align: center;
+  font-size: 26pt;
+  margin: 0;
+  padding: 0;
+  margin-top: -0.1in;
+}
+
+.resume-template h2 {
+  text-transform: uppercase;
+  font-size: 11pt;
+  font-weight: normal;
+  padding: 0;
+  margin-bottom: 8pt;
+  margin-top: 5pt;
+  position: relative;
+  padding-bottom: 2pt;
+}
+
+.resume-template h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  border-bottom: 1px solid #000000;
+}
+
+.resume-template h3 {
+  display: flex;
+  font-size: 11pt;
+  padding: 0;
+  justify-content: space-between;
+  margin: 0;
+  margin-left: 0.15in;
+}
+
+.resume-template h4 {
+  display: flex;
+  font-size: 11pt;
+  font-weight: normal;
+  font-style: italic;
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  justify-content: space-between;
+  margin: 0;
+  margin-left: 0.15in;
+}
+
+.resume-template p {
+  margin: 0;
+  padding: 0;
+}
+
+.resume-template a {
+  color: black;
+  text-underline-offset: 4px;
+}
+
+.resume-template ul {
+  margin: 1pt 0;
+  margin-left: 0.3in;
+  padding-left: 24px;
+  padding-right: 24px;
+  font-size: 11pt;
+  list-style-type: disc;
+}
+
+.resume-template ul > li {
+  margin-bottom: 1pt;
+  list-style-type: disc;
+}
+
+.resume-template ul > li:first-child {
+  padding-top: -4px;
+}
+
+.resume-template ul > li:last-child {
+  margin-bottom: 5pt;
+}
+
+/* Header info content */
+.resume-template .headerInfo > ul {
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  margin: 0px auto 0pt !important;
+  margin-top: -1pt;
+  padding: 0;
+}
+
+.resume-template .headerInfo > ul > li {
+  display: inline;
+  white-space: pre;
+  list-style-type: none;
+}
+
+.resume-template .headerInfo > ul > li:not(:last-child) {
+  margin-right: 8px;
+}
+
+.resume-template .headerInfo > ul > li:not(:last-child):after {
+  content: "|";
+  margin-left: 8px;
+}
+
+.resume-template .indent {
+  margin-left: 0.15in;
+}
+
+.resume-template .tech-stack {
+  font-style: normal;
+  font-weight: normal;
+}
+
+.resume-template .normal {
+  font-weight: normal;
+}
+
+/* Fix cursor jumping in contentEditable h1 */
+.resume-template[contenteditable="true"] h1 {
+  text-align: center;
+  direction: ltr;
+  unicode-bidi: normal;
+  /* Removed -webkit-user-modify to allow rich text formatting */
+}
+
+/* Ensure proper cursor behavior in centered contentEditable */
+.resume-template[contenteditable="true"] h1:focus {
+  outline: none;
+}
+
+/* Legacy classes for backward compatibility */
+.small-caps { font-variant: small-caps; letter-spacing: .06em; }
+.hr-thin { height: 1px; background: #111; opacity: .6; }

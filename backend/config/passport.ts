@@ -1,6 +1,7 @@
 // src/config/passport.ts
 import { Strategy as GoogleStrategy } from "passport-google-oauth2";
 import { prisma } from "../lib/prisma";
+import sendEmail from "./email";
 import * as jwt from "jsonwebtoken";
 import passport from "passport";
 
@@ -47,12 +48,16 @@ passport.use(
           });
         } else {
           console.log("Found existing user:", user.id);
+          const emailSent = await sendEmail(user.email, "Welcome to our platform", "Welcome to our platform");
+          if (!emailSent) {
+            console.error("Failed to send welcome email");
+          }
         }
 
         const token = jwt.sign(
           { id: user.id, email: user.email, name: user.name, picture: profile.picture },
           process.env.JWT_SECRET!,
-          { expiresIn: "1h" }
+          { expiresIn: "1d" }
         );
 
         const userAuth = { id: user.id, token, email: user.email, name: user.name, picture: profile.picture } as UserAuth;

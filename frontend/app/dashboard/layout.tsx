@@ -1,35 +1,37 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import {
   DoorOpen,
   Plus,
   FileText,
   BookOpen,
-  MessageCircle,
+  LayoutTemplate,
   HelpCircle,
   Settings,
-  
+  User,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/authProvider";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
-  { icon: Plus, label: "New", active: true, href: "/dashboard/" },
+  { icon: Plus, label: "New", href: "/dashboard/" },
   { icon: FileText, label: "Documents", href: "/dashboard/documents" },
   { icon: BookOpen, label: "Library", href: "/dashboard/library" },
-  { icon: MessageCircle, label: "All Chat", href: "/dashboard/all-chat" },
+  { icon: LayoutTemplate, label: "Templates", href: "/dashboard/templates" },
 ];
 const bottomNavItems = [
   { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
-  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -46,22 +48,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
 
+  const handleUserClick = () => {
+    setShowUserModal(!showUserModal);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setShowUserModal(false);
+  };
+
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex min-h-screen bg-white overflow-x-hidden">
+      <style jsx global>{`
+        html, body {
+          background-color: white;
+          overscroll-behavior: none;
+        }
+        body {
+          overflow-x: hidden;
+        }
+      `}</style>
       {/* Sidebar */}
       <div
-        className={`transition-all duration-300 ${
+        className={`fixed left-0 top-0 h-screen transition-all duration-200 ease-out ${
           isMobile ? "w-16" : sidebarOpen ? "w-64" : "w-16 cursor-pointer"
         } bg-white border-r border-gray-200 flex flex-col overflow-hidden group`}
         onClick={!sidebarOpen && !isMobile ? () => setSidebarOpen(true) : undefined}
-        style={{ zIndex: 40 }}
+        style={{ zIndex: 40, willChange: 'width' }}
       >
         {/* Logo & Toggle */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
-            </div>
+            <Image src="/symbol.svg" alt="ResumeRouter" width={32} height={32} />
             {sidebarOpen && <span className="font-semibold text-gray-900">ResumeRouter</span>}
           </div>
           {sidebarOpen && !isMobile && (
@@ -79,11 +97,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <nav className="space-y-1 mt-2">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.label}
-                  className={`flex items-center w-full p-2 rounded-lg transition-colors duration-200 group/nav relative
-                    ${item.active ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}
+                  className={`flex items-center w-full p-2 rounded-lg transition-colors duration-150 group/nav relative
+                    ${isActive ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-100 text-gray-700'}
                     ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
                   `}
                   aria-label={item.label}
@@ -109,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     href={item.href}
                     key={item.label}
-                    className={`flex items-center w-full p-2 rounded-lg transition-colors duration-200 group/nav relative
+                    className={`flex items-center w-full p-2 rounded-lg transition-colors duration-150 group/nav relative
                       hover:bg-gray-100 text-gray-700
                       ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
                     `}
@@ -129,25 +148,85 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
         </div>
-        
+
         {/* User avatar at the bottom */}
-        {user?.picture && (
-          <div className={`w-full flex ${sidebarOpen ? 'justify-start px-4' : 'justify-center'} pb-4 mt-auto`}>
-            <div className=" group/avatar flex flex-row items-center">
-              <Image
-                src={user.picture}
-                alt={user.name || user.email || 'User'}
-                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover shadow"
-                width={40}
-                height={40}
-                unoptimized
-              />
+        {user && (
+          <div className="relative">
+            <div 
+              className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors duration-150 cursor-pointer`}
+              onClick={handleUserClick}
+            >
+              <div className="flex items-center w-full">
+                {user.picture ? (
+                  <Image
+                    src={user.picture}
+                    alt={user.name || user.email || 'User'}
+                    className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover shadow-sm flex-shrink-0"
+                    width={40}
+                    height={40}
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border-2 border-gray-200 bg-blue-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-sm font-semibold">
+                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                {sidebarOpen && (
+                  <div className="flex flex-col ml-3 min-w-0 flex-1">
+                    <span className="text-sm font-medium text-gray-900 truncate">{user.name || user.email}</span>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Backdrop for modal */}
+            {showUserModal && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowUserModal(false)}
+                />
+                <nav className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 cursor-pointer min-w-48 w-auto">
+                  <Link
+                    href="/profile"
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <User className="w-4 h-4 mr-3 flex-shrink-0" />
+                    <span>Profile</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/settings"
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
+                    <span>Settings</span>
+                  </Link>
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <button 
+                    className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-4 h-4 mr-3 flex-shrink-0" />
+                    <span>Logout</span>
+                  </button>
+                </nav>
+              </>
+            )}
           </div>
         )}
       </div>
       {/* Main Content Area */}
-      <div className="flex-1 flex min-w-0 justify-center">
+      <div 
+        className="flex-1 flex justify-center min-h-screen overflow-y-auto"
+        style={{ 
+          marginLeft: isMobile ? '64px' : sidebarOpen ? '256px' : '64px',
+          transition: 'margin-left 200ms ease-out',
+          willChange: 'margin-left',
+          '--sidebar-width': isMobile ? '64px' : sidebarOpen ? '256px' : '64px'
+        } as React.CSSProperties}
+      >
         {children}
       </div>
     </div>

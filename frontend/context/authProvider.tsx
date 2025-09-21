@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
-
+import { useRouter } from "next/navigation";
 interface User {
   id: string;
   email: string;
@@ -17,6 +17,18 @@ interface AuthContextType {
   signup: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   googleLogin: () => void;
+  forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
+  verifyResetCode: (email: string, resetCode: string) => Promise<VerifyResetCodeResponse>;
+  resetPassword: (resetToken: string, newPassword: string) => Promise<ResetPasswordResponse>;
+}
+
+interface ForgotPasswordResponse {
+  message: string;
+}
+
+interface VerifyResetCodeResponse {
+  message: string;
+  resetToken: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,11 +37,15 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+interface ResetPasswordResponse {
+  message: string;
+}
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const router = useRouter();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   // Initial auth check when component mounts
@@ -56,7 +72,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     checkAuth();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, router]);
 
 
 
@@ -73,7 +89,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      if (!response.ok) throw new Error("Login failed");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Login failed" }));
+        throw new Error(errorData.message || "Login failed");
+      }
+      
       const data = await response.json();
       setUser(data.user);
       Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
@@ -81,6 +102,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError((err as Error).message);
       Cookies.remove("authToken");
       setUser(null);
+      throw err; // Re-throw to allow components to handle
     } finally {
       setLoading(false);
     }
@@ -99,7 +121,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         credentials: "include",
         body: JSON.stringify({ email, name, password }),
       });
-      if (!response.ok) throw new Error("Signup failed");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Signup failed" }));
+        throw new Error(errorData.message || "Signup failed");
+      }
+      
       const data = await response.json();
       setUser(data.user);
       Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
@@ -107,6 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError((err as Error).message);
       Cookies.remove("authToken");
       setUser(null);
+      throw err; // Re-throw to allow components to handle
     } finally {
       setLoading(false);
     }
@@ -127,17 +155,127 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setLoading(true);
-    Cookies.remove("authToken");
-    setUser(null);
     setError(null);
-    setLoading(false);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Logout failed" }));
+        throw new Error(errorData.message || "Logout failed");
+      }
+      
+      // Clear local state regardless of server response
+      Cookies.remove("authToken");
+      setUser(null);
+      setError(null);
+      
+      // Redirect to signin page
+      router.push("/signin");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if server logout fails, clear local state
+      Cookies.remove("authToken");
+      setUser(null);
+      setError(null);
+      router.push("/signin");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Forgot password failed' }));
+        throw new Error(errorData.message || 'Forgot password failed');
+      }
+  
+      const data = await response.json() as ForgotPasswordResponse;
+  
+      return data;
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+    
+  }
+
+  const verifyResetCode = async (email: string, resetCode: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, resetCode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Verify reset code failed' }));
+        throw new Error(errorData.message || 'Verify reset code failed');
+      }
+
+      const data = await response.json() as VerifyResetCodeResponse;
+      return data;
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const resetPassword = async (resetToken: string, newPassword: string): Promise<ResetPasswordResponse> => {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ resetToken, newPassword }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to reset password' }));
+        throw new Error(errorData.message || 'Failed to reset password');
+      }
+  
+      const data = await response.json() as ResetPasswordResponse;
+  
+      return data; // Return success response for the caller to handle
+    } catch (error) {
+      setError((error as Error).message || 'An unexpected error occurred. Please try again.');
+      throw error; // Re-throw for the caller to handle (e.g., display error)
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, login, signup, logout, googleLogin }}
+      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword }}
     >
       {children}
     </AuthContext.Provider>

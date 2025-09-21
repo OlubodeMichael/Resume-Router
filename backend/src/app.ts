@@ -9,6 +9,7 @@ import session from "express-session";
 import authRoute from "./routes/authRoute";
 import usersRoute from "./routes/usersRoute";
 import profileRoute from "./routes/profileRoute"
+import personalInfoRoute from "./routes/personalInfoRoute"
 import jobRoute from "./routes/JobRoute"
 import resumeRoute from "./routes/resumeRoute"
 
@@ -19,7 +20,11 @@ import resumeRoute from "./routes/resumeRoute"
 const app = express();
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: [
+        "https://resumerouter.app",
+        "https://www.resumerouter.app",
+        "http://localhost:3000", // For local development
+      ],
     credentials: true,
 }));
 app.use(express.json());
@@ -44,6 +49,7 @@ app.use(passport.session());
 app.use("/api/auth", authRoute);
 app.use("/api/users", usersRoute);
 app.use("/api/profile", profileRoute);
+app.use("/api/personal-info", personalInfoRoute);
 app.use("/api/job-description", jobRoute);
 app.use("/api/resumes", resumeRoute);
 
