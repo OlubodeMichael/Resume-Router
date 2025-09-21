@@ -75,7 +75,7 @@ function Navbar() {
           </div>
           {/* Join Waitlist Button */}
           <div className="hidden md:block">
-            {process.env.NODE_ENV === 'production' ? <a href="#join-waitlist">
+            {process.env.NODE_ENV === 'production' ? <a href="#join-waitlist" className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition">
               Join Waitlist
             </a> : <a
               href="/signin"
