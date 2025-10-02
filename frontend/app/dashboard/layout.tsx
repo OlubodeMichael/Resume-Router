@@ -1,20 +1,24 @@
 "use client";
 import { useState, useEffect } from "react";
+
 import {
   DoorOpen,
   Plus,
   FileText,
   BookOpen,
   LayoutTemplate,
-  HelpCircle,
   Settings,
   User,
   LogOut,
+  X,
+  Banknote,
 } from "lucide-react";
 import { useAuth } from "@/context/authProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Setting from "@/components/Setting/Setting";
+import Subscription from "@/components/Subscription/subscription";
 
 const navItems = [
   { icon: Plus, label: "New", href: "/dashboard/" },
@@ -22,9 +26,26 @@ const navItems = [
   { icon: BookOpen, label: "Library", href: "/dashboard/library" },
   { icon: LayoutTemplate, label: "Templates", href: "/dashboard/templates" },
 ];
-const bottomNavItems = [
-  { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
-];
+
+
+const handleBillingClick = () => {
+  if (typeof window !== 'undefined') {
+    window.location.hash = '#pricing'
+  }
+};
+
+function useHash() {
+  const [hash, setHash] = useState<string>(typeof window !== 'undefined' ? window.location.hash : '')
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onHash)
+    // pick up initial server->client transition
+    setHash(window.location.hash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  return { hash, setHash }
+}
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -32,6 +53,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Subscription
+  const { hash, setHash } = useHash()
+  const [showPricing, setShowPricing] = useState(false)
+
+  // Update showPricing when hash changes (client-side only)
+  useEffect(() => {
+    setShowPricing(hash === '#pricing')
+  }, [hash])
+
+  const closePricing = () => {
+    // remove the hash from the URL and update state
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname)
+      setHash('')
+    }
+  }
 
   useEffect(() => {
     const checkMobile = () => {
@@ -48,6 +87,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
 
+  // Prevent body scroll when pricing modal is open
+  useEffect(() => {
+    if (showPricing) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showPricing]);
+
   const handleUserClick = () => {
     setShowUserModal(!showUserModal);
   };
@@ -55,6 +108,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const handleLogout = () => {
     logout();
     setShowUserModal(false);
+  };
+
+  const handleSettingsClick = () => {
+    setShowUserModal(false);
+    setShowSettingsModal(true);
   };
 
   return (
@@ -120,43 +178,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               );
             })}
           </nav>
-          <div className="border-t border-gray-200 mt-4 pt-4 w-full">
-            <nav className="space-y-1">
-              {bottomNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    href={item.href}
-                    key={item.label}
-                    className={`flex items-center w-full p-2 rounded-lg transition-colors duration-150 group/nav relative
-                      hover:bg-gray-100 text-gray-700
-                      ${sidebarOpen ? 'justify-start space-x-3' : 'justify-center'}
-                    `}
-                    aria-label={item.label}
-                    tabIndex={0}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {sidebarOpen && <span className="transition-opacity duration-200">{item.label}</span>}
-                    {!sidebarOpen && (
-                      <span className="absolute left-14 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover/nav:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
-                        {item.label}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+          
         </div>
 
         {/* User avatar at the bottom */}
         {user && (
-          <div className="relative">
+          <div className="relative border-t border-gray-300" onClick={(e) => e.stopPropagation()}>
             <div 
               className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors duration-150 cursor-pointer`}
-              onClick={handleUserClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUserClick();
+              }}
             >
-              <div className="flex items-center w-full">
+              <div className={`flex items-center ${sidebarOpen ? 'w-full' : 'justify-center'}`}>
                 {user.picture ? (
                   <Image
                     src={user.picture}
@@ -185,10 +220,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {showUserModal && (
               <>
                 <div 
-                  className="fixed inset-0 z-40" 
+                  className="fixed inset-0 z-40 border-t" 
                   onClick={() => setShowUserModal(false)}
                 />
-                <nav className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 cursor-pointer min-w-48 w-auto">
+                <nav className={`mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[70] cursor-pointer min-w-48 w-auto ${
+                  sidebarOpen 
+                    ? 'absolute bottom-full left-1/2 transform -translate-x-1/2' 
+                    : 'fixed bottom-32 left-20'
+                }`} style={{ backgroundColor: 'white' }}>
                   <Link
                     href="/profile"
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -196,13 +235,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <User className="w-4 h-4 mr-3 flex-shrink-0" />
                     <span>Profile</span>
                   </Link>
-                  <Link
-                    href="/dashboard/settings"
+                  <button 
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                    onClick={handleSettingsClick}
                   >
                     <Settings className="w-4 h-4 mr-3 flex-shrink-0" />
                     <span>Settings</span>
-                  </Link>
+                  </button>
+                  <button 
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                    onClick={handleBillingClick}
+                  >
+                    <Banknote className="w-4 h-4 mr-3 flex-shrink-0" />
+                    <span>Upgrade Plan</span>
+                  </button>
                   <div className="border-t border-gray-100 my-1"></div>
                   <button 
                     className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
@@ -229,6 +275,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {children}
       </div>
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <>
+          <div 
+            className="fixed inset-0 z-[60] bg-opacity-90 bg-black/50" 
+            onClick={() => setShowSettingsModal(false)}
+          />
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[40px] shadow-xl max-w-4xl w-[50%] h-fit overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <Setting />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {showPricing && (
+        <div aria-modal className="fixed inset-0 z-50 bg-black/50 w-full h-full">
+          <div className="w-full h-full bg-gray-50 overflow-y-auto">
+              <Subscription onClose={closePricing} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

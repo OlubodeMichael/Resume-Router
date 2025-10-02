@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
+import { useToast } from '@/components/Ui/Toast';
 
 interface GeneratedResume {
   id?: string;
@@ -42,6 +43,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     const [error, setError] = useState<string | null>(null);
     const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const { showSuccess, showError } = useToast();
 
 
     const parseJobDescription = async (jobDescription: string) => {
@@ -103,12 +105,22 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             
             if (data.resume) {
                 setGeneratedResumeContent(data.resume);
+                showSuccess(
+                    'Resume Generated Successfully!',
+                    'Your personalized resume is ready for download.',
+                    5000
+                );
             } else {
                 throw new Error('Invalid response format');
             }
         } catch (err) {
             console.error('Generate resume error:', err);
             setError((err as Error).message);
+            showError(
+                'Resume Generation Failed',
+                (err as Error).message || 'Please try again later.',
+                5000
+            );
         } finally {
             setIsLoading(false);
         }

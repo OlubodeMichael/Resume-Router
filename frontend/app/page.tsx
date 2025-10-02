@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
-import Logo from '@/components/logo';
 import Image from 'next/image';
+import Navbar from '@/components/Ui/Navbar';
+import Footer from '@/components/Ui/Footer';
 
 export default function Home() {
   return (
@@ -17,11 +17,13 @@ export default function Home() {
           overflow-x: hidden;
         }
       `}</style>
-      {/* Professional Navbar */}
-      <Navbar />
-
+      
+        <Navbar />
       {/* Hero Section */}
       <Hero />
+
+      {/* Company Logos Section */}
+      <CompanyLogos />
 
       {/* Professional Features Section */}
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
@@ -45,108 +47,12 @@ export default function Home() {
 
       {/* Professional FAQ Section */}
       <FAQ />
-
-      {/* Professional Footer */}
       <Footer />
-      
     </div>
   );
 }
 
 
-function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <>
-      <nav className="sticky top-0 z-50 w-full bg-white py-2 opacity-98 backdrop-blur-sm smooth-scroll">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-          <Link className="flex justify-center items-center space-x-2" href="/" >
-            <Logo />
-          </Link>
-          </div>
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-gray-700 hover:text-black font-medium">Features</a>
-            <a href="#how-it-works" className="text-gray-700 hover:text-black font-medium">How It Works</a>
-            <a href="#faq" className="text-gray-700 hover:text-black font-medium">FAQ</a>
-          </div>
-          {/* Join Waitlist Button */}
-          <div className="hidden md:block">
-            {process.env.NODE_ENV === 'production' ? <a href="#join-waitlist" className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition">
-              Join Waitlist
-            </a> : <a
-              href="/signin"
-              className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
-            >
-              Login
-            </a>}
-          </div>
-          {/* Hamburger Icon */}
-          <button
-            className="md:hidden flex items-center z-50 relative"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-7 h-7 text-gray-700"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile Menu Dropdown */}
-      <div className={`fixed top-[72px] left-0 right-0 bg-white shadow-xl z-[60] md:hidden border-t border-gray-100 transform transition-all duration-300 ease-in-out ${
-        menuOpen 
-          ? 'translate-y-0 opacity-100' 
-          : '-translate-y-full opacity-0 pointer-events-none'
-      }`}>
-        <div className="px-4 py-2">
-          <a 
-            href="#features" 
-            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
-            onClick={() => setMenuOpen(false)}
-          >
-            Features
-          </a>
-          <a 
-            href="#how-it-works" 
-            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
-            onClick={() => setMenuOpen(false)}
-          >
-            How It Works
-          </a>
-          <a 
-            href="#faq" 
-            className="block py-3 text-gray-700 hover:text-black font-medium border-b border-gray-100 transition-colors duration-200"
-            onClick={() => setMenuOpen(false)}
-          >
-            FAQ
-          </a>
-          <a
-            href="#join-waitlist"
-            className="block mt-4 bg-blue-800 text-white px-5 py-3 rounded-lg font-semibold shadow hover:bg-blue-900 transition-all duration-200 text-center"
-            onClick={() => setMenuOpen(false)}
-          >
-            Join Waitlist
-          </a>
-        </div>
-      </div>
-    </>
-  );
-}
 
 
 
@@ -551,22 +457,95 @@ function JoinWaitlist() {
   );
 }
 
-function Footer() {
+function CompanyLogos() {
+  const companies = [
+    { name: "Google", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
+    { name: "Apple", logo: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
+    { name: "Microsoft", logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
+    { name: "Amazon", logo: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" },
+    { name: "Meta", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg" },
+    { name: "Netflix", logo: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
+    { name: "Tesla", logo: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Tesla_T_symbol.svg" },
+    { name: "Spotify", logo: "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" },
+    { name: "Adobe", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Adobe_Systems_logo_and_wordmark.svg" },
+    { name: "Salesforce", logo: "https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg" },
+    { name: "Oracle", logo: "https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg" },
+    { name: "IBM", logo: "https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" },
+    { name: "Intel", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Intel_logo_%282006-2020%29.svg" },
+    { name: "NVIDIA", logo: "https://upload.wikimedia.org/wikipedia/commons/2/21/Nvidia_logo.svg" },
+    { name: "PayPal", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
+    { name: "Uber", logo: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png" },
+    { name: "Airbnb", logo: "https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" },
+    { name: "Twitter", logo: "https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg" },
+    { name: "LinkedIn", logo: "https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" },
+    { name: "GitHub", logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" },
+    { name: "Shopify", logo: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Shopify_logo_2018.svg" },
+    { name: "Zoom", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7b/Zoom_Communications_Logo.svg" },
+    { name: "Slack", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg" },
+    { name: "Dropbox", logo: "https://upload.wikimedia.org/wikipedia/commons/7/78/Dropbox_Icon.svg" }
+  ];
+
+  // Duplicate the array to create seamless loop
+  const duplicatedCompanies = [...companies, ...companies];
+
   return (
-    <footer className="bg-slate-100 text-white py-10 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto text-center space-y-4">
-        <div className="flex justify-center items-center space-x-2">
-          <Logo />
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-100">
+      <div className="max-w-6xl mx-auto text-center">
+        <h2 className="text-2xl sm:text-3xl font-serif font-medium text-slate-900 mb-12">
+          Resumes That Landed Interviews At
+        </h2>
+        
+        <div className="relative overflow-hidden">
+          <div className="flex animate-scroll">
+            {duplicatedCompanies.map((company, index) => (
+              <div
+                key={`${company.name}-${index}`}
+                className="flex items-center justify-center h-12 w-24 mx-4 flex-shrink-0 grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-80"
+              >
+                <Image
+                  src={company.logo}
+                  width={100}
+                  height={100}
+                  alt={`${company.name} logo`}
+                  className="max-h-8 max-w-20 object-contain"
+                  onError={(e) => {
+                    // Fallback to text if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<span class="text-slate-600 font-medium text-sm">${company.name}</span>`;
+                    }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-
-        <div className="flex justify-center space-x-6 text-slate-700 text-sm font-medium font-sans">
-          <a href="#" className="hover:text-slate-900 transition">Privacy</a>
-          <a href="#" className="hover:text-slate-900 transition">Terms</a>
-          <a href="#" className="hover:text-slate-900 transition">Contact</a>
-        </div>
-
-        <p className="text-xs text-slate-700">&copy; {new Date().getFullYear()} ResumeRouter. All rights reserved.</p>
+        
+        <p className="text-slate-500 text-sm mt-8 max-w-2xl mx-auto">
+          Join thousands of professionals who&apos;ve successfully landed interviews at top companies using AI-optimized resumes
+        </p>
       </div>
-    </footer>
+
+      <style jsx>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        
+        .animate-scroll {
+          animation: scroll 15s linear infinite;
+        }
+        
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+    </section>
   );
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useProfile } from "@/context/profileProvider";
 import { X, FolderOpen, Loader2 } from "lucide-react";
 import { convertDateForInput } from "@/lib/formateDate";
+import DatePicker from "@/components/Ui/DatePicker";
 
 interface ProjectFormProps {
   initial?: {
@@ -55,8 +56,14 @@ export default function ProjectForm({ initial, onClose, editIndex }: ProjectForm
         technologies: form.technologies.filter(t => t.trim() !== ""),
       };
       
-      if (!payload.name || !payload.description || !payload.startDate || payload.technologies.length === 0) {
-        setError("Please fill all required fields and add at least one technology.");
+      if (!payload.name.trim()) {
+        setError("Project name is required.");
+        setLoading(false);
+        return;
+      }
+      
+      if (!payload.description.trim()) {
+        setError("Project description is required.");
         setLoading(false);
         return;
       }
@@ -141,7 +148,7 @@ export default function ProjectForm({ initial, onClose, editIndex }: ProjectForm
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Project URL
+                Project URL (Optional)
               </label>
               <input
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm  text-gray-900 placeholder-gray-400"
@@ -170,7 +177,7 @@ export default function ProjectForm({ initial, onClose, editIndex }: ProjectForm
           {/* Technologies */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Technologies *
+              Technologies
             </label>
             
             {/* Display existing technologies */}
@@ -227,27 +234,22 @@ export default function ProjectForm({ initial, onClose, editIndex }: ProjectForm
           {/* Date Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Start Date *
-              </label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                type="month"
+              <DatePicker
+                label="Start Date (Optional)"
                 value={form.startDate}
-                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                required
+                onChange={value => setForm(f => ({ ...f, startDate: value }))}
+                placeholder="Select start date (optional)"
+                maxDate={form.endDate || undefined}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                End Date
-              </label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 text-gray-900 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                type="month"
+              <DatePicker
+                label="End Date (Optional)"
                 value={form.endDate || ""}
-                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                onChange={value => setForm(f => ({ ...f, endDate: value }))}
+                placeholder="Select end date (optional)"
+                minDate={form.startDate || undefined}
               />
             </div>
           </div>

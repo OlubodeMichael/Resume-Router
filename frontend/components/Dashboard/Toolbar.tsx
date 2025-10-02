@@ -280,6 +280,56 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
     });
   }, [refreshActive]);
 
+  // Undo/redo implementation using execCommand
+  const handleUndo = useCallback(() => {
+    if (!editorRef.current) return;
+    
+    editorRef.current.focus();
+    
+    // Use execCommand for undo
+    const success = document.execCommand('undo', false);
+    if (success) {
+      runAndRefresh();
+    }
+  }, [editorRef, runAndRefresh]);
+
+  const handleRedo = useCallback(() => {
+    if (!editorRef.current) return;
+    
+    editorRef.current.focus();
+    
+    // Use execCommand for redo
+    const success = document.execCommand('redo', false);
+    if (success) {
+      runAndRefresh();
+    }
+  }, [editorRef, runAndRefresh]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle shortcuts when the editor is focused
+      if (!editorRef.current?.contains(document.activeElement)) return;
+      
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === 'z' && !event.shiftKey) {
+          event.preventDefault();
+          // Use execCommand for undo
+          document.execCommand('undo', false);
+          runAndRefresh();
+        } else if (event.key === 'y' || (event.key === 'z' && event.shiftKey)) {
+          event.preventDefault();
+          // Use execCommand for redo
+          document.execCommand('redo', false);
+          runAndRefresh();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editorRef, runAndRefresh]);
+
   const applyFormat = useCallback(
     (command: string) => {
       if (!editorRef.current) return;
@@ -500,36 +550,18 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
       {/* Undo / Redo */}
       <button
         className={baseButtonClass}
-        onClick={() => {
-          if (!editorRef.current) return;
-          editorRef.current.focus();
-          
-          // Use a small delay to ensure focus is established
-          setTimeout(() => {
-            document.execCommand("undo");
-            runAndRefresh();
-          }, 0);
-        }}
-        aria-label="Undo"
-        title="Undo"
+        onClick={handleUndo}
+        aria-label="Undo (Ctrl+Z)"
+        title="Undo (Ctrl+Z)"
       >
         <Undo2 className="w-5 h-5" />
       </button>
 
       <button
         className={baseButtonClass}
-        onClick={() => {
-          if (!editorRef.current) return;
-          editorRef.current.focus();
-          
-          // Use a small delay to ensure focus is established
-          setTimeout(() => {
-            document.execCommand("redo");
-            runAndRefresh();
-          }, 0);
-        }}
-        aria-label="Redo"
-        title="Redo"
+        onClick={handleRedo}
+        aria-label="Redo (Ctrl+Y)"
+        title="Redo (Ctrl+Y)"
       >
         <Redo2 className="w-4 h-4" />
       </button>

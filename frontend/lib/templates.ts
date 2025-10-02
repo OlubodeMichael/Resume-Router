@@ -20,9 +20,9 @@ async function buildThumbsMap(): Promise<Map<string, string>> {
     });
     for (const b of blobs) {
       const lc = b.pathname.toLowerCase();
-      if (lc.endsWith('.webp') || lc.endsWith('.png')) {
-        // If both .webp and .png exist, keep .webp (insert webp after png to override or vice-versa)
-        // We prefer webp: if a webp arrives later, it will overwrite the png
+      if (lc.endsWith('.webp') || lc.endsWith('.png') || lc.endsWith('.jpg') || lc.endsWith('.jpeg')) {
+        // Priority order: webp > png > jpg/jpeg
+        // If multiple formats exist, webp will override png, and png will override jpg
         m.set(lc, b.url);
       }
     }
@@ -32,7 +32,7 @@ async function buildThumbsMap(): Promise<Map<string, string>> {
   return m;
 }
 
-/** Collect PDFs and attach exact thumb URL if present (pref .webp, then .png) */
+/** Collect PDFs and attach exact thumb URL if present (pref .webp, then .png, then .jpg/.jpeg) */
 async function _fetchPdfItems(): Promise<PdfItem[]> {
   const thumbs = await buildThumbsMap();
   const items: PdfItem[] = [];
@@ -59,8 +59,10 @@ async function _fetchPdfItems(): Promise<PdfItem[]> {
 
       const webpKey = `${thumbsBase}.webp`.toLowerCase();
       const pngKey = `${thumbsBase}.png`.toLowerCase();
+      const jpgKey = `${thumbsBase}.jpg`.toLowerCase();
+      const jpegKey = `${thumbsBase}.jpeg`.toLowerCase();
 
-      const thumbUrl = thumbs.get(webpKey) ?? thumbs.get(pngKey);
+      const thumbUrl = thumbs.get(webpKey) ?? thumbs.get(pngKey) ?? thumbs.get(jpgKey) ?? thumbs.get(jpegKey);
 
       items.push({ pdfUrl: b.url, thumbUrl, title });
     }

@@ -30,7 +30,7 @@ body {
 @import url('https://www.resume.lol/fonts/cm/fonts.css');
 
 @media print {
-  @page { size: Letter; margin: 0.5in; }
+  @page { size: Letter; margin: 0.25in; }
   .no-print { display: none !important; }
   .print-exact { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
@@ -157,7 +157,7 @@ body {
 }
 
 .resume-template .headerInfo > ul > li:not(:last-child):after {
-  content: "|";
+
   margin-left: 8px;
 }
 
@@ -185,6 +185,17 @@ body {
 /* Ensure proper cursor behavior in centered contentEditable */
 .resume-template[contenteditable="true"] h1:focus {
   outline: none;
+}
+
+/* Resume Editor Cursor Styles */
+.resume-editor [contenteditable="true"] {
+  caret-color: black !important;
+  cursor: text !important;
+}
+
+.resume-editor [contenteditable="true"]:focus {
+  caret-color: black !important;
+  cursor: text !important;
 }
 
 /* Legacy classes for backward compatibility */

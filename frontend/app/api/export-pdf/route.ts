@@ -35,120 +35,63 @@ export async function POST(request: NextRequest) {
       timeout: 30000 
     });
 
-    // Add minimal, optimized CSS for PDF generation (no external fonts)
+    // Add PDF-specific CSS that preserves template styling
     await page.addStyleTag({
       content: `
         @page { 
-          size: A4; 
-          margin: 0.5in;
+          size: letter; 
+          margin: 0.25in 0.75in 0.1in 0.75in;
         }
+        
+        /* Ensure print compatibility */
         * { 
-          -webkit-print-color-adjust: exact; 
-          print-color-adjust: exact; 
+          -webkit-print-color-adjust: exact !important; 
+          print-color-adjust: exact !important; 
           box-sizing: border-box;
         }
+        
+        /* Override any conflicting styles for PDF */
         body { 
-          font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif; 
-          color: #000;
-          margin: 0;
-          padding: 0;
-          background: white;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          color: black !important;
         }
         
-        /* Minimal utility classes */
-        .mx-auto { margin-left: auto; margin-right: auto; }
-        .w-\\[816px\\] { width: 816px; }
-        .max-w-full { max-width: 100%; }
-        .bg-white { background-color: white; }
-        .p-8 { padding: 2rem; }
-        .text-center { text-align: center; }
-        .text-sm { font-size: 0.875rem; }
-        .text-black { color: #000; }
-        .font-normal { font-weight: 400; }
-        .font-bold { font-weight: 700; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .flex { display: flex; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .gap-2 { gap: 0.5rem; }
-        .gap-4 { gap: 1rem; }
-        .border-b { border-bottom: 1px solid #000; }
-        .pb-2 { padding-bottom: 0.5rem; }
-        .list-disc { list-style-type: disc; }
-        .list-inside { list-style-position: inside; }
-        .ml-4 { margin-left: 1rem; }
-        .indent { margin-left: 0.15in; }
+        /* Ensure all text is black in PDF */
+        h1, h2, h3, h4, p, a, li, span, div {
+          color: black !important;
+          background: transparent !important;
+        }
         
-        /* Resume-specific styles - minimal and clean */
-        h1 { 
-          font-size: 24px; 
-          margin: 0 0 16px 0; 
-          font-weight: 700;
-          text-align: center;
-          color: #000;
+        /* Hide any pseudo-elements that might cause issues */
+        ::before,
+        ::after {
+          display: none !important;
         }
-        h2 { 
-          font-size: 16px; 
-          margin: 16px 0 8px 0; 
-          font-weight: 600;
-          border-bottom: 1px solid #000;
-          padding-bottom: 4px;
-          color: #000;
-        }
-        h3 { 
-          font-size: 14px; 
-          margin: 8px 0 4px 0; 
-          font-weight: 600;
-          color: #000;
-        }
-        h4 { 
-          font-size: 12px; 
-          margin: 4px 0; 
-          font-weight: 400;
-          font-style: italic;
-          color: #000;
-        }
-        p { margin: 4px 0; color: #000; }
-        ul { margin: 8px 0; padding-left: 20px; }
-        li { margin: 2px 0; color: #000; }
-        a { color: #000; text-decoration: underline; }
         
-        .headerInfo ul {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          margin: 0;
-          padding: 0;
-          list-style: none;
+        /* Ensure proper PDF rendering */
+        .print-container {
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
-        .headerInfo li:not(:last-child)::after {
-          content: "|";
-          margin-left: 8px;
-        }
-        .tech-stack { font-style: italic; }
-        .resume-template { font-family: serif; }
       `
     });
 
     // Generate PDF with optimized settings
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: 'letter',
       printBackground: true,
       displayHeaderFooter: false,
       margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in'
+        top: '0.1in',
+        right: '0.75in',
+        bottom: '0.1in',
+        left: '0.75in'
       },
-      preferCSSPageSize: true
+      preferCSSPageSize: false
     });
-
-    console.log('Generated PDF size:', pdfBuffer.length, 'bytes');
 
     await browser.close();
 

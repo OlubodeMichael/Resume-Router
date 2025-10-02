@@ -4,14 +4,14 @@ import { createContext, useContext, useState, ReactNode, useEffect, useCallback 
 import { useAuth } from "./authProvider";
 
 interface PersonalInfo {
-  fullName: string;
-  phone: string;
-  location: string;
-  linkedIn: string;
-  portfolio: string;
-  jobTitle: string;
-  pronouns: string;
-  email: string; // Email is auto-populated from User table into PersonalInformation
+  fullName: string | null;
+  phone: string | null;
+  location: string | null;
+  linkedIn: string | null;
+  portfolio: string | null;
+  jobTitle: string | null;
+  pronouns: string | null;
+  email: string | null; // Email is auto-populated from User table into PersonalInformation
 }
 
 interface PersonalInfoFormData {

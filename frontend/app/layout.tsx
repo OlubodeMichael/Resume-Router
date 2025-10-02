@@ -7,6 +7,7 @@ import { ResumeProvider } from "@/context/resumeProvider";
 import { PersonalInfoProvider } from "@/context/personalInfoProvider";
 
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -31,6 +32,19 @@ export const metadata: Metadata = {
     "resume builder",
     "resume optimizer",
     "cover letter",
+    "job description",
+    "Free ai resume builder",
+    "Free resume builder",
+    "Free resume optimizer",
+    "Free cover letter",
+    "Free job description",
+    "AI based resume builder",
+    "AI based resume optimizer",
+    "AI based cover letter",
+    "AI based job description",
+
+  
+
   ],
   alternates: { canonical: "/" },
   openGraph: {

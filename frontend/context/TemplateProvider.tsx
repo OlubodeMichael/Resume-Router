@@ -3,11 +3,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 type TemplateContextType = {
-  // local (current) selection; empty string means “none selected yet”
   selectedId: string;
-  // last value saved in the backend ('' if none)
   savedId: string;
-  // UI flags
   loading: boolean;
   saving: boolean;
   dirty: boolean;
