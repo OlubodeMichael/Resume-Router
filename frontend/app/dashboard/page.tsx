@@ -5,29 +5,25 @@ import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/authProvider'
 import { useResume } from '@/context/resumeProvider'
 import Toolbar from '@/components/Dashboard/Toolbar'
-import Ryan from '@/components/Templates/Ryan'
+import { EditableTemplateRenderer } from '@/lib/TemplateEngine'
+import { ryanTemplateSpec } from '@/Templates/html/ryan'
 import JobDescription from '@/components/Dashboard/jobDescription'
 import type { ResumeData } from '@/types/resume'
 import { ResumeRecordSchema } from '@/types/resume-record.schema'
 import { mapRecordToTemplateData } from '@/utils/mapRecordToTemplateData'
-
-
-const DEFAULT_RESUME: ResumeData = {
-  name: 'Your Name',
-  contacts: [],
-  education: [],
-  experience: [],
-  projects: [],
-  skills: [],
-  summaryHTML: undefined,
-}
+import { DEFAULT_RESUME, transformResumeData } from '@/lib/resumeUtils'
+import { downloadResumeAsPDF } from '@/lib/pdfUtils'
+import { saveEditedContent, loadEditedContent, saveEditedContentImmediate, clearEditedContent } from '@/lib/storageUtils'
+import { ToastContainer, useToast } from '@/components/Ui/Toast'
 
 export default function Dashboard() {
   const { loading } = useAuth()
   const { generatedResumeContent } = useResume()   // this is your backend JSON
   const editorRef = useRef<HTMLDivElement>(null)
   const [editedContent, setEditedContent] = useState<string | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { toasts, removeToast, showSuccess, showError } = useToast()
 
   const resumeData: ResumeData = useMemo(() => {
     if (!generatedResumeContent) return DEFAULT_RESUME
@@ -37,53 +33,72 @@ export default function Dashboard() {
       console.warn('Invalid resume payload', parsed.error)
       return DEFAULT_RESUME
     }
-    return mapRecordToTemplateData(parsed.data)
+    const mapped = mapRecordToTemplateData(parsed.data)
+  
+    return mapped
   }, [generatedResumeContent])
 
+  // Transform data for the ryan template
+  const templateData = useMemo(() => {
+    const transformed = transformResumeData(resumeData)
+    return transformed
+  }, [resumeData])
+
   // Save content changes when editor content changes (debounced)
-  const handleContentChange = useCallback(() => {
-    if (editorRef.current) {
-      // Clear existing timeout
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current)
-      }
-      
-      // Set new timeout to save content without changing rendering mode
-      debounceTimeoutRef.current = setTimeout(() => {
-        if (editorRef.current) {
-          // Save content to localStorage without changing rendering mode
-          const content = editorRef.current.innerHTML
-          if (generatedResumeContent?.id) {
-            localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, content)
-          }
-        }
-      }, 1000) // 1 second delay
-    }
+  const handleContentChange = useCallback((html: string) => {
+    saveEditedContent(html, generatedResumeContent?.id, debounceTimeoutRef)
   }, [generatedResumeContent?.id])
 
-  // Reset edited content when new resume is generated
+  // Reset edited content when new resume is generated and clear localStorage
   useEffect(() => {
     if (generatedResumeContent) {
       setEditedContent(null)
+      // Clear localStorage when a new resume is generated
+      clearEditedContent(generatedResumeContent.id)
     }
   }, [generatedResumeContent])
 
   // Save content to localStorage for persistence across page refreshes
   useEffect(() => {
     if (editedContent && generatedResumeContent?.id) {
-      localStorage.setItem(`resume-edited-content-${generatedResumeContent.id}`, editedContent)
+      saveEditedContentImmediate(editedContent, generatedResumeContent.id)
     }
   }, [editedContent, generatedResumeContent?.id])
 
   // Load edited content from localStorage on mount
   useEffect(() => {
     if (generatedResumeContent?.id) {
-      const savedContent = localStorage.getItem(`resume-edited-content-${generatedResumeContent.id}`)
+      const savedContent = loadEditedContent(generatedResumeContent.id)
       if (savedContent) {
         setEditedContent(savedContent)
       }
     }
   }, [generatedResumeContent?.id])
+
+  // Download resume as PDF
+  const handleDownloadResume = useCallback(async () => {
+    await downloadResumeAsPDF(
+      editorRef, 
+      templateData, 
+      setIsDownloading,
+      () => {
+        showSuccess(
+          'PDF Downloaded Successfully!',
+          'Your resume has been saved to your device.',
+          3000
+        );
+        // Clear localStorage after successful download
+        clearEditedContent(generatedResumeContent?.id);
+      },
+      (error) => {
+        showError(
+          'PDF Download Failed',
+          error,
+          5000
+        );
+      }
+    )
+  }, [templateData, showSuccess, showError, generatedResumeContent?.id])
 
   if (loading) {
     return (
@@ -108,12 +123,42 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10">
+        {/* Download Button */}
+        {generatedResumeContent?.id && 
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={handleDownloadResume}
+            disabled={isDownloading}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
+              isDownloading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl'
+            } text-white`}
+          >
+            {isDownloading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Resume PDF
+              </>
+            )}
+          </button>
+        </div>}
+
         <div className="mt-6">
-          <Ryan 
-            data={resumeData} 
-            editorRef={editorRef} 
-            editedContent={editedContent}
+          <EditableTemplateRenderer
+            ref={editorRef}
+            spec={ryanTemplateSpec}
+            data={templateData}
+            initialContent={editedContent}
             onContentChange={handleContentChange}
+            className="resume-editor"
           />
         </div>
       </main>
@@ -124,6 +169,9 @@ export default function Dashboard() {
           <JobDescription />
         </div>
       </footer>
+      
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

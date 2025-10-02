@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      handlebars: 'handlebars/dist/handlebars.js', // or 'handlebars/dist/handlebars.min.js'
+    };
+    return config;
+  },
   /* config options here */
   output: 'standalone',
   // Ensure proper routing in production
@@ -11,6 +18,18 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'wfyt3kh9osclrdcx.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/**',
       },

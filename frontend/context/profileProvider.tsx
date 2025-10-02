@@ -79,6 +79,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const getProfile = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
       const response = await fetch(`${API_URL}/api/profile`, {
         method: "GET",
         headers: {
@@ -90,6 +91,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       if (!response.ok) throw new Error(data.message || "Failed to fetch profile");
       setProfile(data.profile);
     } catch (err) {
+      console.error('Profile fetch error:', err);
       setError((err as Error).message);
     } finally {
       setLoading(false);

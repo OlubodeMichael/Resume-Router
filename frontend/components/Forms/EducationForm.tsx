@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useProfile } from "@/context/profileProvider";
 import { X, GraduationCap, Loader2 } from "lucide-react";
 import { convertDateForInput } from "@/lib/formateDate";
+import DatePicker from "@/components/Ui/DatePicker";
 
 interface EducationFormProps {
   initial?: {
@@ -224,28 +225,23 @@ export default function EducationForm({ initial, onClose, editIndex }: Education
           {/* Date Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Start Date *
-              </label>
-              <input
-                className="w-auto min-w-[140px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm text-gray-900"
-                type="month"
+              <DatePicker
+                label="Start Date"
                 value={form.startDate}
-                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                onChange={value => setForm(f => ({ ...f, startDate: value }))}
+                placeholder="Select start date"
                 required
+                maxDate={form.endDate || undefined}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                End Date
-              </label>
-              <input
-                className="w-auto min-w-[140px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm text-gray-900"
-                type="month"
+              <DatePicker
+                label="End Date"
                 value={form.endDate || ""}
-                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                placeholder="Leave empty if current"
+                onChange={value => setForm(f => ({ ...f, endDate: value }))}
+                placeholder="Select end date (optional)"
+                minDate={form.startDate || undefined}
               />
             </div>
           </div>

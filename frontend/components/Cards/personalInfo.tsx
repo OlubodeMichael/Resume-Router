@@ -14,6 +14,18 @@ export default function PersonalInfo() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  const formatUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // If URL already has protocol, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Add https:// protocol for external links
+    return `https://${url}`;
+  };
+
   return (
     <>
       <div className="bg-white  ">
@@ -94,7 +106,7 @@ export default function PersonalInfo() {
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">LinkedIn</div>
                   {personalInfo.linkedIn ? (
                     <a 
-                      href={personalInfo.linkedIn} 
+                      href={formatUrl(personalInfo.linkedIn)} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-sm text-indigo-600 hover:text-indigo-700 font-medium hover:underline"
@@ -109,7 +121,7 @@ export default function PersonalInfo() {
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Portfolio</div>
                   {personalInfo.portfolio ? (
                     <a 
-                      href={personalInfo.portfolio} 
+                      href={formatUrl(personalInfo.portfolio)} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-sm text-indigo-600 hover:text-indigo-700 font-medium hover:underline"

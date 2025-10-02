@@ -16,6 +16,17 @@ interface PersonalInfoData {
   email: string; // email field is now included in the form
 }
 
+interface PersonalInfoFromAPI {
+  fullName: string | null;
+  phone: string | null;
+  location: string | null;
+  linkedIn: string | null;
+  portfolio: string | null;
+  jobTitle: string | null;
+  pronouns: string | null;
+  email: string | null;
+}
+
 interface PersonalInfoFormData {
   fullName: string;
   phone: string;
@@ -29,7 +40,7 @@ interface PersonalInfoFormData {
 
 interface PersonalInfoFormProps {
   onClose: () => void;
-  initial?: PersonalInfoData;
+  initial?: PersonalInfoFromAPI;
   editIndex?: number | null;
 }
 
@@ -37,14 +48,14 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
   const { updatePersonalInfo } = usePersonalInfo();
   const { user } = useAuth();
   const [formData, setFormData] = useState<PersonalInfoData>({
-    fullName: user?.name || "",
+    fullName: (user?.name ?? "") || "",
     phone: "",
     location: "",
     linkedIn: "",
     portfolio: "",
     jobTitle: "",
     pronouns: "",
-    email: user?.email || "",
+    email: (user?.email ?? "") || "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,15 +64,20 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
   useEffect(() => {
     if (initial) {
       setFormData({
-        ...initial,
-        fullName: initial.fullName || user?.name || "",
-        email: initial.email || user?.email || ""
+        fullName: initial.fullName || (user?.name ?? "") || "",
+        phone: initial.phone || "",
+        location: initial.location || "",
+        linkedIn: initial.linkedIn || "",
+        portfolio: initial.portfolio || "",
+        jobTitle: initial.jobTitle || "",
+        pronouns: initial.pronouns || "",
+        email: initial.email || (user?.email ?? "") || ""
       });
     } else if (user?.name || user?.email) {
       setFormData(prev => ({
         ...prev,
-        fullName: user?.name || prev.fullName,
-        email: user?.email || prev.email
+        fullName: (user?.name ?? "") || prev.fullName,
+        email: (user?.email ?? "") || prev.email
       }));
     }
   }, [initial, user?.name, user?.email]);
@@ -72,6 +88,18 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
       [field]: value
     }));
     if (error) setError(null);
+  };
+
+  const formatUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // If URL already has protocol, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Add https:// protocol for external links
+    return `https://${url}`;
   };
 
   const validateForm = (): boolean => {
@@ -103,8 +131,8 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
         fullName: formData.fullName,
         phone: formData.phone,
         location: formData.location,
-        linkedIn: formData.linkedIn,
-        portfolio: formData.portfolio,
+        linkedIn: formatUrl(formData.linkedIn),
+        portfolio: formatUrl(formData.portfolio),
         jobTitle: formData.jobTitle,
         pronouns: formData.pronouns,
         email: formData.email
@@ -221,13 +249,22 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Pronouns
             </label>
-            <input
-              type="text"
+            <select
               value={formData.pronouns}
               onChange={(e) => handleInputChange("pronouns", e.target.value)}
               className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., he/him, she/her, they/them"
-            />
+            >
+              <option value="">Select pronouns</option>
+              <option value="he/him">he/him</option>
+              <option value="she/her">she/her</option>
+              <option value="they/them">they/them</option>
+              <option value="he/they">he/they</option>
+              <option value="she/they">she/they</option>
+              <option value="ze/hir">ze/hir</option>
+              <option value="ze/zir">ze/zir</option>
+              <option value="xe/xem">xe/xem</option>
+              <option value="other">Other (please specify)</option>
+            </select>
           </div>
 
           {/* LinkedIn */}
@@ -236,11 +273,11 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
               LinkedIn Profile
             </label>
             <input
-              type="url"
+              type="text"
               value={formData.linkedIn}
               onChange={(e) => handleInputChange("linkedIn", e.target.value)}
               className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="https://linkedin.com/in/yourprofile"
+              placeholder="linkedin.com/in/yourprofile or https://linkedin.com/in/yourprofile"
             />
           </div>
 
@@ -250,11 +287,11 @@ export default function PersonalInfoForm({ onClose, initial, editIndex }: Person
               Portfolio Website
             </label>
             <input
-              type="url"
+              type="text"
               value={formData.portfolio}
               onChange={(e) => handleInputChange("portfolio", e.target.value)}
               className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="https://yourportfolio.com"
+              placeholder="yourportfolio.com or https://yourportfolio.com"
             />
           </div>
         </div>

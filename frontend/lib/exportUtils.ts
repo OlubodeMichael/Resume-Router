@@ -164,7 +164,7 @@ export const exportToPDFCompressed = async (
 export const exportVectorPDF = async (
   html: string,
   filename: string = 'resume.pdf',
-  allowUserToChooseLocation: boolean = false
+  allowUserToChooseLocation: boolean = false // Default to false to avoid security warnings
 ): Promise<void> => {
   try {
     console.log('Starting vector PDF export...');
@@ -192,7 +192,7 @@ export const exportVectorPDF = async (
     // Save via File System Access API if available and requested
     if (allowUserToChooseLocation && 'showSaveFilePicker' in window) {
       try {
-        const handle = await window.showSaveFilePicker!({
+        const handle = await (window as unknown as { showSaveFilePicker: (options: { suggestedName: string; types: Array<{ description: string; accept: Record<string, string[]> }> }) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
           suggestedName: filename,
           types: [{ 
             description: 'PDF files', 
@@ -202,10 +202,14 @@ export const exportVectorPDF = async (
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
+        console.log('✅ PDF saved successfully with file picker!');
         return;
-      } catch {
-        // User canceled or API failed, fall back to download
-        console.log('File picker cancelled or failed, using regular download');
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('📝 User cancelled file save');
+          return; // User cancelled, don't show error
+        }
+        console.warn('⚠️ File picker failed, falling back to download:', error);
       }
     }
 

@@ -21,6 +21,11 @@ export const ResumeRecordSchema = z.object({
       summary: z.string().optional(),
     }),
     skills: z.array(z.string()).default([]),
+    categorizedSkills: z.object({
+      languages: z.array(z.string()).default([]),
+      librariesFrameworks: z.array(z.string()).default([]),
+      developerTools: z.array(z.string()).default([]),
+    }).optional(),
     projects: z.array(z.object({
       title: z.string(),
       description: z.string().optional(),
@@ -31,6 +36,8 @@ export const ResumeRecordSchema = z.object({
       school: z.string(),
       fieldOfStudy: z.string().optional(),
       graduationYear: z.string().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
       location: z.string().optional(),
       gpa: z.string().optional(),
     })).default([]),
