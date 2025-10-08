@@ -5,7 +5,6 @@ import {
   DoorOpen,
   Plus,
   FileText,
-  BookOpen,
   LayoutTemplate,
   Settings,
   User,
@@ -23,7 +22,6 @@ import Subscription from "@/components/Subscription/subscription";
 const navItems = [
   { icon: Plus, label: "New", href: "/dashboard/" },
   { icon: FileText, label: "Documents", href: "/dashboard/documents" },
-  { icon: BookOpen, label: "Library", href: "/dashboard/library" },
   { icon: LayoutTemplate, label: "Templates", href: "/dashboard/templates" },
 ];
 

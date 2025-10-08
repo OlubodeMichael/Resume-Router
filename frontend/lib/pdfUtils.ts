@@ -20,21 +20,19 @@ export const downloadResumeAsPDF = async (
   setIsDownloading(true);
   
   try {
-    console.log('🔄 Starting PDF generation...');
-    
     // Get the current HTML content from the editor
     const currentHtml = editorRef.current.innerHTML;
-    console.log('📄 HTML content extracted, length:', currentHtml.length);
+    //console.log('📄 HTML content extracted, length:', currentHtml.length);
     
     // Import the template engine to generate proper standalone HTML
     const { buildStandaloneHTML } = await import('@/lib/TemplateEngine');
-    console.log('⚙️ Building standalone HTML...');
+    //console.log('⚙️ Building standalone HTML...');
     
     // Generate standalone HTML with proper CSS and structure
     const standaloneHtml = buildStandaloneHTML(ryanTemplateSpec, templateData, currentHtml);
-    console.log('✅ Standalone HTML generated, length:', standaloneHtml.length);
+    //console.log('✅ Standalone HTML generated, length:', standaloneHtml.length);
     
-    console.log('🌐 Sending request to PDF API...');
+    //console.log('🌐 Sending request to PDF API...');
     // Generate PDF using the export API
     const response = await fetch('/api/export-pdf', {
       method: 'POST',
@@ -51,11 +49,11 @@ export const downloadResumeAsPDF = async (
       throw new Error(`Failed to generate PDF: ${response.status} ${response.statusText}`);
     }
     
-    console.log('📥 PDF response received, processing...');
+    //console.log('📥 PDF response received, processing...');
     const blob = await response.blob(); 
-    console.log('📄 PDF blob created, size:', blob.size, 'bytes');
+    //console.log('📄 PDF blob created, size:', blob.size, 'bytes');
     
-    console.log('💾 Opening file picker...');
+    //console.log('💾 Opening file picker...');
     
     // Use File System Access API for location and filename selection
     if ('showSaveFilePicker' in window) {
@@ -74,12 +72,12 @@ export const downloadResumeAsPDF = async (
         await writable.write(blob);
         await writable.close();
         
-        console.log('✅ PDF saved successfully with file picker!');
+        //console.log('✅ PDF saved successfully with file picker!');
         onSuccess?.();
         return;
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          console.log('📝 User cancelled file save');
+          //console.log('📝 User cancelled file save');
           return; // User cancelled, don't show error
         }
         console.warn('⚠️ File picker failed, falling back to download:', error);
@@ -87,7 +85,7 @@ export const downloadResumeAsPDF = async (
     }
     
     // Fallback: Use traditional download
-    console.log('💾 Using fallback download method...');
+    //console.log('💾 Using fallback download method...');
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -95,7 +93,7 @@ export const downloadResumeAsPDF = async (
     link.click();
     window.URL.revokeObjectURL(url);
     
-    console.log('✅ PDF download completed successfully!');
+    //console.log('✅ PDF download completed successfully!');
     onSuccess?.();
   } catch (error) {
     console.error('❌ Download failed:', error);

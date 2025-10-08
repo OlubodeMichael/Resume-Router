@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useResume } from '@/context/resumeProvider';
 
 
@@ -8,24 +9,25 @@ export default function JobDescription() {
   const [content, setContent] = useState("");
   const [shouldGenerateResume, setShouldGenerateResume] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { generateResume, parseJobDescription, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent } = useResume();
+  const router = useRouter();
+  const { parseJobDescription, getResume, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent } = useResume();
 
-  // Effect to generate resume when job description is parsed
+  // Effect to get resume when job description is parsed
   useEffect(() => {
-    if (shouldGenerateResume && jobDescription && typeof jobDescription === 'object' && 'id' in jobDescription) {
-        const generateResumeFunction = async () => {
-            await generateResume(jobDescription.id as string);
+    if (shouldGenerateResume && jobDescription && typeof jobDescription === 'object' && 'resumeId' in jobDescription) {
+        const getResumeFunction = async () => {
+            await getResume(jobDescription.resumeId as string);
         }
-        generateResumeFunction();
+        getResumeFunction();
         setShouldGenerateResume(false);
+        
+        // Redirect to the documents page with the resumeId
+        router.push(`/dashboard/documents/${jobDescription.resumeId}`);
     }
-  }, [jobDescription, shouldGenerateResume, generateResume]);
-
-  // Effect to log generated content when it's available and clear the form
+  }, [jobDescription, shouldGenerateResume, getResume, router]);
+  // Effect to log retrieved content when it's available and clear the form
   useEffect(() => {
     if (generatedResumeContent) {
-      console.log('Generated resume content:', generatedResumeContent);
-      // Clear the content and reset the form after successful generation
       setContent("");
       setShouldGenerateResume(false);
     }
