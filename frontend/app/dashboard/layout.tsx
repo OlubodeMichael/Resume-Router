@@ -12,7 +12,7 @@ import {
   X,
   Banknote,
 } from "lucide-react";
-import { useAuth } from "@/context/authProvider";
+import { useAuth } from "@/hooks/authProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

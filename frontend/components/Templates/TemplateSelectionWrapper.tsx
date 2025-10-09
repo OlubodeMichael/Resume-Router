@@ -1,7 +1,7 @@
 'use client';
 
-import { useAuth } from '@/context/authProvider';
-import { TemplateProvider, useTemplate } from '@/context/TemplateProvider';
+import { useAuth } from '@/hooks/authProvider';
+import { TemplateProvider, useTemplate } from '@/hooks/TemplateProvider';
 import Image from 'next/image';
 import type { PdfItem } from '@/lib/templates';
 import Loading from '@/components/loading';

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { User, Edit3 } from "lucide-react";
 import PersonalInfoForm from "../Forms/PersonalInfoForm";
-import { usePersonalInfo } from "../../context/personalInfoProvider";
+import { usePersonalInfo } from "../../hooks/personalInfoProvider";
 //import { useAuth } from "../../context/authProvider";
 
 export default function PersonalInfo() {

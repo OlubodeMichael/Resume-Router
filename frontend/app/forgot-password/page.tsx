@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Mail } from "lucide-react";
-import { useAuth } from "@/context/authProvider";
+import { useAuth } from "@/hooks/authProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface ForgotPasswordResponse {

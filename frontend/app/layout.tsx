@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/authProvider";
-import { ProfileProvider } from "@/context/profileProvider";
-import { ResumeProvider } from "@/context/resumeProvider";
-import { PersonalInfoProvider } from "@/context/personalInfoProvider";
+import { AuthProvider } from "@/hooks/authProvider";
+import { ProfileProvider } from "@/hooks/profileProvider";
+import { ResumeProvider } from "@/hooks/resumeProvider";
+import { PersonalInfoProvider } from "@/hooks/personalInfoProvider";
 
 
 

@@ -144,24 +144,6 @@ export default function SideBar({
           ))}
         </div>
       </div>
-
-      {/* Help Section */}
-      <div className="mt-6 pt-6 border-t border-gray-100">
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-          <div className="flex items-start">
-            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-white">
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <path d="M12 17h.01" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-blue-900 mb-1">Need Help?</h4>
-              <p className="text-xs text-blue-700">Get support with your job search journey</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

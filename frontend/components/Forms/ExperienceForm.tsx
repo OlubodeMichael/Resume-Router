@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useProfile } from "@/context/profileProvider";
+import { useProfile } from "@/hooks/profileProvider";
 import { X, Plus, Briefcase, Loader2, Trash2 } from "lucide-react";
 import { convertDateForInput } from "@/lib/formateDate";
 import DatePicker from "@/components/Ui/DatePicker";

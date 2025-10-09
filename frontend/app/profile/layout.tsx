@@ -1,5 +1,5 @@
 "use client";
-import { useAuth } from "../../context/authProvider";
+import { useAuth } from "../../hooks/authProvider";
 import SideBar from "@/components/Ui/SideBar";
 import { UserIcon } from "lucide-react";
 import { useState } from "react";

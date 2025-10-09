@@ -1,4 +1,4 @@
-import { useAuth } from "@/context/authProvider";
+import { useAuth } from "@/hooks/authProvider";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 

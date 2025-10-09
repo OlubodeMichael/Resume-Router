@@ -1,5 +1,5 @@
 "use client";
-import { useProfile } from "@/context/profileProvider";
+import { useProfile } from "@/hooks/profileProvider";
 import { X } from "lucide-react";
 import SkillInput from "./SkillInput";
 

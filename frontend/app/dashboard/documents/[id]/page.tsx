@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useAuth } from "@/context/authProvider";
-import { useResume } from "@/context/resumeProvider";
+import { useAuth } from "@/hooks/authProvider";
+import { useResume } from "@/hooks/resumeProvider";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { ToastContainer, useToast } from "@/components/Ui/Toast";
 import { EditableTemplateRenderer } from "@/lib/TemplateEngine";

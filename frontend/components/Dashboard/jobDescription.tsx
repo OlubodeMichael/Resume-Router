@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useResume } from '@/context/resumeProvider';
+import { useResume } from '@/hooks/resumeProvider';
 
 
 export default function JobDescription() {

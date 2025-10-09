@@ -11,7 +11,7 @@
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "@supabase/supabase-js": "^2.50.0",
-    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query": "^5.90.2",
     "@tiptap/extension-link": "^3.4.1",
     "@tiptap/extension-placeholder": "^3.4.1",
     "@tiptap/extension-text-align": "^3.4.1",
