@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { useToast } from '@/components/Ui/Toast';
+import { useToast, ToastContainer } from '@/components/Ui/Toast';
 
 interface GeneratedResume {
   id?: string;
@@ -29,7 +29,7 @@ interface ResumeContextType {
   generatedResumeContent: GeneratedResume | null;
   useResumeSSE: (resumeId: string) => Status | null;
   status: Status | null;
-  getResume: (resumeId: string) => Promise<void>;
+  getResume: (resumeId: string, showToast?: boolean) => Promise<void>;
   getResumes: () => Promise<void>;
   resumes: GeneratedResume[];
   setGeneratedResumeContent: (generatedResumeContent: GeneratedResume | null) => void;
@@ -50,7 +50,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     const [status, setStatus] = useState<Status | null>(null);
     const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const { showSuccess, showError } = useToast();
+    const { toasts, removeToast, showSuccess, showError } = useToast();
 
 
     const parseJobDescription = async (jobDescription: string) => {
@@ -139,7 +139,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
-    const getResume = async (resumeId: string) => {
+    const getResume = async (resumeId: string, showToast: boolean = false) => {
         setIsLoading(true);
         setError(null);
         try {
@@ -158,11 +158,13 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             
             if (data.resume) {
                 setGeneratedResumeContent(data.resume);
-                showSuccess(
-                    'Resume Retrieved Successfully!',
-                    'Your resume has been loaded.',
-                    3000
-                );
+                if (showToast) {
+                    showSuccess(
+                        'Resume Retrieved Successfully!',
+                        'Your resume has been loaded.',
+                        3000
+                    );
+                }
             } else {
                 throw new Error('Invalid response format');
             }
@@ -250,6 +252,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             }}
         >
             {children}
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
         </ResumeContext.Provider>
     )
 }

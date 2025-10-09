@@ -1,64 +1,121 @@
+// app/components/ResumeLoading.tsx
 "use client";
 
-
 export default function ResumeLoading() {
-    return (
-        <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-            <div className="max-w-md w-full">
-                {/* Main loading card */}
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-                    {/* Animated logo/icon */}
-                    <div className="relative mb-8">
-                        <div className="w-20 h-20 mx-auto relative">
-                            {/* Outer ring */}
-                            <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                            {/* Spinning ring */}
-                            <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 border-r-blue-600 rounded-full animate-spin"></div>
-                            {/* Inner pulsing dot */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="space-y-4">
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Generating Your Resume
-                        </h1>
-                        <p className="text-gray-600 leading-relaxed">
-                            Our AI is crafting a personalized resume tailored to your job description. This usually takes 30-60 seconds.
-                        </p>
-                    </div>
-
-                    {/* Progress indicator */}
-                    <div className="mt-8">
-                        <div className="flex items-center justify-center space-x-2 mb-3">
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                            Processing your information...
-                        </div>
-                    </div>
-                </div>
-
-                {/* Additional info card */}
-                <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-100">
-                    <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div className="text-sm text-blue-800">
-                            <p className="font-medium">What&apos;s happening?</p>
-                            <p className="mt-1">We&apos;re analyzing your job description and generating a tailored resume that highlights your most relevant skills and experience.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-[850px]">
+        {/* Status message */}
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-4 py-2 border border-gray-200">
+            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-sm text-gray-700">Tailoring your resume...</span>
+          </div>
         </div>
-    )
+
+        {/* Resume skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-12 space-y-8">
+          {/* Header - Name and contact */}
+          <div className="space-y-3 pb-6 border-b border-gray-200">
+            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+            <div className="flex gap-4">
+              <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-36 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Summary section */}
+          <div className="space-y-3">
+            <div className="h-5 w-32 bg-gray-300 rounded animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-3/4 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Experience section */}
+          <div className="space-y-4">
+            <div className="h-5 w-40 bg-gray-300 rounded animate-pulse" />
+            
+            {/* Experience item 1 */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+                <div className="h-3 w-28 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="h-3 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="space-y-1.5 mt-2">
+                <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-4/5 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+
+            {/* Experience item 2 */}
+            <div className="space-y-2 pt-3">
+              <div className="flex justify-between items-start">
+                <div className="h-4 w-52 bg-gray-200 rounded animate-pulse" />
+                <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="h-3 w-36 bg-gray-200 rounded animate-pulse" />
+              <div className="space-y-1.5 mt-2">
+                <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-5/6 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Education section */}
+          <div className="space-y-3">
+            <div className="h-5 w-32 bg-gray-300 rounded animate-pulse" />
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <div className="h-4 w-56 bg-gray-200 rounded animate-pulse" />
+                <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="h-3 w-44 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Skills section */}
+          <div className="space-y-3">
+            <div className="h-5 w-24 bg-gray-300 rounded animate-pulse" />
+            <div className="flex flex-wrap gap-2">
+              <div className="h-7 w-20 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-7 w-24 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-7 w-28 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-7 w-20 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-7 w-24 bg-gray-200 rounded-full animate-pulse" />
+              <div className="h-7 w-32 bg-gray-200 rounded-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Progress indicator */}
+        <div className="mt-6">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
+            <div 
+              className="h-full w-1/3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600"
+              style={{
+                animation: 'slide 2s ease-in-out infinite'
+              }}
+            />
+          </div>
+          <style jsx>{`
+            @keyframes slide {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(400%); }
+            }
+          `}</style>
+        </div>
+
+        {/* Footnote */}
+        <p className="mt-4 text-center text-xs text-gray-500">
+          This usually takes a few seconds
+        </p>
+      </div>
+    </div>
+  );
 }
