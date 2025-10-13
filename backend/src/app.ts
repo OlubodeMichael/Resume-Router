@@ -4,6 +4,8 @@ import cors from "cors";
 import passport from "../config/passport";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 
 import authRoute from "./routes/authRoute";
@@ -18,6 +20,17 @@ import resumeRoute from "./routes/resumeRoute"
 
 
 const app = express();
+app.use(helmet());
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, 
+  standardHeaders: true,     // adds RateLimit-* headers
+  legacyHeaders: false,
+  message: 'Too many requests. Please try again later.',
+});
+
+app.use( "api/", limiter);
+
 
 app.use(cors({
     origin: [
@@ -27,7 +40,9 @@ app.use(cors({
       ],
     credentials: true,
 }));
+
 app.use(express.json());
+
 app.use(morgan("dev"));
 app.use(cookieParser());
 

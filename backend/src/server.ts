@@ -1,8 +1,15 @@
 import app from "./app";
 import dotenv from 'dotenv';
 import { prisma } from "../lib/prisma"; // adjust path if needed
+import express from "express";
+import path from "path";
 
 dotenv.config({ path: './config.env' });
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Increase max listeners to prevent memory leak warnings
+process.setMaxListeners(20);
 
 async function startServer() {
   try {
