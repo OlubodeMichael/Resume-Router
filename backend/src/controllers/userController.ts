@@ -24,7 +24,7 @@ export const getUser = catchAsync(async (req: Request, res: Response): Promise<v
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, credits: true },
+    select: { id: true, email: true, name: true, avatarUrl: true, credits: true },
   });
   
 
@@ -65,7 +65,7 @@ export const updateUser = catchAsync(async (req: Request, res: Response): Promis
   const user = await prisma.user.update({
     where: { id: userId },
     data: { name, email, updatedAt: new Date() },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, avatarUrl: true },
   });
  
 

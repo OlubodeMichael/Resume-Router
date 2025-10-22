@@ -12,10 +12,11 @@ model User {
   email            String    @unique
   name             String?
   password         String? // nullable for OAuth
+  avatarUrl        String? // Google profile picture URL
   resetCode        String? // 6-digit code for password reset
   resetCodeExpires DateTime?
   stripeCustomerId String?  @unique
-  credits          Int      @default(20)
+  credits          Int      @default(0)
   createdAt         DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

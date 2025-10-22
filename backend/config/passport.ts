@@ -43,24 +43,40 @@ passport.use(
             data: {
               email: profile.email,
               name: profile.displayName,
-              credits: 20, // Give 50 free credits to new users (5 resumes)
+              avatarUrl: profile.picture, // Save Google profile picture URL
               createdAt: new Date(),
             },
           });
           
-          // Add welcome credits to ledger
-          await prisma.creditLedger.create({
-            data: {
-              userId: user.id,
-              delta: 20,
-              reason: "welcome",
-              opKey: `welcome-${user.id}-${Date.now()}`,
-            },
+          // Add welcome credits to ledger and update user credits
+          await prisma.$transaction(async (tx) => {
+            await tx.creditLedger.create({
+              data: {
+                userId: user!.id,
+                delta: 20,
+                reason: "welcome",
+                opKey: `welcome-${user!.id}-${Date.now()}`,
+              },
+            });
+
+            await tx.user.update({
+              where: { id: user!.id },
+              data: { credits: 20 },
+            });
           });
           
           isNewUser = true;
         } else {
           console.log("Found existing user:", user.id);
+          
+          // Update avatar URL if user doesn't have one or if it's different
+          if (!user.avatarUrl || user.avatarUrl !== profile.picture) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { avatarUrl: profile.picture }
+            });
+            console.log("Updated avatar URL for user:", user.email);
+          }
         }
 
         const token = jwt.sign(

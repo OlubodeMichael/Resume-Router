@@ -61,26 +61,32 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
       email,
       name,
       password: hashedPassword,
-      credits: 20, // Give 20 free credits to new users (2 resumes)
       createdAt: new Date(),
     },
   });
 
-  // Add welcome credits to ledger
-  await prisma.creditLedger.create({
-    data: {
-      userId: user.id,
-      delta: 20,
-      reason: "welcome",
-      opKey: `welcome-${user.id}-${Date.now()}`,
-    },
+  // Add welcome credits to ledger and update user credits
+  await prisma.$transaction(async (tx) => {
+    await tx.creditLedger.create({
+      data: {
+        userId: user.id,
+        delta: 20,
+        reason: "welcome",
+        opKey: `welcome-${user.id}-${Date.now()}`,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: { credits: 20 },
+    });
   });
 
   const token = generateToken(user.id, user.email);
 
   res.status(201).json({
     message: "User created successfully",
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits },
     token,
   });
 });
@@ -110,7 +116,7 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
 
   res.status(200).json({
     message: "Login successful",
-    user: { id: user.id, email: user.email, name: user.name },
+    user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits },
     token,
   });
 });
@@ -195,14 +201,17 @@ export const verifyAuth = async (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; picture: string };
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    const user = await prisma.user.findUnique({ 
+      where: { id: decoded.id },
+      select: { id: true, email: true, name: true, avatarUrl: true, credits: true }
+    });
     if (!user) {
       console.log("User not found in database");
       throw new Error("User not found");
     }
     
     console.log("User verified successfully:", user.email);
-    res.json({ user: { id: user.id, email: user.email, name: user.name, picture: decoded.picture } });
+    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits } });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
   }
