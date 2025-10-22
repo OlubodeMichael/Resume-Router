@@ -15,7 +15,7 @@ model User {
   resetCode        String? // 6-digit code for password reset
   resetCodeExpires DateTime?
   stripeCustomerId String?  @unique
-  credits          Int      @default(0)
+  credits          Int      @default(20)
   createdAt         DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

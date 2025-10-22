@@ -61,7 +61,18 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
       email,
       name,
       password: hashedPassword,
+      credits: 20, // Give 20 free credits to new users (2 resumes)
       createdAt: new Date(),
+    },
+  });
+
+  // Add welcome credits to ledger
+  await prisma.creditLedger.create({
+    data: {
+      userId: user.id,
+      delta: 20,
+      reason: "welcome",
+      opKey: `welcome-${user.id}-${Date.now()}`,
     },
   });
 

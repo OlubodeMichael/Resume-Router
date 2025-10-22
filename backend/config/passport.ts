@@ -43,9 +43,21 @@ passport.use(
             data: {
               email: profile.email,
               name: profile.displayName,
+              credits: 20, // Give 50 free credits to new users (5 resumes)
               createdAt: new Date(),
             },
           });
+          
+          // Add welcome credits to ledger
+          await prisma.creditLedger.create({
+            data: {
+              userId: user.id,
+              delta: 20,
+              reason: "welcome",
+              opKey: `welcome-${user.id}-${Date.now()}`,
+            },
+          });
+          
           isNewUser = true;
         } else {
           console.log("Found existing user:", user.id);
