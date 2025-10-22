@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useResume } from '@/hooks/resumeProvider';
+import UpgradePrompt from '@/components/UpgradePrompt';
 
 
 export default function JobDescription() {
@@ -10,7 +11,7 @@ export default function JobDescription() {
   const [shouldGenerateResume, setShouldGenerateResume] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
-  const { parseJobDescription, getResume, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent } = useResume();
+  const { parseJobDescription, getResume, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent, showUpgradePrompt, setShowUpgradePrompt } = useResume();
 
   // Effect to get resume when job description is parsed
   useEffect(() => {
@@ -122,6 +123,12 @@ export default function JobDescription() {
           </button>
         </div>
       </form>
+      
+      {/* Upgrade Prompt */}
+      <UpgradePrompt 
+        show={showUpgradePrompt} 
+        onClose={() => setShowUpgradePrompt(false)} 
+      />
     </div>
   );
 }

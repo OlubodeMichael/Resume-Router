@@ -31,10 +31,13 @@ interface ResumeContextType {
   status: Status | null;
   getResume: (resumeId: string, showToast?: boolean) => Promise<void>;
   getResumes: () => Promise<void>;
+  deleteResume: (resumeId: string) => Promise<void>;
   resumes: GeneratedResume[];
   setGeneratedResumeContent: (generatedResumeContent: GeneratedResume | null) => void;
   parseJobDescription: (jobDescription: string) => Promise<void>;
   generateResume: (jobDescriptionId: string) => Promise<void>;
+  showUpgradePrompt: boolean;
+  setShowUpgradePrompt: (show: boolean) => void;
 }
 
 const ResumeContext = createContext<ResumeContextType | null>(null);
@@ -47,6 +50,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     const [resumes, setResumes] = useState<GeneratedResume[]>([]);
     const [jobDescription, setJobDescription] = useState<JobDescription | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
     const [status, setStatus] = useState<Status | null>(null);
     const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -68,9 +72,17 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             
             
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error response:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+                console.error('Error response:', errorData);
+                
+                // Check if it's an insufficient credits error
+                if (response.status === 402 && errorData.error === 'insufficient_credits') {
+                    setShowUpgradePrompt(true);
+                    setError(null); // Clear any existing error
+                    return;
+                }
+                
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
@@ -229,6 +241,45 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         
           return status;
     }
+
+    const deleteResume = async (resumeId: string) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/resumes/${resumeId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Delete resume error response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Delete resume response:', data);
+            
+            // Remove the deleted resume from the resumes array
+            setResumes(prevResumes => prevResumes.filter(resume => resume.id !== resumeId));
+            
+            showSuccess(
+                'Resume Deleted Successfully!',
+                'Your resume has been permanently deleted.',
+                3000
+            );
+        } catch (err) {
+            console.error('Delete resume error:', err);
+            setError((err as Error).message);
+            showError(
+                'Failed to Delete Resume',
+                (err as Error).message || 'Please try again later.',
+                5000
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    }
     return (
         <ResumeContext.Provider 
             value={{ 
@@ -248,7 +299,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                 setGeneratedResumeContent, 
                 generatedResumeContent, 
                 parseJobDescription, 
-                generateResume 
+                generateResume,
+                deleteResume,
+                showUpgradePrompt,
+                setShowUpgradePrompt
             }}
         >
             {children}

@@ -5,7 +5,7 @@ import { AuthProvider } from "@/hooks/authProvider";
 import { ProfileProvider } from "@/hooks/profileProvider";
 import { ResumeProvider } from "@/hooks/resumeProvider";
 import { PersonalInfoProvider } from "@/hooks/personalInfoProvider";
-
+import { CheckoutProvider } from "@/hooks/CheckoutProvider";
 
 
 const geistSans = Geist({
@@ -87,7 +87,9 @@ export default function RootLayout({
           <ProfileProvider>
             <ResumeProvider>
               <PersonalInfoProvider>
+                <CheckoutProvider>
                   {children}
+                </CheckoutProvider>
               </PersonalInfoProvider>
             </ResumeProvider>
           </ProfileProvider>

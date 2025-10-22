@@ -193,12 +193,12 @@ export default function Profile() {
   };
 
   if (loading) {
-    return <Loading message="Loading profile..." />;
+    return <Loading message="Loading profile..." className="flex justify-center items-center min-h-screen" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="mb-4">
             <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -221,7 +221,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-scree">
       {/* Full Width Profile Editor */}
       
       <div className="w-full px-3 sm:px-6 md:px-8 lg:px-12">
