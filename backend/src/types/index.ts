@@ -3,3 +3,4 @@ export interface JobDescriptionInput {
     source?: string;
   }
 
+export type PlanTier = "free" | "credits" | "pass";

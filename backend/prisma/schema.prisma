@@ -14,12 +14,16 @@ model User {
   password         String? // nullable for OAuth
   resetCode        String? // 6-digit code for password reset
   resetCodeExpires DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  stripeCustomerId String?  @unique
+  credits          Int      @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   profile         Profile?
   resumes         Resume[]
   jobDescriptions JobDescription[]
+  subscriptions   Subscription[]
+  creditLedger    CreditLedger[]
 
   @@index([createdAt])
 }
@@ -113,4 +117,38 @@ enum ResumeStatus {
   processing
   ready
   failed
+}
+
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  stripeSubscriptionId String   @unique
+  status               String
+  currentPeriodEnd     DateTime
+  priceId              String
+  productId            String
+
+  @@index([userId])
+}
+
+model CreditLedger {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  delta                  Int
+  reason                 String
+  opKey                  String?  @unique       // ← idempotency key for spends/refunds
+  stripePaymentIntentId  String?  @unique
+  createdAt              DateTime @default(now())
+
+  @@index([userId])
+}
+
+
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  createdAt     DateTime @default(now())
 }

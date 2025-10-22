@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import * as Resume from '../controllers/resumeController';
 import { protect } from '../controllers/authController';
+import { requireEntitlement } from '../middleware/requireEntitlement';
 
 const router = express.Router();
 
@@ -34,7 +35,10 @@ const upload = multer({
   }
 });
 
-router.post('/', protect, Resume.createResume);
+router.post('/', protect, requireEntitlement({ 
+  feature: 'resume', 
+  creditCost: 10, 
+  opKeyFromReq: (req) => req.body.resumeId || `resume:${req.user.id}:${Date.now()}` }), Resume.createResume);
 router.get('/', protect, Resume.getResumes);
 router.get('/:id', protect, Resume.getResume);
 router.delete('/:id', protect, Resume.deleteResume);
