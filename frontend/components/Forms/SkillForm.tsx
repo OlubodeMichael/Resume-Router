@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useProfile } from "@/context/profileProvider";
+import { useProfile } from "@/hooks/profileProvider";
 import { X } from "lucide-react";
 
 interface SkillFormProps {

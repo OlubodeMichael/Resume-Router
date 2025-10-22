@@ -8,6 +8,9 @@ import fs from "fs/promises";
 import * as fsSync from "fs";
 import { extractProfileDataWithLangChain } from '../services/resume.service';
 import AppError from '../../utils/appError';
+import { processResumeAsync } from '../../utils/worker';
+import { $Enums } from '@prisma/client';
+import { createDraftAndStart } from '../services/resumeDraft.service';
 
 // Extend Express Request to include file property
 interface RequestWithFile extends Request {
@@ -88,33 +91,77 @@ async function parseDocxStream(filePath: string): Promise<string> {
 
 
 // Create Resume
-export const createResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
-  const userId = (req.user as any)?.id;
-  const { jobDescriptionId } = req.body;
+// POST /api/resumes
+export const createResume = catchAsync(async (req, res) => {
+  const userId = (req.user as any)?.id as string | undefined;
+  const { jd, tone = "neutral", template }: { jd?: string; tone?: string; template?: string } = req.body || {};
 
-  if (!userId) {
-    res.status(401).json({ message: 'User not authenticated' });
-    return;
+  if (!userId) return void res.status(401).json({ message: "User not authenticated" });
+  if ((!jd || typeof jd !== "string" || jd.trim().length < 30) && !template) {
+    return void res.status(400).json({ message: "Provide a valid job description (≥ 30 chars) or a template." });
   }
 
-  // Generate resume content
-  const content = await generateResume(userId, jobDescriptionId);
+  const resumeId = await createDraftAndStart({
+    userId,
+    jd: jd ?? "",
+    template,
+    tone,
+  });
 
-  // Save to database
-  const resume = await prisma.resume.create({
+  res.status(201).json({ resumeId, status: "processing" });
+});
+
+
+export const tailorResume = catchAsync(async (req, res) => {
+  const userId = (req.user as any)?.id as string | undefined;
+  const { id } = req.params as { id: string };
+  const { jd, tone = "neutral" } = (req.body ?? {}) as { jd?: string; tone?: string };
+
+  if (!userId) return void res.status(401).json({ message: "User not authenticated" });
+
+  const exists = await prisma.resume.findFirst({ where: { id, userId }, select: { id: true } });
+  if (!exists) return void res.status(404).json({ message: "Resume not found" });
+
+  await prisma.resume.update({
+    where: { id },
     data: {
-      userId,
-      jobDescriptionId: jobDescriptionId || null,
-      content,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: $Enums.ResumeStatus.processing,
+      ...(typeof jd === "string" ? { jdRaw: jd } : {}),
+      errorMessage: null,
     },
   });
 
-  res.status(201).json({
-    message: 'Resume created successfully',
-    resume,
+  // reuse worker directly (no need to create a new draft)
+  void processResumeAsync({
+    resumeId: id,
+    userId,
+    jd: jd ?? "",
+    tone,
   });
+
+  res.status(200).json({ status: "processing" });
+});
+
+export const getResumeStatus = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id as string | undefined;
+  const { id } = req.params as { id: string };
+
+  if (!userId) {
+    res.status(401).json({ message: "User not authenticated" });
+    return;
+  }
+
+  const resume = await prisma.resume.findFirst({
+    where: { id, userId },
+    select: { status: true },
+  });
+
+  if (!resume) {
+    res.status(404).json({ message: "Resume not found" });
+    return;
+  }
+
+  res.status(200).json({ status: resume.status });
 });
 
 // Get All Resumes for User
@@ -129,11 +176,19 @@ export const getResumes = catchAsync(async (req: Request, res: Response): Promis
   const resumes = await prisma.resume.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
+    select: { id: true, createdAt: true, updatedAt: true, status: true, title: true},
   });
+
+  // Format dates to ISO string
+  const formattedResumes = resumes.map(resume => ({
+    ...resume,
+    createdAt: resume.createdAt.toISOString(),
+    updatedAt: resume.updatedAt.toISOString(),
+  }));
 
   res.status(200).json({
     message: 'Resumes fetched successfully',
-    resumes,
+    resumes: formattedResumes,
   });
 });
 
@@ -148,7 +203,10 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
   }
 
   const resume = await prisma.resume.findFirst({
-    where: { id, userId },
+    where: { 
+      id, 
+      userId }, 
+      
   });
 
   if (!resume) {
@@ -156,9 +214,16 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
     return;
   }
 
+  // Format dates to ISO string
+  const formattedResume = {
+    ...resume,
+    createdAt: resume.createdAt.toISOString(),
+    updatedAt: resume.updatedAt.toISOString(),
+  };
+
   res.status(200).json({
     message: 'Resume fetched successfully',
-    resume,
+    resume: formattedResume,
   });
 });
 
@@ -256,3 +321,117 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
   }
 });
 
+
+/*
+export const setTemplateId = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id as string | undefined;
+  const { resumeId } = req.params as { resumeId: string };
+  const { templateId } = req.body as { templateId?: string };
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+  if (!templateId) {
+    res.status(400).json({ message: 'templateId is required' });
+    return;
+  }
+
+  // single write + ownership enforcement
+  const { count } = await prisma.resume.updateMany({
+    where: { id: resumeId, userId },
+    data: { templateId: templateId as any }, 
+  });
+
+  if (count === 0) {
+    res.status(404).json({ message: 'Resume not found' });
+    return;
+  }
+
+  res.status(200).json({ templateId });
+});
+
+export const getTemplateId = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id as string | undefined;
+  const { resumeId } = req.params as { resumeId: string };
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  const resume = await prisma.resume.findFirst({
+    where: { id: resumeId, userId },
+    select: { templateId: true },
+  });
+
+  if (!resume) {
+    res.status(404).json({ message: 'Resume not found' });
+    return;
+  }
+
+  res.status(200).json({ templateId: resume.templateId ?? null });
+});
+*/
+
+export const resumeStream = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  // SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+
+  const send = (event: string, data: any) => {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // push current status immediately
+  const first = await prisma.resume.findUnique({
+    where: { id },
+    select: { status: true, errorMessage: true, updatedAt: true },
+  });
+  if (!first) {
+    send("error", { message: "not_found" });
+    res.end();
+    return;
+  }
+  send("status", first);
+
+  // simple server-side polling loop (backend reads DB, frontend does NOT)
+  const interval = setInterval(async () => {
+    try {
+      const r = await prisma.resume.findUnique({
+        where: { id },
+        select: { status: true, errorMessage: true, updatedAt: true },
+      });
+      if (!r) {
+        send("error", { message: "not_found" });
+        clearInterval(interval);
+        res.end();
+        return;
+      }
+      send("status", r);
+      if (r.status === "ready" || r.status === "failed") {
+        send("complete", r);
+        clearInterval(interval);
+        res.end();
+        return;
+      }
+    } catch {
+      send("error", { message: "db_error" });
+      clearInterval(interval);
+      res.end();
+    }
+  }, 1000);
+
+  // keep-alive ping for proxies
+  const ping = setInterval(() => send("ping", Date.now()), 100000);
+
+  // cleanup on client disconnect
+  req.on("close", () => {
+    clearInterval(interval);
+    clearInterval(ping);
+  });
+})

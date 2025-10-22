@@ -1,0 +1,1 @@
+export const resetEmailTemplate = function (name: string, resetCode: string) {}

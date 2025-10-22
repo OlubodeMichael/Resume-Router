@@ -1,14 +1,9 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import {
-  createResume,
-  getResumes,
-  getResume,
-  deleteResume,
-  parseResume,
-} from '../controllers/resumeController';
+import * as Resume from '../controllers/resumeController';
 import { protect } from '../controllers/authController';
+import { requireEntitlement } from '../middleware/requireEntitlement';
 
 const router = express.Router();
 
@@ -40,10 +35,20 @@ const upload = multer({
   }
 });
 
-router.post('/', protect, createResume);
-router.get('/', protect, getResumes);
-router.get('/:id', protect, getResume);
-router.delete('/:id', protect, deleteResume);
-router.post('/parse', protect, upload.single('resume'), parseResume);
+router.post('/', protect, requireEntitlement({ 
+  feature: 'resume', 
+  creditCost: 10, 
+  opKeyFromReq: (req) => req.body.resumeId || `resume:${req.user.id}:${Date.now()}` }), Resume.createResume);
+router.get('/', protect, Resume.getResumes);
+router.get('/:id', protect, Resume.getResume);
+router.delete('/:id', protect, Resume.deleteResume);
+router.post('/parse', protect, upload.single('resume'), Resume.parseResume);
+router.post('/:id/tailor', protect, Resume.tailorResume);
+router.get('/:id/status', protect, Resume.getResumeStatus);
+router.get('/:id/stream', protect, Resume.resumeStream);
+/*
+router.post('/:resumeId/template', protect, setTemplateId);
+router.get('/:resumeId/template', protect, getTemplateId);
+*/
 
 export default router;

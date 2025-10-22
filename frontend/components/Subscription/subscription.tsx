@@ -4,6 +4,7 @@ import { Check, Star, Zap, Crown, Shield, Sparkles, Award } from "lucide-react";
 import { PLANS, formatApprox, Plan } from "@/lib/pricing";
 import { LucideIcon, X } from "lucide-react";
 import Logo from "@/components/logo";
+import { useCheckout } from "@/hooks/CheckoutProvider";
 
 interface ExtendedPlan extends Omit<Plan, 'cta' | 'features'> {
     features: readonly string[];
@@ -16,7 +17,7 @@ interface ExtendedPlan extends Omit<Plan, 'cta' | 'features'> {
 }
 
 export default function Subscription({ onClose }: { onClose: () => void }) {
-
+    const { startCheckout, loading, error } = useCheckout();
     const plans: ExtendedPlan[] = [
         {
             ...PLANS.free,
@@ -94,6 +95,24 @@ export default function Subscription({ onClose }: { onClose: () => void }) {
                         Unlock your career potential with our AI-powered resume builder. 
                         Professional templates, expert guidance, and results that get you hired.
                     </p>
+                    
+                    {/* Error Display */}
+                    {error && (
+                        <div className="mt-6 max-w-md mx-auto">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0">
+                                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-3">
+                                        <p className="text-sm text-red-800">{error}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Pricing Cards */}
@@ -189,15 +208,20 @@ export default function Subscription({ onClose }: { onClose: () => void }) {
                                                     : plan.disabled
                                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                     : 'bg-gray-900 text-white hover:bg-gray-800 shadow-lg hover:shadow-xl'
-                                            }`}
-                                            disabled={plan.disabled}
-                                            onClick={() => {
-                                                if (!plan.disabled && typeof plan.cta === 'object' && 'href' in plan.cta) {
-                                                    window.location.href = plan.cta.href;
+                                            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            disabled={plan.disabled || loading}
+                                            onClick={async () => {
+                                                if (!plan.disabled && plan.id !== 'free') {
+                                                    try {
+                                                        const planType = plan.id === 'credits-1000' ? 'credits' : 'pass3';
+                                                        await startCheckout(planType);
+                                                    } catch (err) {
+                                                        console.error('Checkout failed:', err);
+                                                    }
                                                 }
                                             }}
                                         >
-                                            {typeof plan.cta === 'object' && 'label' in plan.cta ? plan.cta.label : plan.cta}
+                                            {loading ? 'Processing...' : (typeof plan.cta === 'object' && 'label' in plan.cta ? plan.cta.label : plan.cta)}
                                         </button>
                                     </div>
                                 </div>

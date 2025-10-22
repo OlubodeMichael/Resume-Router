@@ -5,7 +5,6 @@ import {
   DoorOpen,
   Plus,
   FileText,
-  BookOpen,
   LayoutTemplate,
   Settings,
   User,
@@ -13,7 +12,7 @@ import {
   X,
   Banknote,
 } from "lucide-react";
-import { useAuth } from "@/context/authProvider";
+import { useAuth } from "@/hooks/authProvider";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,8 +22,8 @@ import Subscription from "@/components/Subscription/subscription";
 const navItems = [
   { icon: Plus, label: "New", href: "/dashboard/" },
   { icon: FileText, label: "Documents", href: "/dashboard/documents" },
-  { icon: BookOpen, label: "Library", href: "/dashboard/library" },
   { icon: LayoutTemplate, label: "Templates", href: "/dashboard/templates" },
+  { icon: User, label: "Profile", href: "/dashboard/profile" },
 ];
 
 
@@ -228,13 +227,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     ? 'absolute bottom-full left-1/2 transform -translate-x-1/2' 
                     : 'fixed bottom-32 left-20'
                 }`} style={{ backgroundColor: 'white' }}>
-                  <Link
-                    href="/profile"
-                    className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <User className="w-4 h-4 mr-3 flex-shrink-0" />
-                    <span>Profile</span>
-                  </Link>
                   <button 
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                     onClick={handleSettingsClick}

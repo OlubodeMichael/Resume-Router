@@ -65,7 +65,7 @@
               {{#if url}}<a href="{{url}}">{{name}}</a>{{else}}{{name}}{{/if}}
               {{#if stack}}<span class="tech-stack">&nbsp;| <em>{{stack}}</em></span>{{/if}}
             </span>
-            <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+            {{#if start}}<span class="normal">{{{start}}} &ndash; {{{end}}}</span>{{/if}}
           </h3>
           <ul>
             {{#each bullets}}<li>{{item}}</li>{{/each}}
@@ -128,10 +128,14 @@
         margin: 0.25in 0.75in 0.1in 0.75in; 
       }
       
-      h1, h2, h3, h4, p, a, li {
+      h1, h2, h3, h4, p, a, li, .normal {
         color: black !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+      }
+      
+      .normal {
+        font-weight: bold !important;
       }
       
       .headerInfo > ul > li:not(:last-child)::after {
@@ -181,7 +185,7 @@
     p { 
       margin: 0; 
       padding: 0; 
-      font-size: 11pt;
+      font-size: 10pt;
     }
     
     a { 
@@ -193,7 +197,7 @@
     ul { 
       margin: 2pt 0; 
       padding-left: 0.3in; 
-      font-size: 11pt; 
+      font-size: 10pt; 
       list-style-type: disc;
     }
     
@@ -204,7 +208,7 @@
     }
     
     ul > li:last-child { 
-      margin-bottom: 4pt; 
+      margin-bottom: 3pt; 
     }
 
     /* Header info line */
@@ -223,7 +227,7 @@
     
     .headerInfo > ul > li { 
       white-space: nowrap;
-      font-size: 11pt;
+      font-size: 10pt;
       list-style: none !important;
     }
     
@@ -251,7 +255,8 @@
     }
     
     .normal {
-      font-weight: normal;
+      font-weight: bold;
+
     }
   `,
   page: { size: 'letter', margin: '0.25in 0.75in 0.1in 0.75in' },

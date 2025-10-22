@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { usePersonalInfo } from "../../context/personalInfoProvider";
-import { useAuth } from "../../context/authProvider";
+import { usePersonalInfo } from "../../hooks/personalInfoProvider";
+import { useAuth } from "../../hooks/authProvider";
 
 interface PersonalInfoData {
   fullName: string;

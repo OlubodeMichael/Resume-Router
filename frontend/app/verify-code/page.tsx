@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useAuth } from "@/context/authProvider";
+import { useAuth } from "@/hooks/authProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface VerifyResetCodeResponse {

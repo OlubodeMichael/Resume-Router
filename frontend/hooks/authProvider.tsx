@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       const data = await response.json();
       setUser(data.user);
-      Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
+      Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
     } catch (err) {
       setError((err as Error).message);
       Cookies.remove("authToken");
@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       const data = await response.json();
       setUser(data.user);
-      Cookies.set("authToken", data.token, { expires: 1 }); // 1 day
+      Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
     } catch (err) {
       setError((err as Error).message);
       Cookies.remove("authToken");

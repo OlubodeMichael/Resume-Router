@@ -1,7 +1,6 @@
 // src/config/passport.ts
 import { Strategy as GoogleStrategy } from "passport-google-oauth2";
 import { prisma } from "../lib/prisma";
-import sendEmail from "./email";
 import * as jwt from "jsonwebtoken";
 import passport from "passport";
 
@@ -37,30 +36,56 @@ passport.use(
           where: { email: profile.email },
         });
 
+        let isNewUser = false;
         if (!user) {
           console.log("Creating new user for email:", profile.email);
           user = await prisma.user.create({
             data: {
               email: profile.email,
               name: profile.displayName,
+              avatarUrl: profile.picture, // Save Google profile picture URL
               createdAt: new Date(),
             },
           });
+          
+          // Add welcome credits to ledger and update user credits
+          await prisma.$transaction(async (tx) => {
+            await tx.creditLedger.create({
+              data: {
+                userId: user!.id,
+                delta: 20,
+                reason: "welcome",
+                opKey: `welcome-${user!.id}-${Date.now()}`,
+              },
+            });
+
+            await tx.user.update({
+              where: { id: user!.id },
+              data: { credits: 20 },
+            });
+          });
+          
+          isNewUser = true;
         } else {
           console.log("Found existing user:", user.id);
-          const emailSent = await sendEmail(user.email, "Welcome to our platform", "Welcome to our platform");
-          if (!emailSent) {
-            console.error("Failed to send welcome email");
+          
+          // Update avatar URL if user doesn't have one or if it's different
+          if (!user.avatarUrl || user.avatarUrl !== profile.picture) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { avatarUrl: profile.picture }
+            });
+            console.log("Updated avatar URL for user:", user.email);
           }
         }
 
         const token = jwt.sign(
           { id: user.id, email: user.email, name: user.name, picture: profile.picture },
           process.env.JWT_SECRET!,
-          { expiresIn: "1d" }
+          { expiresIn: "7d" }
         );
 
-        const userAuth = { id: user.id, token, email: user.email, name: user.name, picture: profile.picture } as UserAuth;
+        const userAuth = { id: user.id, token, email: user.email, name: user.name, picture: profile.picture, isNewUser } as UserAuth & { isNewUser: boolean };
         console.log("Returning user auth object:", userAuth);
         
         return done(null, userAuth);

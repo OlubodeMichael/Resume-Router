@@ -2,11 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../lib/prisma';
 import { catchAsync } from '../../utils/catchAsync';
 import { formatDate } from '../../utils/formateDate';
+import { rget, rset, rdel } from '../../utils/rcache';
 
 interface Education {
   school: string;
   degree: string;
   fieldOfStudy?: string;
+  location?: string;
   startDate: string;
   endDate?: string | null;
   gpa?: string;
@@ -24,9 +26,9 @@ interface Experience {
 interface Project {
   name: string;
   description: string;
-  technologies: string[];
+  technologies?: string[];
   url?: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string | null;
 }
 
@@ -35,22 +37,54 @@ interface Skill {
   level: string;
 }
 
+const TTL_SEC = 60 * 60 * 24; // 24 hours
+const KProfile = (userId: string) => `rr:v1:profile:${userId}`;
+async function writeThroughProfileCache(userId: string, profile: any) {
+  await rset<any>(KProfile(userId), profile, { ttlSec: TTL_SEC });
+}
+
+async function invalidateProfileCache(userId: string) {
+  await rdel(KProfile(userId));
+}
+
 // Get Profile
 export const getProfile = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
     return;
+    }
+    const key = KProfile(userId);
+
+  const cached = await rget<any>(key);
+  if (cached) {
+    res.status(200).json({
+      message: 'Profile fetched successfully',
+      profile: cached,
+    });
+    return;
   }
 
-  const profile = await prisma.profile.findUnique({
+  let profile = await prisma.profile.findUnique({
     where: { userId },
   });
 
+  // If profile doesn't exist, create an empty one for new users
   if (!profile) {
-    res.status(404).json({ message: 'Profile not found' });
-    return;
+    profile = await prisma.profile.create({
+      data: {
+        userId,
+        skills: [],
+        experience: [],
+        education: [],
+        projects: [],
+        achievements: [],
+        createdAt: new Date(),
+      },
+    });
   }
+
+  await rset<any>(key, profile, { ttlSec: TTL_SEC });
 
   res.status(200).json({
     message: 'Profile fetched successfully',
@@ -92,6 +126,7 @@ export const upsertProfile = catchAsync(async (req: Request, res: Response): Pro
       createdAt: new Date(),
     },
   });
+  await writeThroughProfileCache(userId, profile);
 
   res.status(200).json({
     message: 'Profile saved successfully',
@@ -102,7 +137,7 @@ export const upsertProfile = catchAsync(async (req: Request, res: Response): Pro
 // Add Education Entry
 export const addEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
-  const { school, degree, fieldOfStudy, startDate, endDate, gpa } = req.body;
+  const { school, degree, fieldOfStudy, location, startDate, endDate, gpa } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -123,6 +158,7 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
       school,
       degree,
       fieldOfStudy,
+      location,
       startDate: formatDate(startDate),
       endDate: endDate ? formatDate(endDate) : null,
       gpa,
@@ -143,6 +179,8 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
     },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: 'Education entry added successfully',
     profile: updatedProfile,
@@ -153,7 +191,7 @@ export const addEducationEntry = catchAsync(async (req: Request, res: Response):
 export const updateEducationEntry = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;
   const { index } = req.params;
-  const { school, degree, fieldOfStudy, startDate, endDate, gpa } = req.body;
+  const { school, degree, fieldOfStudy, location, startDate, endDate, gpa } = req.body;
 
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
@@ -183,6 +221,7 @@ export const updateEducationEntry = catchAsync(async (req: Request, res: Respons
     school,
     degree,
     fieldOfStudy,
+    location,
     startDate: formatDate(startDate),
     endDate: endDate ? formatDate(endDate) : null,
     gpa,
@@ -192,6 +231,8 @@ export const updateEducationEntry = catchAsync(async (req: Request, res: Respons
     where: { userId },
     data: { education: currentEducation as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Education entry updated successfully',
@@ -229,6 +270,8 @@ export const deleteEducationEntry = catchAsync(async (req: Request, res: Respons
     where: { userId },
     data: { education: updatedEducation as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Education entry deleted successfully',
@@ -285,6 +328,8 @@ export const addExperienceEntry = catchAsync(async (req: Request, res: Response)
     },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: 'Experience entry added successfully',
     profile: updatedProfile,
@@ -340,6 +385,8 @@ export const updateExperienceEntry = catchAsync(async (req: Request, res: Respon
     data: { experience: currentExperience as any },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: 'Experience entry updated successfully',
     profile: updatedProfile,
@@ -376,6 +423,8 @@ export const deleteExperienceEntry = catchAsync(async (req: Request, res: Respon
     where: { userId },
     data: { experience: updatedExperience as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Experience entry deleted successfully',
@@ -422,6 +471,8 @@ export const addSkill = catchAsync(async (req: Request, res: Response): Promise<
       createdAt: new Date(),
     },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Skill added successfully',
@@ -473,6 +524,8 @@ export const updateSkill = catchAsync(async (req: Request, res: Response): Promi
     data: { skills: currentSkills as any },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: 'Skill updated successfully',
     profile: updatedProfile,
@@ -509,6 +562,8 @@ export const deleteSkill = catchAsync(async (req: Request, res: Response): Promi
     where: { userId },
     data: { skills: updatedSkills as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Skill deleted successfully',
@@ -566,6 +621,8 @@ export const addBulkSkills = catchAsync(async (req: Request, res: Response): Pro
     },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: `${newSkills.length} skills added successfully`,
     profile: updatedProfile,
@@ -581,12 +638,12 @@ export const addProject = catchAsync(async (req: Request, res: Response): Promis
     return;
   }
 
-  if (!name || !description || !technologies || !startDate) {
-    res.status(400).json({ message: 'Name, description, technologies, and startDate are required' });
+  if (!name || !description) {
+    res.status(400).json({ message: 'Name and description are required' });
     return;
   }
 
-  if (!Array.isArray(technologies)) {
+  if (technologies && !Array.isArray(technologies)) {
     res.status(400).json({ message: 'Technologies must be an array' });
     return;
   }
@@ -599,9 +656,9 @@ export const addProject = catchAsync(async (req: Request, res: Response): Promis
     {
       name,
       description,
-      technologies,
-      url,
-      startDate: formatDate(startDate),
+      technologies: technologies || [],
+      url: url || undefined,
+      startDate: startDate ? formatDate(startDate) : undefined,
       endDate: endDate ? formatDate(endDate) : null,
     },
   ];
@@ -620,6 +677,8 @@ export const addProject = catchAsync(async (req: Request, res: Response): Promis
     },
   });
 
+  await writeThroughProfileCache(userId, updatedProfile);
+
   res.status(200).json({
     message: 'Project added successfully',
     profile: updatedProfile,
@@ -636,12 +695,12 @@ export const updateProject = catchAsync(async (req: Request, res: Response): Pro
     return;
   }
 
-  if (!name || !description || !technologies || !startDate) {
-    res.status(400).json({ message: 'Name, description, technologies, and startDate are required' });
+  if (!name || !description) {
+    res.status(400).json({ message: 'Name and description are required' });
     return;
   }
 
-  if (!Array.isArray(technologies)) {
+  if (technologies && !Array.isArray(technologies)) {
     res.status(400).json({ message: 'Technologies must be an array' });
     return;
   }
@@ -663,9 +722,9 @@ export const updateProject = catchAsync(async (req: Request, res: Response): Pro
   currentProjects[projectIndex] = {
     name,
     description,
-    technologies,
-    url,
-    startDate: formatDate(startDate),
+    technologies: technologies || [],
+    url: url || undefined,
+    startDate: startDate ? formatDate(startDate) : undefined,
     endDate: endDate ? formatDate(endDate) : null,
   };
 
@@ -673,6 +732,8 @@ export const updateProject = catchAsync(async (req: Request, res: Response): Pro
     where: { userId },
     data: { projects: currentProjects as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Project updated successfully',
@@ -709,6 +770,8 @@ export const deleteProject = catchAsync(async (req: Request, res: Response): Pro
     where: { userId },
     data: { projects: updatedProjects as any },
   });
+
+  await writeThroughProfileCache(userId, updatedProfile);
 
   res.status(200).json({
     message: 'Project deleted successfully',

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { useAuth } from "../../context/authProvider";
+import { useAuth } from "../../hooks/authProvider";
 import { useRouter } from "next/navigation";
 
 export default function SignIn() {

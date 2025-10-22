@@ -18,3 +18,20 @@ export const formatDate = (dateString: string) => {
   
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
+
+// Format timestamp to human-readable format with date and time
+export const formatTimestamp = (date: Date): string => {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+// Format timestamp to ISO string (for consistent API responses)
+export const formatTimestampISO = (date: Date): string => {
+  return date.toISOString();
+};

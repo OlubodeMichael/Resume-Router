@@ -1,31 +1,34 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useResume } from '@/context/resumeProvider';
+import { useRouter } from "next/navigation";
+import { useResume } from '@/hooks/resumeProvider';
+import UpgradePrompt from '@/components/UpgradePrompt';
 
 
 export default function JobDescription() {
   const [content, setContent] = useState("");
   const [shouldGenerateResume, setShouldGenerateResume] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { generateResume, parseJobDescription, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent } = useResume();
+  const router = useRouter();
+  const { parseJobDescription, getResume, isLoading, error, jobDescription, generatedResumeContent, setGeneratedResumeContent, showUpgradePrompt, setShowUpgradePrompt } = useResume();
 
-  // Effect to generate resume when job description is parsed
+  // Effect to get resume when job description is parsed
   useEffect(() => {
-    if (shouldGenerateResume && jobDescription && typeof jobDescription === 'object' && 'id' in jobDescription) {
-        const generateResumeFunction = async () => {
-            await generateResume(jobDescription.id as string);
+    if (shouldGenerateResume && jobDescription && typeof jobDescription === 'object' && 'resumeId' in jobDescription) {
+        const getResumeFunction = async () => {
+            await getResume(jobDescription.resumeId as string);
         }
-        generateResumeFunction();
+        getResumeFunction();
         setShouldGenerateResume(false);
+        
+        // Redirect to the documents page with the resumeId
+        router.push(`/dashboard/documents/${jobDescription.resumeId}`);
     }
-  }, [jobDescription, shouldGenerateResume, generateResume]);
-
-  // Effect to log generated content when it's available and clear the form
+  }, [jobDescription, shouldGenerateResume, getResume, router]);
+  // Effect to log retrieved content when it's available and clear the form
   useEffect(() => {
     if (generatedResumeContent) {
-      console.log('Generated resume content:', generatedResumeContent);
-      // Clear the content and reset the form after successful generation
       setContent("");
       setShouldGenerateResume(false);
     }
@@ -103,10 +106,15 @@ export default function JobDescription() {
           <button
             type="submit"
             disabled={!content.trim() || isLoading}
-            className="p-2 bg-gray-800 text-white rounded-xl hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center w-[44px] h-[44px] flex-shrink-0"
+            className={`${
+              isLoading ? 'px-4 w-auto' : 'w-[44px]'
+            } p-2 bg-gray-800 text-white rounded-xl hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 h-[44px] flex-shrink-0`}
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm whitespace-nowrap">Parsing...</span>
+              </>
             ) : (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -115,6 +123,12 @@ export default function JobDescription() {
           </button>
         </div>
       </form>
+      
+      {/* Upgrade Prompt */}
+      <UpgradePrompt 
+        show={showUpgradePrompt} 
+        onClose={() => setShowUpgradePrompt(false)} 
+      />
     </div>
   );
 }
