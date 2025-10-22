@@ -30,7 +30,7 @@ function TemplateGrid({ items }: { items: PdfItem[] }) {
 
   if (loading) {
     return (
-      <Loading message="Loading templates..." />
+      <Loading message="Loading templates..." className=""/>
     );
   }
 
@@ -163,7 +163,7 @@ export function TemplateSelectionWrapper({ items }: { items: PdfItem[] }) {
   const { user } = useAuth();
 
   if (!user) {
-    return <Loading message="Loading templates..." />
+    return <Loading message="Loading templates..." className=""/>
   }
 
   return (
