@@ -7,6 +7,7 @@ interface User {
   email: string;
   name: string;
   picture?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -59,7 +60,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (response.ok) {
           const data = await response.json();
           console.log(data.user);
-          setUser(data.user);
+          // Map avatarUrl to picture field for frontend compatibility
+          const userData = {
+            ...data.user,
+            picture: data.user.avatarUrl || data.user.picture
+          };
+          setUser(userData);
         } else {
           setUser(null);
         }
@@ -96,7 +102,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       const data = await response.json();
-      setUser(data.user);
+      // Map avatarUrl to picture field for frontend compatibility
+      const userData = {
+        ...data.user,
+        picture: data.user.avatarUrl || data.user.picture
+      };
+      setUser(userData);
       Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
     } catch (err) {
       setError((err as Error).message);
@@ -128,7 +139,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       
       const data = await response.json();
-      setUser(data.user);
+      // Map avatarUrl to picture field for frontend compatibility
+      const userData = {
+        ...data.user,
+        picture: data.user.avatarUrl || data.user.picture
+      };
+      setUser(userData);
       Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
     } catch (err) {
       setError((err as Error).message);
