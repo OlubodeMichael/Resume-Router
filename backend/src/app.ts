@@ -11,7 +11,7 @@ import authRoute from "./routes/authRoute";
 import usersRoute from "./routes/usersRoute";
 import profileRoute from "./routes/profileRoute";
 import personalInfoRoute from "./routes/personalInfoRoute";
-import jobRoute from "./routes/JobRoute";
+import jobRoute from "./routes/jobRoute";
 import resumeRoute from "./routes/resumeRoute";
 import paymentRoute from "./routes/payment";
 
