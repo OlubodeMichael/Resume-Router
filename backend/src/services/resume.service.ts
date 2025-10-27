@@ -531,9 +531,9 @@ const generationPrompt = PromptTemplate.fromTemplate(`
 async function callModelString(promptText: string): Promise<string> {
   const model = new ChatOpenAI({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     temperature: 0,
-    maxTokens: 1800,
+    maxTokens: 1200, // Reduced from 1800 to make it faster
   });
 
   // Use a simple one-turn user message

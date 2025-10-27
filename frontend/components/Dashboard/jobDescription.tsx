@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useResume } from '@/hooks/resumeProvider';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import { createReactPasteHandler } from '@/lib/pasteUtils';
 
 
 export default function JobDescription() {
@@ -76,12 +75,6 @@ export default function JobDescription() {
     }
   };
 
-  // Handle paste events to strip formatting
-  const handlePaste = createReactPasteHandler({
-    stripFormatting: true,
-    preserveLineBreaks: true
-  });
-
   return (
     <div className="">
       {error && (
@@ -97,7 +90,6 @@ export default function JobDescription() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
             className="flex-1 px-3 py-3 bg-transparent text-gray-800 placeholder-gray-500 resize-none focus:outline-none min-h-[44px] max-h-40"
             placeholder="Paste job description here to generate a tailored resume..."
             required

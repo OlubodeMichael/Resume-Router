@@ -193,12 +193,12 @@ export default function Profile() {
   };
 
   if (loading) {
-    return <Loading message="Loading profile..." className="flex justify-center items-center min-h-screen" />;
+    return <Loading message="Loading profile..." className="flex justify-center items-center h-fit" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="mb-4">
             <svg className="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

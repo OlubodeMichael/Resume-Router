@@ -7,7 +7,7 @@ import ResumesList from "@/components/Resume/Resumes";
 
 
 export default function Documents() {
-  const { getResumes, resumes, isLoading } = useResume();
+  const { getResumes, resumes, isLoading, deleteResume } = useResume();
   const router = useRouter();
   const hasFetched = useRef(false);
 
@@ -143,7 +143,14 @@ export default function Documents() {
             </div>
           </div>
         ) : (
-          <ResumesList resumes={resumes} handleResumeClick={handleResumeClick} getStatusBadge={getStatusBadge} formatDateTime={formatDateTime} />
+          <ResumesList 
+            resumes={resumes} 
+            handleResumeClick={handleResumeClick} 
+            getStatusBadge={getStatusBadge} 
+            formatDateTime={formatDateTime}
+            onDeleteResume={deleteResume}
+            isDeleting={isLoading}
+          />
         )}
       </div>
     </div>
