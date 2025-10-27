@@ -27,7 +27,7 @@ type ProviderProps = {
 };
 
 export const TemplateProvider: React.FC<ProviderProps> = ({ children, resumeId, profileKey }) => {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL 
 
   // localStorage key is per-user + per-resume to avoid collisions
   const LS_KEY = useMemo(

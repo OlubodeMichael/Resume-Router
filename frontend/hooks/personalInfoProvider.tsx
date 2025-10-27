@@ -43,8 +43,8 @@ export const PersonalInfoProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
+  
+  const API_URL = process.env.NEXT_PUBLIC_API_URL 
   const getPersonalInfo = useCallback(async () => {
     try {
       setLoading(true);

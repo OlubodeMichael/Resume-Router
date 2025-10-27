@@ -8,75 +8,121 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(uuid())
-  email            String    @unique
+  id               String           @id @default(uuid())
+  email            String           @unique
   name             String?
-  password         String? // nullable for OAuth
-  avatarUrl        String? // Google profile picture URL
-  resetCode        String? // 6-digit code for password reset
+  password         String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  resetCode        String?
   resetCodeExpires DateTime?
-  stripeCustomerId String?  @unique
-  credits          Int      @default(0)
-  createdAt         DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  profile         Profile?
-  resumes         Resume[]
-  jobDescriptions JobDescription[]
-  subscriptions   Subscription[]
-  creditLedger    CreditLedger[]
+  stripeCustomerId String?          @unique
+  credits          Int              @default(0)
+  avatarUrl        String?
+  creditLedger     CreditLedger[]
+  jobDescriptions  JobDescription[]
+  profile          Profile?
+  resumes          Resume[]
+  subscriptions    Subscription[]
 
   @@index([createdAt])
 }
 
 model Profile {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  skills       Json
+  id           String               @id @default(uuid())
+  userId       String               @unique
   experience   Json
   education    Json
   projects     Json
   achievements Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  skills       Json
   personalInfo PersonalInformation?
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model PersonalInformation {
-  id        String @id @default(uuid())
-  profileId String @unique
-
+  id        String   @id @default(uuid())
+  profileId String   @unique
   fullName  String?
   phone     String?
   location  String?
   linkedIn  String?
-  email     String?
   portfolio String?
   jobTitle  String?
   pronouns  String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  email     String?
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
 model JobDescription {
   id         String   @id @default(uuid())
   userId     String
   content    String
-  parsedData Json // consider Json? if you sometimes store before parsing
+  parsedData Json
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  resumes Resume[]
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes    Resume[]
 
   @@index([userId, createdAt])
+}
+
+model Resume {
+  id               String          @id @default(uuid())
+  userId           String
+  createdAt        DateTime        @default(now())
+  jobDescriptionId String?
+  content          Json?
+  updatedAt        DateTime        @updatedAt
+  errorMessage     String?
+  jdRaw            String?
+  status           ResumeStatus    @default(processing)
+  template         Template?
+  title            String          @default("Untitled")
+  jobDescription   JobDescription? @relation(fields: [jobDescriptionId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([status, createdAt])
+  @@index([jobDescriptionId])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String
+  stripeSubscriptionId String   @unique
+  status               String
+  currentPeriodEnd     DateTime
+  priceId              String
+  productId            String
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model CreditLedger {
+  id                    String   @id @default(cuid())
+  userId                String
+  delta                 Int
+  reason                String
+  stripePaymentIntentId String?  @unique
+  createdAt             DateTime @default(now())
+  opKey                 String?  @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  createdAt     DateTime @default(now())
 }
 
 enum Template {
@@ -89,67 +135,8 @@ enum Template {
   yao
 }
 
-model Resume {
-  id               String  @id @default(uuid())
-  userId           String
-  jobDescriptionId String?
-
-  title        String       @default("Untitled")
-  status       ResumeStatus @default(processing)
-  errorMessage String?
-  content      Json?
-  jdRaw        String?
-
-  // just store which template enum was used (optional)
-  template Template?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  jobDescription JobDescription? @relation(fields: [jobDescriptionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-
-  @@index([userId, updatedAt])
-  @@index([status, createdAt])
-  @@index([jobDescriptionId])
-}
-
 enum ResumeStatus {
   processing
   ready
   failed
-}
-
-
-model Subscription {
-  id                   String   @id @default(cuid())
-  userId               String
-  user                 User     @relation(fields: [userId], references: [id])
-  stripeSubscriptionId String   @unique
-  status               String
-  currentPeriodEnd     DateTime
-  priceId              String
-  productId            String
-
-  @@index([userId])
-}
-
-model CreditLedger {
-  id                     String   @id @default(cuid())
-  userId                 String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  delta                  Int
-  reason                 String
-  opKey                  String?  @unique       // ← idempotency key for spends/refunds
-  stripePaymentIntentId  String?  @unique
-  createdAt              DateTime @default(now())
-
-  @@index([userId])
-}
-
-
-model WebhookEvent {
-  id            String   @id @default(cuid())
-  stripeEventId String   @unique
-  createdAt     DateTime @default(now())
 }

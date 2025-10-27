@@ -19,7 +19,7 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL 
 
   const startCheckout = async (plan: 'credits' | 'pass3') => {
     try {

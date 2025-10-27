@@ -5,6 +5,7 @@ import Handlebars from 'handlebars';
 import DOMPurify from 'isomorphic-dompurify';
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import root from 'react-shadow';
+import { createPasteHandler } from './pasteUtils';
 
 // Template spec interface
 interface TemplateSpec {
@@ -272,6 +273,12 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
       }
     `;
 
+        // Handle paste events to strip formatting
+        const handlePaste = createPasteHandler({
+          stripFormatting: true,
+          preserveLineBreaks: true
+        });
+
         // Handle content changes
         const handleInput = () => {
           if (onContentChange && contentRef.current) {
@@ -282,10 +289,12 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
         const currentElement = contentRef.current;
         currentElement.addEventListener('input', handleInput, true); // Capture for better control
         currentElement.addEventListener('blur', handleInput);
+        currentElement.addEventListener('paste', handlePaste);
 
         return () => {
           currentElement?.removeEventListener('input', handleInput, true);
           currentElement?.removeEventListener('blur', handleInput);
+          currentElement?.removeEventListener('paste', handlePaste);
           const parentStyle = currentElement?.parentElement?.querySelector('.template-style');
           if (parentStyle) parentStyle.remove();
         };

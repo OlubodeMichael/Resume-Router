@@ -35,7 +35,7 @@ export async function middleware(req: NextRequest) {
   const verifyUrl =
     process.env.NODE_ENV === "development"
       ? "http://localhost:8000/api/auth/verify"
-      : "https://api.resumeroute.com/api/auth/verify";
+      : "https://api.resumerouter.app/api/auth/verify";
 
   try {
     const res = await fetch(verifyUrl, {
