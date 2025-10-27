@@ -22,6 +22,9 @@ import expressRaw from "express"; // same express, just to call .raw
 
 const app = express();
 
+// Trust proxy - essential for production deployments behind reverse proxies
+app.set('trust proxy', 1);
+
 app.use(helmet());
 
 // Rate limit (❗️exclude webhook path)

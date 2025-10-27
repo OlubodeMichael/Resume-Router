@@ -183,10 +183,11 @@ export const googleCallback = (req: Request, res: Response) => {
       // Set the cookie first
       res.cookie("authToken", userAuth.token, {
         httpOnly: true,
-        secure:  false, // Set to false for development (localhost)
+        secure: process.env.NODE_ENV === "production", // Set to true in production
         sameSite: "lax", // Allow cross-origin cookies
         maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-        domain: process.env.FRONTEND_URL // Ensure cookie is available on both ports
+        // Remove domain for localhost development, or set to proper domain format for production
+        ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {})
       });
       
       
