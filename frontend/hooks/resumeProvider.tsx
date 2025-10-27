@@ -53,7 +53,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
     const [status, setStatus] = useState<Status | null>(null);
     const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL 
     const { toasts, removeToast, showSuccess, showError } = useToast();
 
 

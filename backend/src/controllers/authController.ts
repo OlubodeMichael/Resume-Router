@@ -186,11 +186,11 @@ export const googleCallback = (req: Request, res: Response) => {
         secure:  false, // Set to false for development (localhost)
         sameSite: "lax", // Allow cross-origin cookies
         maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-        domain: "localhost" // Ensure cookie is available on both ports
+        domain: process.env.FRONTEND_URL // Ensure cookie is available on both ports
       });
       
       
-      res.redirect(`http://localhost:3000/dashboard`);
+      res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     }
   );
 };
