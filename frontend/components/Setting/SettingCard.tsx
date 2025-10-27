@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 export default function SettingCard({ activeCategory }: { activeCategory: string }) {
     const { user } = useAuth();
-    console.log(user);
     const renderContent = () => {
         switch (activeCategory) {
             case 'profile':
