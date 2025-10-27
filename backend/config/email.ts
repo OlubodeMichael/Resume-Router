@@ -13,7 +13,6 @@ export async function sendEmail(to: string, subject: string, html: string, from:
         };
         
         await resend.emails.send(mailOptions);
-        console.log(`Email sent successfully to ${to}`);
         return true;
     } catch (error) {
         console.error("Error sending email:", error);

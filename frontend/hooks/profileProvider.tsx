@@ -75,8 +75,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL 
-  
-  console.log(API_URL);
 
   const getProfile = useCallback(async () => {
     try {
