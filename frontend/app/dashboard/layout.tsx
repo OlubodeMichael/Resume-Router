@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ 
           zIndex: 40, 
           willChange: 'width',
-          height: isMobile ? '100dvh' : '100vh',
+          height: '100svh',
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : '0',
           paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0'
         }}
