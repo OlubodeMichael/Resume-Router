@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="flex min-h-screen bg-white overflow-x-hidden">
+    <div className="flex min-h-[100svh] bg-white overflow-x-hidden">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no viewport-fit=cover" />
       <style jsx global>{`
         html, body {
