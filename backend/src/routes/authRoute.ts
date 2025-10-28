@@ -1,5 +1,5 @@
 import express, { RequestHandler } from "express";
-import { register, login, logout, protect, googleAuth, googleCallback, verifyAuth, authFailed, forgotPassword, verifyResetCode, resetPassword, updatePassword} from "../controllers/authController";
+import { register, login, logout, protect, googleAuth, googleCallback, verifyAuth, authFailed, forgotPassword, verifyResetCode, resetPassword, updatePassword, checkProfileCompletion} from "../controllers/authController";
 
 const router = express.Router();
 
@@ -19,5 +19,8 @@ router.get("/google/callback", googleCallback);
 // Verify authentication
 router.get("/verify", verifyAuth as RequestHandler);
 router.get("/failed", authFailed as RequestHandler);
+
+// Check profile completion
+router.get("/check-profile", protect, checkProfileCompletion as RequestHandler);
 
 export default router;

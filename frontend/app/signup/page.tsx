@@ -17,7 +17,7 @@ export default function SignUp() {
         confirmPassword: ""
     });
     const [formError, setFormError] = useState("");
-    const { signup, googleLogin } = useAuth();
+    const { signup, googleLogin, checkProfileCompletion } = useAuth();
     const router = useRouter();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,8 +72,19 @@ export default function SignUp() {
             setFormError("");
             await signup(formData.email, formData.name, formData.password);
             
-            // Redirect to dashboard on successful signup
-            router.push("/dashboard");
+            // Check if user needs to complete profile
+            try {
+                const data = await checkProfileCompletion();
+                if (data.needsProfileCompletion) {
+                    router.push("/dashboard/profile");
+                } else {
+                    router.push("/dashboard");
+                }
+            } catch (error) {
+                console.error("Profile check error:", error);
+                // Fallback to profile page if check fails
+                router.push("/dashboard/profile");
+            }
         } catch (error) {
             console.error("Sign up error:", error);
             setFormError("Sign up failed. Please try again.");

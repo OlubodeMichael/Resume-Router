@@ -116,6 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-white overflow-x-hidden">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no viewport-fit=cover" />
       <style jsx global>{`
         html, body {
           background-color: white;
@@ -129,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div
         className={`fixed left-0 top-0 transition-all duration-200 ease-out ${
           isMobile 
-            ? (sidebarOpen ? "w-64 h-screen" : "w-0 h-screen") 
+            ? (sidebarOpen ? "w-64 h-full" : "w-0 h-full") 
             : sidebarOpen 
               ? "w-64 h-screen" 
               : "w-16 h-screen cursor-pointer"
@@ -138,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ 
           zIndex: 40, 
           willChange: 'width',
-          height: isMobile ? '100vh' : '100vh',
+          height: isMobile ? '100dvh' : '100vh',
           paddingTop: isMobile ? 'env(safe-area-inset-top)' : '0',
           paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0'
         }}
@@ -160,8 +161,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </div>
         {/* Navigation */}
-        <div className={`flex-1 p-2 flex flex-col justify-between ${sidebarOpen ? '' : 'items-center'}`}>
-          <nav className="space-y-1 mt-2">
+        <div className={`flex-1 p-2 flex flex-col ${sidebarOpen ? '' : 'items-center'}`}>
+          <nav className="space-y-1 mt-2 flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -187,14 +188,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               );
             })}
           </nav>
-          
         </div>
 
         {/* User avatar at the bottom */}
         {user && (
-          <div className="relative border-t border-gray-300" onClick={(e) => e.stopPropagation()}>
+          <div className="relative border-t border-gray-300 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <div 
-              className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} mt-auto hover:bg-gray-50 rounded-lg transition-colors duration-150 cursor-pointer`}
+              className={`w-full flex items-center ${sidebarOpen ? 'px-3 py-3' : 'justify-center py-3'} hover:bg-gray-50 rounded-lg transition-colors duration-150 cursor-pointer`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleUserClick();
