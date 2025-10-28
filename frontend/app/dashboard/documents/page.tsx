@@ -99,58 +99,64 @@ export default function Documents() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 pt-20 sm:pt-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
-              <p className="mt-2 text-sm text-gray-600">
-                {resumes.length} {resumes.length === 1 ? 'resume' : 'resumes'} total
-              </p>
-            </div>
-            <button
-              onClick={handleCreateNew}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create New Resume
-            </button>
-          </div>
-        </div>
-
-        {/* Resumes Grid */}
         {resumes.length === 0 ? (
-          <div className="text-center py-16">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No documents</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new resume.</p>
-            <div className="mt-6">
-              <button
-                onClick={handleCreateNew}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create New Resume
-              </button>
+          /* Empty State - Centered */
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+            <div>
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No documents</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by creating a new resume.</p>
+              <div className="mt-6">
+                <button
+                  onClick={handleCreateNew}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create New Resume
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <ResumesList 
-            resumes={resumes} 
-            handleResumeClick={handleResumeClick} 
-            getStatusBadge={getStatusBadge} 
-            formatDateTime={formatDateTime}
-            onDeleteResume={deleteResume}
-            isDeleting={isLoading}
-          />
+          /* Normal State with Header and Content */
+          <>
+            {/* Header */}
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Documents</h1>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {resumes.length} {resumes.length === 1 ? 'resume' : 'resumes'} total
+                  </p>
+                </div>
+                <button
+                  onClick={handleCreateNew}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create New Resume
+                </button>
+              </div>
+            </div>
+
+            {/* Resumes Grid */}
+            <ResumesList 
+              resumes={resumes} 
+              handleResumeClick={handleResumeClick} 
+              getStatusBadge={getStatusBadge} 
+              formatDateTime={formatDateTime}
+              onDeleteResume={deleteResume}
+              isDeleting={isLoading}
+            />
+          </>
         )}
       </div>
     </div>
