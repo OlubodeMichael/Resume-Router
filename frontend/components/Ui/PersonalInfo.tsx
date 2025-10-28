@@ -2,7 +2,7 @@ import PersonalInfoCard from "../Cards/personalInfo";
 
 export default function PersonalInfo() {
   return (
-    <div className="min-h-screen">
+    <div className="h-fit">
       <div className="w-full px-3 sm:px-6 md:px-8 lg:px-12">
         <div className="py-6 sm:py-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

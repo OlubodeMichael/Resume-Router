@@ -179,13 +179,13 @@ export default function DocumentPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pt-24 pb-32 relative z-10">
+      <main className="mx-auto max-w-5xl px-6 pt-28 sm:pt-24 pb-32 relative z-10">
         
 
         <div className="mt-6">
           { (status?.status === "ready" && generatedResumeContent) ? 
           <>
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6 mt-16 sm:mt-6">
               <button
                 onClick={handleDownloadResume}
                 disabled={isDownloading}

@@ -59,6 +59,20 @@ export default function Home() {
 function Hero() {
   return (
     <section className="w-full flex flex-col items-center justify-center text-center py-20 px-4 bg-white">
+      {/* Product Hunt Badge */}
+      <div className="mb-8">
+        <a href="https://www.producthunt.com/products/resumerouter?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-resumerouter" target="_blank">
+          <Image 
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1031131&theme=neutral&t=1761651158409" 
+            alt="ResumeRouter - Tailor resumes to any job in seconds | Product Hunt" 
+            width={250} 
+            height={54} 
+            className="mx-auto"
+            unoptimized
+          />
+        </a>
+      </div>
+
       <h1 className="font-serif text-[2.7rem] md:text-[4rem] font-medium leading-tight mb-6 text-slate-900">
         Resumes That Actually<br className="hidden md:inline" />
         Match the Job
@@ -71,7 +85,7 @@ function Hero() {
         className="bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
         style={{ boxShadow: "0 2px 16px 0 rgba(60, 120, 255, 0.10)" }}
       >
-        <span className="font-semibold">Join Waitlist</span> – it’s free
+        <span className="font-semibold">Join Waitlist</span> – it&apos;s free
       </a>
 
       <div className="w-full flex justify-center mt-6">

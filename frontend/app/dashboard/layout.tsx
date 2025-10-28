@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const checkMobile = () => {
       if (typeof window !== 'undefined') {
-        setIsMobile(window.matchMedia('(max-width: 640px)').matches);
+        setIsMobile(window.matchMedia('(max-width: 768px)').matches);
       }
     };
     checkMobile();
@@ -128,7 +128,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <div
         className={`fixed left-0 top-0 h-screen transition-all duration-200 ease-out ${
-          isMobile ? "w-16" : sidebarOpen ? "w-64" : "w-16 cursor-pointer"
+          isMobile 
+            ? (sidebarOpen ? "w-64" : "w-0") 
+            : sidebarOpen 
+              ? "w-64" 
+              : "w-16 cursor-pointer"
         } bg-white border-r border-gray-200 flex flex-col overflow-hidden group`}
         onClick={!sidebarOpen && !isMobile ? () => setSidebarOpen(true) : undefined}
         style={{ zIndex: 40, willChange: 'width' }}
@@ -139,7 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Image src="/symbol.svg" alt="ResumeRouter" width={32} height={32} />
             {sidebarOpen && <span className="font-semibold text-gray-900">ResumeRouter</span>}
           </div>
-          {sidebarOpen && !isMobile && (
+          {sidebarOpen && (
             <button
               className="focus:outline-none"
               onClick={e => { e.stopPropagation(); setSidebarOpen(false); }}
@@ -225,7 +229,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <nav className={`mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[70] cursor-pointer min-w-48 w-auto ${
                   sidebarOpen 
                     ? 'absolute bottom-full left-1/2 transform -translate-x-1/2' 
-                    : 'fixed bottom-32 left-20'
+                    : isMobile
+                      ? 'fixed bottom-20 left-4 right-4'
+                      : 'fixed bottom-32 left-20'
                 }`} style={{ backgroundColor: 'white' }}>
                   <button 
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -255,14 +261,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
       </div>
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle menu"
+        >
+          <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-transparent z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content Area */}
       <div 
-        className="flex-1 flex justify-center min-h-screen overflow-y-auto"
+        className={`flex-1 flex justify-center min-h-screen overflow-y-auto transition-all duration-200 ${
+          isMobile && sidebarOpen ? 'opacity-50' : 'opacity-100'
+        }`}
         style={{ 
-          marginLeft: isMobile ? '64px' : sidebarOpen ? '256px' : '64px',
-          transition: 'margin-left 200ms ease-out',
-          willChange: 'margin-left',
-          '--sidebar-width': isMobile ? '64px' : sidebarOpen ? '256px' : '64px'
+          marginLeft: isMobile ? '0' : sidebarOpen ? '256px' : '64px',
+          transition: 'margin-left 200ms ease-out, opacity 200ms ease-out',
+          willChange: 'margin-left, opacity',
+          '--sidebar-width': isMobile ? '0' : sidebarOpen ? '256px' : '64px'
         } as React.CSSProperties}
       >
         {children}
@@ -276,7 +305,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => setShowSettingsModal(false)}
           />
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div className="bg-white rounded-[40px] shadow-xl max-w-4xl w-[50%] h-fit overflow-hidden flex flex-col">
+            <div className={`bg-white rounded-[40px] shadow-xl h-fit overflow-hidden flex flex-col ${
+              isMobile ? 'max-w-full w-full max-h-[90vh]' : 'max-w-4xl w-[50%]'
+            }`}>
               <div className="flex justify-between items-center p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
                 <button
