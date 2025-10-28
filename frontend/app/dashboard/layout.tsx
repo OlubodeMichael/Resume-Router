@@ -127,15 +127,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}</style>
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 h-screen transition-all duration-200 ease-out ${
+        className={`fixed left-0 top-0 transition-all duration-200 ease-out ${
           isMobile 
-            ? (sidebarOpen ? "w-64" : "w-0") 
+            ? (sidebarOpen ? "w-64 h-screen" : "w-0 h-screen") 
             : sidebarOpen 
-              ? "w-64" 
-              : "w-16 cursor-pointer"
+              ? "w-64 h-screen" 
+              : "w-16 h-screen cursor-pointer"
         } bg-white border-r border-gray-200 flex flex-col overflow-hidden group`}
         onClick={!sidebarOpen && !isMobile ? () => setSidebarOpen(true) : undefined}
-        style={{ zIndex: 40, willChange: 'width' }}
+        style={{ 
+          zIndex: 40, 
+          willChange: 'width',
+          height: isMobile ? '100vh' : '100vh',
+          paddingTop: isMobile ? 'env(safe-area-inset-top)' : '0',
+          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0'
+        }}
       >
         {/* Logo & Toggle */}
         <div className="p-4 flex items-center justify-between">
@@ -262,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       </div>
       {/* Mobile Menu Button */}
-      {isMobile && (
+      {isMobile && !sidebarOpen && (
         <button
           className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
           onClick={() => setSidebarOpen(!sidebarOpen)}
