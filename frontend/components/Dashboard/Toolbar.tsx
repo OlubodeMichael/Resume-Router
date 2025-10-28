@@ -546,7 +546,229 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
   const Divider = () => <div className="w-px h-7 bg-gray-200 mx-2" />;
 
   return (
-    <div className="toolbar-container flex items-center justify-center gap-2 p-3 bg-white border border-gray-200 rounded-xl w-auto">
+    <div className="toolbar-container bg-white border border-gray-200 rounded-xl w-full max-w-4xl mx-auto">
+      {/* Mobile Layout - Stacked */}
+      <div className="flex flex-col sm:hidden gap-2 p-3">
+        {/* Row 1: Undo/Redo, Font Size, Colors */}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            className={baseButtonClass}
+            onClick={handleUndo}
+            aria-label="Undo (Ctrl+Z)"
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 className="w-4 h-4" />
+          </button>
+
+          <button
+            className={baseButtonClass}
+            onClick={handleRedo}
+            aria-label="Redo (Ctrl+Y)"
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 className="w-4 h-4" />
+          </button>
+
+          <Divider />
+
+          {/* Font Size Dropdown */}
+          <div className="relative font-size-dropdown-container">
+            <button
+              ref={fontSizeButtonRef}
+              className={`${baseButtonClass} px-2`}
+              onClick={() => {
+                if (fontSizeButtonRef.current) {
+                  const rect = fontSizeButtonRef.current.getBoundingClientRect();
+                  setDropdownPosition({
+                    top: rect.bottom + window.scrollY + 8,
+                    left: rect.left + window.scrollX
+                  });
+                }
+                setShowFontSizeDropdown((v) => !v);
+              }}
+              aria-label="Font size"
+              title="Font size"
+            >
+              <span className="text-xs">{currentFontSize}</span>
+              <ChevronDown className="w-3 h-3 ml-1" />
+            </button>
+            {showFontSizeDropdown && dropdownPosition && createPortal(
+              <div 
+                data-font-dropdown
+                className="fixed bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] min-w-[120px]"
+                style={{
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left
+                }}
+              >
+                <div className="py-2 text-gray-700">
+                  {["10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"].map((size) => (
+                    <button
+                      key={size}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between transition-colors duration-150 rounded-lg mx-1"
+                      onClick={() => applyFontSize(size)}
+                    >
+                      <span className="font-medium">{size}</span>
+                      <span className="text-xs text-gray-400" style={{ fontSize: size }}>
+                        Aa
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>,
+              document.body
+            )}
+          </div>
+
+          <button
+            ref={textColorButtonRef}
+            className={`${baseButtonClass} px-2`}
+            onClick={() => {
+              if (textColorButtonRef.current) {
+                const rect = textColorButtonRef.current.getBoundingClientRect();
+                setDropdownPosition({
+                  top: rect.bottom + window.scrollY + 8,
+                  left: rect.left + window.scrollX
+                });
+              }
+              setShowTextColorDropdown((v) => !v);
+            }}
+            aria-label="Text color"
+            title="Text color"
+          >
+            <Palette className="w-4 h-4" />
+          </button>
+
+          <button
+            ref={bgColorButtonRef}
+            className={`${baseButtonClass} px-2`}
+            onClick={() => {
+              if (bgColorButtonRef.current) {
+                const rect = bgColorButtonRef.current.getBoundingClientRect();
+                setDropdownPosition({
+                  top: rect.bottom + window.scrollY + 8,
+                  left: rect.left + window.scrollX
+                });
+              }
+              setShowBgColorDropdown((v) => !v);
+            }}
+            aria-label="Background color"
+            title="Background color"
+          >
+            <Highlighter className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Row 2: Lists and Formatting */}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            className={isActive.bulletList ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("bulletList")}
+            aria-label="Bullet list"
+            title="Bullet list"
+          >
+            <List className="w-4 h-4" />
+          </button>
+
+          <button
+            className={isActive.numberedList ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("numberedList")}
+            aria-label="Numbered list"
+            title="Numbered list"
+          >
+            <ListOrdered className="w-4 h-4" />
+          </button>
+
+          <Divider />
+
+          <button
+            className={isActive.bold ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("bold")}
+            aria-label="Bold"
+            title="Bold"
+          >
+            <Bold className="w-4 h-4" />
+          </button>
+
+          <button
+            className={isActive.italic ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("italic")}
+            aria-label="Italic"
+            title="Italic"
+          >
+            <Italic className="w-4 h-4" />
+          </button>
+
+          <button
+            className={isActive.underline ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("underline")}
+            aria-label="Underline"
+            title="Underline"
+          >
+            <Underline className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Row 3: Code, Link, Alignment, Export */}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            className={isActive.code ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("code")}
+            aria-label="Code"
+            title="Code"
+          >
+            <Code className="w-4 h-4" />
+          </button>
+
+          <button
+            className={isActive.link ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("link")}
+            aria-label="Link"
+            title="Link"
+          >
+            <Link className="w-4 h-4" />
+          </button>
+
+          <Divider />
+
+          <button
+            className={isActive.alignLeft ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("alignLeft")}
+            aria-label="Align left"
+            title="Align left"
+          >
+            <AlignLeft className="w-4 h-4" />
+          </button>
+
+          <button
+            className={isActive.alignCenter ? activeButtonClass : baseButtonClass}
+            onClick={() => applyFormat("alignCenter")}
+            aria-label="Align center"
+            title="Align center"
+          >
+            <AlignCenter className="w-4 h-4" />
+          </button>
+
+          <Divider />
+
+          <button
+            className={exportButtonClass}
+            onClick={handleExportPDF}
+            disabled={isExporting}
+            aria-label="Export as PDF"
+            title="Export as PDF"
+          >
+            {isExporting ? (
+              <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Layout - Single Row */}
+      <div className="hidden sm:flex items-center justify-center gap-2 p-3">
       {/* Undo / Redo */}
       <button
         className={baseButtonClass}
@@ -635,7 +857,7 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
           aria-label="Text color"
           title="Text color"
         >
-          <Palette className="w-10 h-10" />
+            <Palette className="w-4 h-4" />
           <ChevronDown className="w-3 h-3 ml-1" />
         </button>
         {showTextColorDropdown && dropdownPosition && createPortal(
@@ -689,7 +911,7 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
           aria-label="Background color"
           title="Background color"
         >
-          <Highlighter className="w-6 h-6" />
+            <Highlighter className="w-4 h-4" />
           <ChevronDown className="w-3 h-3 ml-1" />
         </button>
         {showBgColorDropdown && dropdownPosition && createPortal(
@@ -861,7 +1083,72 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
           <Download className="w-4 h-4" />
         )}
       </button>
+      </div>
 
+      {/* Color Dropdowns for Mobile */}
+      {showTextColorDropdown && dropdownPosition && createPortal(
+        <div 
+          data-text-color-dropdown
+          className="fixed bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] min-w-[200px]"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left
+          }}
+        >
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-700 mb-2">Text Color</div>
+            <div className="grid grid-cols-8 gap-1">
+              {[
+                '#000000', '#333333', '#666666', '#999999',
+                '#CCCCCC', '#FFFFFF', '#FF0000', '#00FF00',
+                '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+                '#FFA500', '#800080', '#008000', '#000080'
+              ].map((color) => (
+                <button
+                  key={color}
+                  className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                  style={{ backgroundColor: color }}
+                  onClick={() => applyColor(color, true)}
+                  title={color}
+                />
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showBgColorDropdown && dropdownPosition && createPortal(
+        <div 
+          data-bg-color-dropdown
+          className="fixed bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] min-w-[200px]"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left
+          }}
+        >
+          <div className="p-3">
+            <div className="text-sm font-medium text-gray-700 mb-2">Background Color</div>
+            <div className="grid grid-cols-8 gap-1">
+              {[
+                '#FFFFFF', '#F0F0F0', '#E0E0E0', '#D0D0D0',
+                '#FFE6E6', '#E6F3FF', '#E6FFE6', '#FFF0E6',
+                '#F0E6FF', '#E6FFFF', '#FFFFE6', '#FFE6F0',
+                '#F5F5DC', '#E6E6FA', '#F0FFF0', '#FFF8DC'
+              ].map((color) => (
+                <button
+                  key={color}
+                  className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                  style={{ backgroundColor: color }}
+                  onClick={() => applyColor(color, false)}
+                  title={color}
+                />
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
