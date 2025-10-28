@@ -190,8 +190,53 @@ export const googleCallback = (req: Request, res: Response) => {
         ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {})
       });
       
-      
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+      // Check if user needs to complete profile (for new users)
+      if (userAuth.isNewUser) {
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard/profile`);
+      } else {
+        // For existing users, check if they have profile data
+        try {
+          const profile = await prisma.profile.findUnique({
+            where: { userId: userAuth.id },
+            include: {
+              personalInfo: true
+            }
+          });
+
+          if (!profile) {
+            res.redirect(`${process.env.FRONTEND_URL}/dashboard/profile`);
+            return;
+          }
+
+          // Check if personal info exists and has meaningful data
+          const hasPersonalInfo = profile.personalInfo && (
+            profile.personalInfo.fullName ||
+            profile.personalInfo.phone ||
+            profile.personalInfo.location ||
+            profile.personalInfo.linkedIn ||
+            profile.personalInfo.portfolio ||
+            profile.personalInfo.jobTitle
+          );
+
+          // Check if profile has meaningful data in other fields
+          const hasExperience = Array.isArray(profile.experience) && profile.experience.length > 0;
+          const hasEducation = Array.isArray(profile.education) && profile.education.length > 0;
+          const hasSkills = Array.isArray(profile.skills) && profile.skills.length > 0;
+          const hasProjects = Array.isArray(profile.projects) && profile.projects.length > 0;
+
+          const needsProfileCompletion = !hasPersonalInfo && !hasExperience && !hasEducation && !hasSkills && !hasProjects;
+
+          if (needsProfileCompletion) {
+            res.redirect(`${process.env.FRONTEND_URL}/dashboard/profile`);
+          } else {
+            res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+          }
+        } catch (error) {
+          console.error("Profile check error:", error);
+          // Fallback to profile page if check fails
+          res.redirect(`${process.env.FRONTEND_URL}/dashboard/profile`);
+        }
+      }
     }
   );
 };
@@ -384,4 +429,52 @@ export const updatePassword = catchAsync(async (req: Request, res: Response, nex
   });
 
   res.status(200).json({ message: 'Password updated successfully.' });
+});
+
+// Check if user needs to complete profile
+export const checkProfileCompletion = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  // Check if user has a profile with meaningful data
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    include: {
+      personalInfo: true
+    }
+  });
+
+  if (!profile) {
+    res.status(200).json({ 
+      needsProfileCompletion: true,
+      message: 'Profile not found' 
+    });
+    return;
+  }
+
+  // Check if personal info exists and has meaningful data
+  const hasPersonalInfo = profile.personalInfo && (
+    profile.personalInfo.fullName ||
+    profile.personalInfo.phone ||
+    profile.personalInfo.location ||
+    profile.personalInfo.linkedIn ||
+    profile.personalInfo.portfolio ||
+    profile.personalInfo.jobTitle
+  );
+
+  // Check if profile has meaningful data in other fields
+  const hasExperience = Array.isArray(profile.experience) && profile.experience.length > 0;
+  const hasEducation = Array.isArray(profile.education) && profile.education.length > 0;
+  const hasSkills = Array.isArray(profile.skills) && profile.skills.length > 0;
+  const hasProjects = Array.isArray(profile.projects) && profile.projects.length > 0;
+
+  const needsProfileCompletion = !hasPersonalInfo && !hasExperience && !hasEducation && !hasSkills && !hasProjects;
+
+  res.status(200).json({ 
+    needsProfileCompletion,
+    message: needsProfileCompletion ? 'Profile needs completion' : 'Profile is complete'
+  });
 });

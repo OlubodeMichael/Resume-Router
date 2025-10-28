@@ -21,6 +21,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<ForgotPasswordResponse>;
   verifyResetCode: (email: string, resetCode: string) => Promise<VerifyResetCodeResponse>;
   resetPassword: (resetToken: string, newPassword: string) => Promise<ResetPasswordResponse>;
+  checkProfileCompletion: () => Promise<{ needsProfileCompletion: boolean; message: string }>;
 }
 
 interface ForgotPasswordResponse {
@@ -289,9 +290,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const checkProfileCompletion = async (): Promise<{ needsProfileCompletion: boolean; message: string }> => {
+    try {
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/check-profile`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Profile check failed' }));
+        throw new Error(errorData.message || 'Profile check failed');
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword }}
+      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword, checkProfileCompletion }}
     >
       {children}
     </AuthContext.Provider>
