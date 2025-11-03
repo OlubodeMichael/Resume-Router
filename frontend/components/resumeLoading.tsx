@@ -1,7 +1,15 @@
 // app/components/ResumeLoading.tsx
 "use client";
 
-export default function ResumeLoading() {
+interface ResumeLoadingProps {
+  message?: "tailoring" | "loading";
+}
+
+export default function ResumeLoading({ message = "loading" }: ResumeLoadingProps) {
+  const displayMessage = message === "tailoring" 
+    ? "Tailoring your resume..." 
+    : "Loading resume...";
+
   return (
     <div className="flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-[850px]">
@@ -9,7 +17,7 @@ export default function ResumeLoading() {
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-4 py-2 border border-gray-200">
             <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-sm text-gray-700">Tailoring your resume...</span>
+            <span className="text-sm text-gray-700">{displayMessage}</span>
           </div>
         </div>
 
