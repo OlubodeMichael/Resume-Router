@@ -12,6 +12,7 @@ import { mapRecordToTemplateData } from "@/utils/mapRecordToTemplateData";
 import { DEFAULT_RESUME, transformResumeData } from "@/lib/resumeUtils";
 import { downloadResumeAsPDF } from "@/lib/pdfUtils";
 import { saveEditedContent, loadEditedContent, saveEditedContentImmediate, clearEditedContent } from "@/lib/storageUtils";
+import { updateJsonFromHtml } from "@/lib/htmlToJsonConverter";
 import Toolbar from "@/components/Dashboard/Toolbar";
 
 import ResumeLoading from "@/components/resumeLoading";
@@ -22,6 +23,8 @@ export default function DocumentPage() {
   const [editedContent, setEditedContent] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [hasFetchedForStatus, setHasFetchedForStatus] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { toasts, removeToast, showSuccess, showError } = useToast()
   const { id } = useParams()
@@ -52,9 +55,104 @@ export default function DocumentPage() {
     const resumeId = (id as string) || generatedResumeContent?.id
     if (resumeId) {
       saveEditedContent(html, resumeId, debounceTimeoutRef)
+      setHasUnsavedChanges(true) // Mark that there are unsaved changes
     }
     setEditedContent(html)
   }, [id, generatedResumeContent?.id])
+
+  // Save JSON to database manually - converts HTML edits to JSON first
+  const handleSaveToDB = useCallback(async () => {
+    const resumeId = (id as string) || generatedResumeContent?.id
+    if (!resumeId || !generatedResumeContent?.content || isSaving) return;
+
+    try {
+      setIsSaving(true);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+      
+      // Get current HTML from editor
+      const currentHtml = editorRef.current?.innerHTML || editedContent || '';
+      
+      // Convert HTML edits to JSON (preserving styling)
+      let updatedJson: Record<string, unknown>;
+      if (currentHtml && generatedResumeContent.content && typeof generatedResumeContent.content === 'object' && !Array.isArray(generatedResumeContent.content)) {
+        // Parse HTML and update JSON - preserves styling (HTML strings in JSON fields)
+        console.log('Converting HTML to JSON...', { 
+          currentHtmlLength: currentHtml.length,
+          hasStyling: currentHtml.includes('<strong') || currentHtml.includes('<em') || currentHtml.includes('style=')
+        });
+        updatedJson = updateJsonFromHtml(currentHtml, generatedResumeContent.content as Record<string, unknown>);
+        const headerName = (updatedJson.header as Record<string, unknown>)?.name;
+        const experience = updatedJson.experience as Array<Record<string, unknown>> | undefined;
+        const sampleExp = experience?.[0]?.responsibilities as string[] | undefined;
+        const categorizedSkills = updatedJson.categorizedSkills as {
+          languages?: string[];
+          librariesFrameworks?: string[];
+          developerTools?: string[];
+        } | undefined;
+        console.log('Updated JSON with styling:', {
+          headerName,
+          sampleExperience: sampleExp?.[0],
+          hasHtmlInJson: JSON.stringify(updatedJson).includes('<strong') || JSON.stringify(updatedJson).includes('<em') || JSON.stringify(updatedJson).includes('<span'),
+          experienceCount: Array.isArray(updatedJson.experience) ? updatedJson.experience.length : 0,
+          projectsCount: Array.isArray(updatedJson.projects) ? updatedJson.projects.length : 0,
+          educationCount: Array.isArray(updatedJson.education) ? updatedJson.education.length : 0,
+          categorizedSkills: categorizedSkills ? {
+            languagesCount: categorizedSkills.languages?.length || 0,
+            librariesCount: categorizedSkills.librariesFrameworks?.length || 0,
+            toolsCount: categorizedSkills.developerTools?.length || 0,
+          } : null,
+        });
+      } else {
+        // Fallback to existing content if no HTML edits or invalid content type
+        if (generatedResumeContent.content && typeof generatedResumeContent.content === 'object') {
+          updatedJson = generatedResumeContent.content as Record<string, unknown>;
+          console.log('Using existing JSON (no HTML edits detected)');
+        } else {
+          throw new Error('Invalid resume content format');
+        }
+      }
+      
+      const requestBody = { 
+        content: updatedJson, // Save updated JSON with styling preserved as HTML strings
+        lastEditedAt: Date.now()
+      };
+      
+      console.log('Saving to DB:', { 
+        resumeId, 
+        contentKeys: Object.keys(updatedJson),
+        hasStylingInContent: JSON.stringify(requestBody.content).includes('<')
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/api/resumes/${resumeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setHasUnsavedChanges(false);
+      showSuccess(
+        'Resume Saved Successfully!',
+        'Your changes with styling have been saved to the database.',
+        3000
+      );
+    } catch (error) {
+      console.error('Failed to save resume:', error);
+      showError(
+        'Save Failed',
+        (error as Error).message || 'Failed to save resume. Please try again.',
+        5000
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [id, generatedResumeContent?.id, generatedResumeContent?.content, editedContent, isSaving, showSuccess, showError])
 
   // Check localStorage first (even before DB fetch) using the ID from URL
   useEffect(() => {
@@ -198,7 +296,33 @@ export default function DocumentPage() {
           <div className="mt-6">
             { ((status?.status === "ready" && generatedResumeContent) || editedContent) ? 
             <>
-              <div className="flex justify-center mb-6 mt-16 sm:mt-6">
+              <div className="flex justify-center gap-4 mb-6 mt-16 sm:mt-6">
+                {/* Save Button - appears when there are unsaved changes */}
+                {hasUnsavedChanges && (
+                  <button
+                    onClick={handleSaveToDB}
+                    disabled={isSaving}
+                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
+                      isSaving 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-green-600 hover:bg-green-700 hover:shadow-xl text-white'
+                    }`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Save</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={handleDownloadResume}
                   disabled={isDownloading}
