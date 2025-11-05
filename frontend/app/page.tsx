@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Navbar from '@/components/Ui/Navbar';
 import Footer from '@/components/Ui/Footer';
+import FadeIn from '@/components/Ui/FadeIn';
 
 export default function Home() {
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-white">
       <style jsx global>{`
         html, body {
           background-color: white;
@@ -20,7 +21,7 @@ export default function Home() {
       
         <Navbar />
       {/* Hero Section */}
-      <Hero />
+      <FadeIn><Hero /></FadeIn>
 
       {/* Company Logos Section */}
       <CompanyLogos />
@@ -41,9 +42,11 @@ export default function Home() {
       
 
       {/* Professional Waitlist Section */}
-      <div className='w-full flex flex-col items-center justify-center text-center  px-4 bg-gray-50'>
-      <JoinWaitlist />
+      <div className='w-full flex flex-col items-center justify-center text-center  px-4  pt-18'>
+      <CTA />
       </div>
+
+      <CTA2 />
 
       {/* Professional FAQ Section */}
       <FAQ />
@@ -85,7 +88,7 @@ function Hero() {
         className="bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
         style={{ boxShadow: "0 2px 16px 0 rgba(60, 120, 255, 0.10)" }}
       >
-        <span className="font-semibold">Join Waitlist</span> – it&apos;s free
+        <span className="font-semibold">Get Started</span> – it&apos;s free
       </a>
 
       <div className="w-full flex justify-center mt-6">
@@ -344,133 +347,6 @@ function FAQ() {
   )
 }
 
-
-function JoinWaitlist() {
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const handleJoinWaitlist = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email.trim()) {
-      setMessage({ type: 'error', text: 'Please enter your email address' });
-      setTimeout(() => setMessage(null), 3000);
-      return;
-    }
-
-    setIsLoading(true);
-    setMessage(null);
-
-    try {
-      const res = await fetch('/api/join-waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-    
-      const data = await res.json();
-      if (res.ok) {
-        setMessage({ type: 'success', text: data.message || 'Successfully joined!' });
-        setEmail('');
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        setMessage({ type: 'error', text: data.message || 'Something went wrong. Please try again.' });
-        setTimeout(() => setMessage(null), 3000);
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
-      setTimeout(() => setMessage(null), 3000);
-    } finally {
-      setIsLoading(false); 
-    }
-    
-  };
-
-  return (
-    <section id="join-waitlist" className="pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 text-center">
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-[2.5rem] sm:text-[3rem] lg:text-5xl font-serif font-medium text-slate-900 mb-4 sm:mb-6 leading-tight px-4 sm:px-0">
-          Build resumes that get noticed
-        </h2>
-        <p className="text-slate-600 text-md sm:text-lg mb-6 font-sans px-4 sm:px-0">
-          Join ResumeRouter today and tailor your next resume with AI no writing skills required.
-        </p>
-
-        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 text-md font-medium text-slate-600 mb-6 sm:mb-8 px-4 sm:px-0">
-          <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            Start for free
-          </span>
-          <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            No credit card required
-          </span>
-          <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            Cancel anytime
-          </span>
-        </div>
-
-        <form onSubmit={handleJoinWaitlist} className="max-w-xl mx-auto w-full px-4 sm:px-0">
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="w-[90%] px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-slate-300 shadow-sm text-slate-800 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 transition"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={isLoading}
-              className=" whitespace-nowrap w-full sm:w-auto bg-blue-800 text-white px-6 sm:px-4 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-base sm:text-md"
-            >
-              {isLoading ? 'Joining...' : 'Join the Waitlist'}
-            </button>
-          </div>
-
-          {message && (
-            <div
-              className={`mt-4 text-sm font-medium px-4 py-3 rounded-lg mx-4 sm:mx-0 ${
-                message.type === 'success'
-                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                  : 'bg-red-100 text-red-800 border border-red-200'
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-        </form>
-        
-        <div className="mt-8 sm:mt-10 border-t border-slate-200 pt-6 sm:pt-8 mx-4 sm:mx-0"></div>
-        
-        <div className="pt-6 sm:pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center text-sm text-slate-600 px-4 sm:px-0">
-          <div>
-            <p className="font-semibold text-slate-900 text-xl">Over 12k</p>
-            <p className="text-sm sm:text-md">Professionals helped</p>
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 text-xl">5.4 hours saved</p>
-            <p className="text-sm sm:text-md">Per resume, on average</p>
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 text-xl">99.7%</p>
-            <p className="text-sm sm:text-md">Plan to use us again</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function CompanyLogos() {
   const companies = [
     { name: "Google", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
@@ -560,6 +436,83 @@ function CompanyLogos() {
           animation-play-state: paused;
         }
       `}</style>
+    </section>
+  );
+}
+
+function CTA() {
+  return (
+    <section className="pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 text-center text-slate-900">
+      <div className="max-w-3xl mx-auto">
+        <h2 className="text-[2rem] sm:text-[2.5rem] lg:text-4xl font-serif font-medium text-slate-900 mb-4 sm:mb-6 leading-tight px-4 sm:px-0">
+          Build resumes that get noticed
+        </h2>
+        <p className="text-slate-900 text-md sm:text-lg mb-6 font-sans px-4 sm:px-0">
+          Join ResumeRouter today and tailor your next resume with AI no writing skills required.
+        </p>
+
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 sm:gap-4 text-md font-medium text-slate-900 mb-6 sm:mb-8 px-4 sm:px-0">
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Start for free
+          </span>
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            No credit card required
+          </span>
+          <span className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Cancel anytime
+          </span>
+        </div>
+
+       
+        
+        <div className="mt-8 sm:mt-10 border-t border-slate-200 pt-6 sm:pt-8 mx-4 sm:mx-0"></div>
+        
+        <div className="pt-6 sm:pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center text-sm text-slate-600 px-4 sm:px-0">
+          <div>
+            <p className="font-semibold text-slate-900 text-xl">Over 12k</p>
+            <p className="text-sm sm:text-md">Professionals helped</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900 text-xl">5.4 hours saved</p>
+            <p className="text-sm sm:text-md">Per resume, on average</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900 text-xl">99.7%</p>
+            <p className="text-sm sm:text-md">Plan to use us again</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CTA2() {
+  return (
+    <section className='bg-[#101828] text-white py-20 sm:py-24 px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-3xl mx-auto text-center'>
+        <h2 className='text-[1.5rem] sm:text-[2rem] lg:text-3xl font-serif font-medium text-white mb-4 sm:mb-6 leading-tight'>
+        Tailor your resume instantly.
+        </h2>
+        <p className='text-slate-300 text-md sm:text-lg mb-8 sm:mb-10 font-sans max-w-2xl mx-auto'>
+          Paste the JD. We align your resume, optimize for ATS, and export in one click.
+        </p>
+        <a
+          href="/signup"
+          className="inline-block bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
+          style={{ boxShadow: "0 2px 16px 0 rgba(255, 255, 255, 0.10)" }}
+        >
+          Get Started
+        </a>
+      </div>
     </section>
   );
 }

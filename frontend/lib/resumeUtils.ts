@@ -145,13 +145,26 @@ export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
       bullets: proj.bullets?.map(b => ({ item: b })) || []
     })),
     skills: (() => {
+      // Helper to clean and join skills (removes any leading colons)
+      const cleanAndJoin = (skills: string[] | undefined): string => {
+        if (!skills || skills.length === 0) return '';
+        return skills
+          .map(s => {
+            // Remove any leading colon and space, then capitalize
+            const cleaned = s.trim().replace(/^:\s*/, '').trim();
+            return capitalize(cleaned);
+          })
+          .filter(Boolean)
+          .join(', ');
+      };
+      
       // Use AI-generated categorized skills if available, otherwise extract and categorize all skills
       if (data.categorizedSkills) {
         return {
-          languages: data.categorizedSkills.languages?.map(capitalize).join(', ') || '',
-          frameworks: data.categorizedSkills.librariesFrameworks?.map(capitalize).join(', ') || '',
-          tools: data.categorizedSkills.developerTools?.map(capitalize).join(', ') || '',
-          libraries: data.categorizedSkills.librariesFrameworks?.map(capitalize).join(', ') || '',
+          languages: cleanAndJoin(data.categorizedSkills.languages),
+          frameworks: cleanAndJoin(data.categorizedSkills.librariesFrameworks),
+          tools: cleanAndJoin(data.categorizedSkills.developerTools),
+          libraries: cleanAndJoin(data.categorizedSkills.librariesFrameworks),
           skills: (data.skills || []).map(capitalize).join(', ') // For templates that expect flat skills
         };
       } else {

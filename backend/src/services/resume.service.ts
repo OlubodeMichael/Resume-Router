@@ -35,6 +35,7 @@ function extractJsonFromText(s: string): string {
 
 // Extraction (resume text -> profile-ish fields)
 const ExtractorSchema = z.object({
+  // Personal Information
   fullName: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
@@ -43,6 +44,11 @@ const ExtractorSchema = z.object({
   portfolio: z.string().nullable().optional(),
   jobTitle: z.string().nullable().optional(),
   pronouns: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  github: z.string().nullable().optional(),
+  twitter: z.string().nullable().optional(),
+  
+  // Experience
   experience: z
     .array(
       z.object({
@@ -52,22 +58,115 @@ const ExtractorSchema = z.object({
         startDate: z.string().nullable().optional(),
         endDate: z.string().nullable().optional(),
         description: z.array(z.string()).optional(),
+        achievements: z.array(z.string()).optional(),
+        technologies: z.array(z.string()).optional(),
+        responsibilities: z.array(z.string()).optional(),
       })
     )
     .default([]),
+    
+  // Education
   education: z
     .array(
       z.object({
         institution: z.string(),
         degree: z.string().nullable().optional(),
+        fieldOfStudy: z.string().nullable().optional(),
         startDate: z.string().nullable().optional(),
         endDate: z.string().nullable().optional(),
         gpa: z.string().nullable().optional(),
+        honors: z.string().nullable().optional(),
+        relevantCoursework: z.array(z.string()).optional(),
       })
     )
     .default([]),
+    
+  // Skills
   skills: z.array(z.string()).default([]),
+  
+  // Projects
+  projects: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().nullable().optional(),
+        technologies: z.array(z.string()).optional(),
+        startDate: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
+        url: z.string().nullable().optional(),
+        github: z.string().nullable().optional(),
+        achievements: z.array(z.string()).optional(),
+      })
+    )
+    .default([]),
+    
+  // Certifications
+  certifications: z
+    .array(
+      z.object({
+        name: z.string(),
+        issuer: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
+        expirationDate: z.string().nullable().optional(),
+        credentialId: z.string().nullable().optional(),
+      })
+    )
+    .default([]),
+    
+  // Awards & Achievements
+  awards: z
+    .array(
+      z.object({
+        title: z.string(),
+        issuer: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+      })
+    )
+    .default([]),
+    
+  // Publications
+  publications: z
+    .array(
+      z.object({
+        title: z.string(),
+        publisher: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
+        url: z.string().nullable().optional(),
+        authors: z.array(z.string()).optional(),
+      })
+    )
+    .default([]),
+    
+  // Volunteer Work
+  volunteer: z
+    .array(
+      z.object({
+        organization: z.string(),
+        role: z.string().nullable().optional(),
+        startDate: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        achievements: z.array(z.string()).optional(),
+      })
+    )
+    .default([]),
+    
+  // Languages
+  languages: z
+    .array(
+      z.object({
+        language: z.string(),
+        proficiency: z.string().nullable().optional(),
+      })
+    )
+    .default([]),
+    
+  // Additional Sections
   summary: z.string().nullable().optional(),
+  additionalInfo: z.string().nullable().optional(),
+  references: z.string().nullable().optional(),
+  interests: z.string().nullable().optional(),
 });
 type ExtractedProfile = z.infer<typeof ExtractorSchema>;
 
@@ -172,15 +271,65 @@ export type ResumeContent = z.infer<typeof ResumeContentSchema>;
  * --------------------------------------------------------------------------*/
 
 const extractorPrompt = ChatPromptTemplate.fromTemplate(
-  `Extract the following fields from the resume text and return ONLY valid JSON (no extra text). 
-If a field is missing, omit it or use null; arrays should be [].
+  `Extract ALL information from the resume text and return ONLY valid JSON (no extra text). 
+Be comprehensive and capture everything present in the resume. If a field is missing, omit it or use null; arrays should be [].
 
-Fields:
-- fullName, email, phone, location, linkedIn, portfolio, jobTitle, pronouns
- - experience[]: { title, company?, location?, startDate?, endDate?, description?: string[] }
-- education[]: { institution, degree?, startDate?, endDate?, gpa? }
-- skills[]: string
-- summary
+CRITICAL JSON FORMATTING RULES:
+1. Return ONLY valid JSON - no markdown, no code blocks, no extra text
+2. Use double quotes for all strings
+3. No trailing commas in arrays or objects
+4. Escape all special characters in strings (quotes, backslashes, newlines)
+5. Keep JSON under 4000 characters to avoid truncation
+6. Return a flat JSON object with all fields at the root level
+
+Extract these fields and ANY OTHER relevant information you find:
+
+PERSONAL INFORMATION (return these fields directly at root level):
+- fullName, email, phone, location, linkedIn, portfolio, jobTitle, pronouns, website, github, twitter
+
+EXPERIENCE:
+- experience[]: {{ title, company, location?, startDate?, endDate?, description?: string[], achievements?: string[], technologies?: string[], responsibilities?: string[] }}
+
+EDUCATION:
+- education[]: {{ institution, degree?, fieldOfStudy?, startDate?, endDate?, gpa?, honors?, relevantCoursework?: string[] }}
+
+SKILLS:
+- skills[]: string (include all technical skills, soft skills, languages, tools, etc.)
+
+PROJECTS:
+- projects[]: {{ name, description?, technologies?: string[], startDate?, endDate?, url?, github?, achievements?: string[] }}
+
+CERTIFICATIONS:
+- certifications[]: {{ name, issuer, date?, expirationDate?, credentialId? }}
+
+AWARDS & ACHIEVEMENTS:
+- awards[]: {{ title, issuer?, date?, description? }}
+
+PUBLICATIONS:
+- publications[]: {{ title, publisher?, date?, url?, authors?: string[] }}
+
+VOLUNTEER WORK:
+- volunteer[]: {{ organization, role?, startDate?, endDate?, description?, achievements?: string[] }}
+
+LANGUAGES:
+- languages[]: {{ language, proficiency? }}
+
+ADDITIONAL SECTIONS:
+- summary (professional summary/objective)
+- additionalInfo (any other relevant information not covered above)
+- references (if mentioned)
+- interests (if mentioned)
+
+EXAMPLE FORMAT (keep it concise):
+{{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "phone": "123-456-7890",
+  "experience": [{{ "title": "Software Engineer", "company": "Tech Corp" }}],
+  "education": [{{ "institution": "University", "degree": "BS Computer Science" }}],
+  "skills": ["JavaScript", "Python"],
+  "summary": "Experienced software engineer..."
+}}
 
 Resume text:
 {resume_text}`
@@ -533,7 +682,7 @@ async function callModelString(promptText: string): Promise<string> {
     apiKey: process.env.OPENAI_API_KEY!,
     model: "gpt-4o",
     temperature: 0,
-    maxTokens: 1200, // Reduced from 1800 to make it faster
+    maxTokens: 2000, // Increased to ensure complete JSON but not too long
   });
 
   // Use a simple one-turn user message
@@ -555,20 +704,121 @@ async function callModelString(promptText: string): Promise<string> {
 export async function extractProfileDataWithLangChain(text: string) {
   try {
     const trimmed = smartTrimResume(text, 35000);
+    console.log("Trimmed text length:", trimmed.length);
+    console.log("First 200 chars of trimmed text:", trimmed.substring(0, 200));
+    
     const formatted = await extractorPrompt.format({ resume_text: trimmed });
+    console.log("Formatted prompt length:", formatted.length);
+    
     const raw = await callModelString(formatted);
+    console.log("Raw AI response length:", raw.length);
+    console.log("First 500 chars of AI response:", raw.substring(0, 500));
 
     const jsonText = extractJsonFromText(raw);
+    console.log("Extracted JSON text length:", jsonText.length);
+    console.log("Extracted JSON text:", jsonText);
+    
     let parsed: unknown;
     try {
       parsed = JSON.parse(jsonText);
     } catch (e) {
-      // Last-resort: try to fix common trailing commas
-      const fixed = jsonText.replace(/,(\s*[}\]])/g, "$1");
-      parsed = JSON.parse(fixed);
+      console.log("JSON parse error, attempting to fix common issues...");
+      let fixed = jsonText;
+      
+      // Fix common JSON issues
+      fixed = fixed.replace(/,(\s*[}\]])/g, "$1"); // Remove trailing commas
+      fixed = fixed.replace(/,(\s*})/g, "$1"); // Remove trailing commas before closing braces
+      fixed = fixed.replace(/,(\s*\])/g, "$1"); // Remove trailing commas before closing brackets
+      fixed = fixed.replace(/([^\\])\\([^"\\\/bfnrt])/g, "$1\\\\$2"); // Fix unescaped backslashes
+      fixed = fixed.replace(/([^\\])\\([^"\\\/bfnrt])/g, "$1\\\\$2"); // Fix unescaped backslashes again
+      
+      // Try to find and fix incomplete JSON by looking for the last complete object/array
+      const lastCompleteBrace = fixed.lastIndexOf('}');
+      const lastCompleteBracket = fixed.lastIndexOf(']');
+      const lastComplete = Math.max(lastCompleteBrace, lastCompleteBracket);
+      
+      if (lastComplete > 0) {
+        // Check if we need to close arrays or objects
+        const beforeLastComplete = fixed.substring(0, lastComplete + 1);
+        const openBraces = (beforeLastComplete.match(/\{/g) || []).length;
+        const closeBraces = (beforeLastComplete.match(/\}/g) || []).length;
+        const openBrackets = (beforeLastComplete.match(/\[/g) || []).length;
+        const closeBrackets = (beforeLastComplete.match(/\]/g) || []).length;
+        
+        let fixedJson = beforeLastComplete;
+        
+        // Close any unclosed arrays
+        for (let i = 0; i < openBrackets - closeBrackets; i++) {
+          fixedJson += ']';
+        }
+        
+        // Close any unclosed objects
+        for (let i = 0; i < openBraces - closeBraces; i++) {
+          fixedJson += '}';
+        }
+        
+        fixed = fixedJson;
+      }
+      
+      console.log("Fixed JSON:", fixed);
+      
+      try {
+        parsed = JSON.parse(fixed);
+        console.log("Successfully parsed fixed JSON");
+      } catch (e2) {
+        console.error("Still failed to parse JSON after fixes:", e2);
+        console.log("Attempting to extract partial data...");
+        
+        // Last resort: try to extract what we can with regex
+        const partialData: any = {};
+        
+        // Extract basic fields with regex
+        const fullNameMatch = jsonText.match(/"fullName"\s*:\s*"([^"]*)"/);
+        if (fullNameMatch) partialData.fullName = fullNameMatch[1];
+        
+        const emailMatch = jsonText.match(/"email"\s*:\s*"([^"]*)"/);
+        if (emailMatch) partialData.email = emailMatch[1];
+        
+        const phoneMatch = jsonText.match(/"phone"\s*:\s*"([^"]*)"/);
+        if (phoneMatch) partialData.phone = phoneMatch[1];
+        
+        const locationMatch = jsonText.match(/"location"\s*:\s*"([^"]*)"/);
+        if (locationMatch) partialData.location = locationMatch[1];
+        
+        const summaryMatch = jsonText.match(/"summary"\s*:\s*"([^"]*)"/);
+        if (summaryMatch) partialData.summary = summaryMatch[1];
+        
+        // Extract arrays
+        partialData.experience = [];
+        partialData.education = [];
+        partialData.skills = [];
+        partialData.projects = [];
+        partialData.certifications = [];
+        partialData.awards = [];
+        partialData.publications = [];
+        partialData.volunteer = [];
+        partialData.languages = [];
+        
+        parsed = partialData;
+        console.log("Extracted partial data:", parsed);
+      }
     }
 
-    const safe = ExtractorSchema.safeParse(parsed);
+    console.log("Parsed JSON:", JSON.stringify(parsed, null, 2));
+
+    // Handle nested personalInformation structure if AI returns it that way
+    let normalizedData = parsed;
+    if (parsed && typeof parsed === 'object' && 'personalInformation' in parsed) {
+      console.log("Detected nested personalInformation structure, flattening...");
+      const { personalInformation, ...rest } = parsed as any;
+      normalizedData = {
+        ...personalInformation,
+        ...rest
+      };
+      console.log("Flattened data:", JSON.stringify(normalizedData, null, 2));
+    }
+
+    const safe = ExtractorSchema.safeParse(normalizedData);
     if (!safe.success) {
       console.warn("ExtractorSchema validation failed:", safe.error.flatten());
       throw new Error("Invalid extractor JSON");
@@ -577,6 +827,7 @@ export async function extractProfileDataWithLangChain(text: string) {
 
     // normalize return to a stable shape
     return {
+      // Personal Information
       fullName: p.fullName ?? "",
       email: p.email ?? "",
       phone: p.phone ?? "",
@@ -585,14 +836,47 @@ export async function extractProfileDataWithLangChain(text: string) {
       portfolio: p.portfolio ?? "",
       jobTitle: p.jobTitle ?? "",
       pronouns: p.pronouns ?? "",
+      website: p.website ?? "",
+      github: p.github ?? "",
+      twitter: p.twitter ?? "",
+      
+      // Experience
       experience: Array.isArray(p.experience) ? p.experience : [],
+      
+      // Education
       education: Array.isArray(p.education) ? p.education : [],
+      
+      // Skills
       skills: Array.isArray(p.skills) ? p.skills : [],
+      
+      // Projects
+      projects: Array.isArray(p.projects) ? p.projects : [],
+      
+      // Certifications
+      certifications: Array.isArray(p.certifications) ? p.certifications : [],
+      
+      // Awards & Achievements
+      awards: Array.isArray(p.awards) ? p.awards : [],
+      
+      // Publications
+      publications: Array.isArray(p.publications) ? p.publications : [],
+      
+      // Volunteer Work
+      volunteer: Array.isArray(p.volunteer) ? p.volunteer : [],
+      
+      // Languages
+      languages: Array.isArray(p.languages) ? p.languages : [],
+      
+      // Additional Sections
       summary: p.summary ?? "",
+      additionalInfo: p.additionalInfo ?? "",
+      references: p.references ?? "",
+      interests: p.interests ?? "",
     };
   } catch (err) {
     console.error("LLM extraction failed:", err);
     return {
+      // Personal Information
       fullName: "",
       email: "",
       phone: "",
@@ -601,10 +885,42 @@ export async function extractProfileDataWithLangChain(text: string) {
       portfolio: "",
       jobTitle: "",
       pronouns: "",
+      website: "",
+      github: "",
+      twitter: "",
+      
+      // Experience
       experience: [],
+      
+      // Education
       education: [],
+      
+      // Skills
       skills: [],
+      
+      // Projects
+      projects: [],
+      
+      // Certifications
+      certifications: [],
+      
+      // Awards & Achievements
+      awards: [],
+      
+      // Publications
+      publications: [],
+      
+      // Volunteer Work
+      volunteer: [],
+      
+      // Languages
+      languages: [],
+      
+      // Additional Sections
       summary: "",
+      additionalInfo: "",
+      references: "",
+      interests: "",
     };
   }
 }

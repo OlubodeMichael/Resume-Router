@@ -99,6 +99,8 @@ export const HTMLTemplateRenderer: React.FC<TemplateRendererProps> = ({ spec, da
 export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTemplateRendererProps>(
   ({ spec, data, className, initialContent, onContentChange }, ref) => {
     const contentRef = useRef<HTMLDivElement>(null);
+    const isEditingRef = useRef(false);
+    const lastContentRef = useRef<string>('');
 
     useImperativeHandle(ref, () => {
       const element = contentRef.current;
@@ -131,14 +133,107 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
           ALLOW_DATA_ATTR: true,
         });
 
-        // Load initial edited content if provided and it's a fresh load
+        // Helper function to save cursor position as offset from start of content
+        const saveCursorPosition = (): number | null => {
+          if (!contentRef.current) return null;
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) return null;
+          
+          const range = selection.getRangeAt(0);
+          const preCaretRange = range.cloneRange();
+          preCaretRange.selectNodeContents(contentRef.current);
+          preCaretRange.setEnd(range.endContainer, range.endOffset);
+          
+          return preCaretRange.toString().length;
+        };
+
+        // Helper function to restore cursor position by offset
+        const restoreCursorPosition = (offset: number) => {
+          if (!contentRef.current) return;
+          
+          try {
+            const range = document.createRange();
+            const selection = window.getSelection();
+            if (!selection) return;
+
+            // Use Range API to find position by character offset
+            let charCount = 0;
+            const walker = document.createTreeWalker(
+              contentRef.current,
+              NodeFilter.SHOW_TEXT,
+              null
+            );
+
+            let node: Node | null = walker.nextNode();
+            let targetNode: Node | null = null;
+            let targetOffset = 0;
+
+            while (node) {
+              const textLength = node.textContent?.length || 0;
+              
+              if (charCount + textLength >= offset) {
+                targetNode = node;
+                targetOffset = offset - charCount;
+                break;
+              }
+              
+              charCount += textLength;
+              node = walker.nextNode();
+            }
+
+            if (targetNode && targetNode.nodeType === Node.TEXT_NODE) {
+              const textNode = targetNode as Text;
+              const safeOffset = Math.min(Math.max(0, targetOffset), textNode.textContent?.length || 0);
+              
+              range.setStart(textNode, safeOffset);
+              range.setEnd(textNode, safeOffset);
+              
+              selection.removeAllRanges();
+              selection.addRange(range);
+              
+              // Ensure the element is focused
+              if (document.activeElement !== contentRef.current) {
+                contentRef.current.focus();
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to restore cursor position:', error);
+          }
+        };
+
+        // Don't update content if user is actively editing
+        const isCurrentlyEditing = isEditingRef.current || document.activeElement === contentRef.current;
+        
+        // Save cursor position before any DOM manipulation
+        const savedOffset = isCurrentlyEditing ? saveCursorPosition() : null;
+        
+        // Only update content if it's different from what's already there
+        const currentHtml = contentRef.current.innerHTML;
         const nameValue = typeof data.name === 'string' ? data.name : 
                          typeof data.fullName === 'string' ? data.fullName : 'default';
-        const contentToSet = initialContent && !contentRef.current.innerHTML.includes(nameValue)
+        const contentToSet = initialContent && !currentHtml.includes(nameValue)
           ? DOMPurify.sanitize(initialContent, { ADD_TAGS: ['style', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'br', 'section'], ADD_ATTR: ['target', 'href', 'class', 'style', 'id'] })
           : cleanHtml;
 
-        contentRef.current.innerHTML = contentToSet;
+        // Only update innerHTML if content actually changed
+        // Skip update if user is actively editing to preserve cursor position
+        if (contentToSet !== currentHtml) {
+          // If user is editing and content hasn't changed, skip the update
+          if (!isCurrentlyEditing || currentHtml !== lastContentRef.current) {
+            contentRef.current.innerHTML = contentToSet;
+            lastContentRef.current = contentToSet;
+            
+            // Restore cursor position if it was saved
+            if (savedOffset !== null && isCurrentlyEditing) {
+              requestAnimationFrame(() => {
+                restoreCursorPosition(savedOffset);
+              });
+            }
+          }
+        } else {
+          // Content is the same, update lastContentRef
+          lastContentRef.current = currentHtml;
+        }
 
         // Inject scoped CSS (no Shadow DOM for editability)
         let style = contentRef.current.parentElement?.querySelector('.template-style');
@@ -282,7 +377,13 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
         // Handle content changes
         const handleInput = () => {
           if (onContentChange && contentRef.current) {
+            isEditingRef.current = true;
+            lastContentRef.current = contentRef.current.innerHTML;
             onContentChange(contentRef.current.innerHTML);
+            // Reset editing flag after a short delay
+            setTimeout(() => {
+              isEditingRef.current = false;
+            }, 100);
           }
         };
 

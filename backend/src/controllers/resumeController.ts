@@ -227,6 +227,51 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
   });
 });
 
+// Update Resume Content
+export const updateResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { id } = req.params;
+  const { content, lastEditedAt } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  if (!content) {
+    res.status(400).json({ message: 'Content is required' });
+    return;
+  }
+
+  // Verify resume exists and belongs to user
+  const resume = await prisma.resume.findFirst({
+    where: { id, userId },
+  });
+
+  if (!resume) {
+    res.status(404).json({ message: 'Resume not found' });
+    return;
+  }
+
+  console.log('Updating resume content:', { resumeId: id, contentKeys: Object.keys(content || {}) });
+
+  // Update resume content with new JSON
+  await prisma.resume.update({
+    where: { id },
+    data: {
+      content: content as any, // JSON content with styling preserved
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log('Resume content saved successfully:', { resumeId: id });
+
+  res.status(200).json({
+    message: 'Resume updated successfully',
+    updatedAt: new Date().toISOString(),
+  });
+});
+
 // Delete Resume
 export const deleteResume = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const userId = (req.user as any)?.id;

@@ -26,14 +26,12 @@ export default function Navbar() {
             </div>
             {/* Join Waitlist Button */}
             <div className="hidden md:block">
-              {process.env.NODE_ENV === 'production' ? <a href="#join-waitlist" className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition">
-                Join Waitlist
-              </a> : <a
+              <a
                 href="/signin"
                 className="bg-blue-800 text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-blue-900 transition"
               >
                 Login
-              </a>}
+              </a>
             </div>
             {/* Hamburger Icon */}
             <button
@@ -94,11 +92,11 @@ export default function Navbar() {
               FAQ
             </Link>
             <Link
-              href="/#join-waitlist"
+              href="/signin"
               className="block mt-4 bg-blue-800 text-white px-5 py-3 rounded-lg font-semibold shadow hover:bg-blue-900 transition-all duration-200 text-center"
               onClick={() => setMenuOpen(false)}
             >
-              Join Waitlist
+              Get Started Free+
             </Link>
           </div>
         </div>
