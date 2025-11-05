@@ -58,6 +58,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           credentials: 'include',
         });
         
+        // If token is expired or invalid (401), clear cookie and redirect to signin
+        if (response.status === 401 || !response.ok) {
+          Cookies.remove("authToken");
+          setUser(null);
+          // Only redirect if we're on a protected route
+          if (typeof window !== 'undefined') {
+            const currentPath = window.location.pathname;
+            if (currentPath.startsWith('/dashboard') || currentPath.startsWith('/profile')) {
+              router.push('/signin');
+            }
+          }
+          setLoading(false);
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json();
           console.log(data.user);
@@ -72,7 +87,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } catch (error) {
         console.error('Initial auth check failed:', error);
+        Cookies.remove("authToken");
         setUser(null);
+        // Only redirect if we're on a protected route
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/dashboard') || currentPath.startsWith('/profile')) {
+            router.push('/signin');
+          }
+        }
       } finally {
         setLoading(false);
       }

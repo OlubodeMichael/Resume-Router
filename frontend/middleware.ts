@@ -43,17 +43,29 @@ export async function middleware(req: NextRequest) {
       headers: { Cookie: `authToken=${token.value}` }, // ⬅️ manually forward token
     });
 
-    if (!res.ok) {
+    // If token is expired or invalid (401), clear cookie and redirect to signin
+    if (!res.ok || res.status === 401) {
       const url = req.nextUrl.clone();
       url.pathname = "/signin";
-      return NextResponse.redirect(url);
+      const response = NextResponse.redirect(url);
+      
+      // Clear the expired/invalid auth token cookie
+      response.cookies.delete("authToken");
+      
+      return response;
     }
 
     return NextResponse.next();
   } catch {
+    // On any error (network, etc.), clear cookie and redirect to signin
     const url = req.nextUrl.clone();
     url.pathname = "/signin";
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    
+    // Clear the auth token cookie on error
+    response.cookies.delete("authToken");
+    
+    return response;
   }
 }
 
