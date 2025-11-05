@@ -5,8 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const { html, filename = 'resume.pdf' } = await request.json();
 
-    console.log('PDF API called with HTML length:', html?.length);
-    console.log('Filename:', filename);
 
     if (!html) {
       return NextResponse.json(

@@ -11,7 +11,6 @@ export const createJobDescription = catchAsync(async (req, res) => {
 
   if (!userId) return void res.status(401).json({ message: "User not authenticated" });
   if (!content || typeof content !== "string" || content.trim().length < 30) {
-    console.log(content)
     return void res.status(400).json({ message: "Content is required and must be a string ≥ 30 chars" });
   }
 

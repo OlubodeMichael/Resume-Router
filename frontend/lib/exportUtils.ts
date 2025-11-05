@@ -167,11 +167,6 @@ export const exportVectorPDF = async (
   allowUserToChooseLocation: boolean = false // Default to false to avoid security warnings
 ): Promise<void> => {
   try {
-    console.log('Starting vector PDF export...');
-    
-   
-    
-    
     const response = await fetch('/api/export-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -187,7 +182,6 @@ export const exportVectorPDF = async (
     }
 
     const blob = await response.blob();
-    console.log('PDF blob size:', blob.size, 'bytes');
 
     // Save via File System Access API if available and requested
     if (allowUserToChooseLocation && 'showSaveFilePicker' in window) {
@@ -202,11 +196,10 @@ export const exportVectorPDF = async (
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
-        console.log('✅ PDF saved successfully with file picker!');
         return;
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          console.log('📝 User cancelled file save');
+      
           return; // User cancelled, don't show error
         }
         console.warn('⚠️ File picker failed, falling back to download:', error);

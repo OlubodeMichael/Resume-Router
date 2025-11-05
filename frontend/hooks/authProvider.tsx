@@ -75,7 +75,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         if (response.ok) {
           const data = await response.json();
-          console.log(data.user);
           // Map avatarUrl to picture field for frontend compatibility
           const userData = {
             ...data.user,

@@ -28,14 +28,12 @@ export default function DocumentPage() {
   
   // Use SSE to monitor resume processing status
   const status = useResumeSSE(id as string)
-  console.log('status', status?.status)
 
   const resumeData: ResumeData = useMemo(() => {
     if (!generatedResumeContent) return DEFAULT_RESUME
     
     const parsed = ResumeRecordSchema.safeParse(generatedResumeContent)
     if (!parsed.success) {
-      console.warn('Invalid resume payload', parsed.error)
       return DEFAULT_RESUME
     }
     const mapped = mapRecordToTemplateData(parsed.data)
@@ -51,7 +49,6 @@ export default function DocumentPage() {
 
   // Save content changes when editor content changes (debounced)
   const handleContentChange = useCallback((html: string) => {
-    // Use ID from URL params (which should match the resume ID)
     const resumeId = (id as string) || generatedResumeContent?.id
     if (resumeId) {
       saveEditedContent(html, resumeId, debounceTimeoutRef)
@@ -139,19 +136,16 @@ export default function DocumentPage() {
       // Check if localStorage has content - if so, skip DB fetch
       const hasLocalStorageContent = id && loadEditedContent(id as string)
       if (hasLocalStorageContent) {
-        console.log('Found localStorage content, skipping DB fetch')
         return
       }
 
       // When status becomes "ready", fetch the resume once
       if (status?.status === "ready" && !hasFetchedForStatus) {
-        console.log('status is ready, fetching resume...')
         setHasFetchedForStatus(true)
         await getResume(id as string)
       } 
       // On initial load without SSE status, try to load the resume directly
       else if (!status && !generatedResumeContent && !hasFetchedForStatus) {
-        console.log('no status yet, trying to load resume...')
         setHasFetchedForStatus(true)
         await getResume(id as string)
       }

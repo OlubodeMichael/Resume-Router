@@ -23,7 +23,6 @@ export async function middleware(req: NextRequest) {
   if (!token) {
     const referer = req.headers.get("referer");
     if (referer?.includes("/api/auth/google/callback")) {
-      console.log("🔍 OAuth redirect detected, allowing access");
       return NextResponse.next();
     }
 
