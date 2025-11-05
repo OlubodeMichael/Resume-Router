@@ -507,7 +507,7 @@ function CTA2() {
         </p>
         <a
           href="/signup"
-          className="inline-block bg-white text-slate-900 px-8 py-3 rounded-xl font-medium shadow-md hover:bg-slate-50 transition text-lg"
+          className="inline-block bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
           style={{ boxShadow: "0 2px 16px 0 rgba(255, 255, 255, 0.10)" }}
         >
           Get Started

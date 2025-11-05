@@ -41,6 +41,7 @@ router.post('/', protect, requireEntitlement({
   opKeyFromReq: (req) => req.body.resumeId || `resume:${req.user.id}:${Date.now()}` }), Resume.createResume);
 router.get('/', protect, Resume.getResumes);
 router.get('/:id', protect, Resume.getResume);
+router.post('/:id', protect, Resume.updateResume); // POST for updating resume content
 router.delete('/:id', protect, Resume.deleteResume);
 router.post('/parse', protect, upload.single('resume'), Resume.parseResume);
 router.post('/:id/tailor', protect, Resume.tailorResume);
