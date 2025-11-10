@@ -38,7 +38,20 @@ interface ResumeContextType {
   generateResume: (jobDescriptionId: string) => Promise<void>;
   showUpgradePrompt: boolean;
   setShowUpgradePrompt: (show: boolean) => void;
+  parseResumeFile: (file: File) => Promise<ParsedResumeResult | null>;
+  isParsingResume: boolean;
+  lastParsedResume: ParsedResumeResult | null;
 }
+
+export type ParsedResumeResult = {
+  message: string;
+  data: Record<string, unknown>;
+  mapped?: {
+    appliedSections: string[];
+    warnings: string[];
+    profileUpdated: boolean;
+  };
+};
 
 const ResumeContext = createContext<ResumeContextType | null>(null);
 
@@ -47,12 +60,14 @@ const ResumeContext = createContext<ResumeContextType | null>(null);
 export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     const [resume, setResume] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isParsingResume, setIsParsingResume] = useState<boolean>(false);
     const [resumes, setResumes] = useState<GeneratedResume[]>([]);
     const [jobDescription, setJobDescription] = useState<JobDescription | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
     const [status, setStatus] = useState<Status | null>(null);
     const [generatedResumeContent, setGeneratedResumeContent] = useState<GeneratedResume | null>(null);
+    const [lastParsedResume, setLastParsedResume] = useState<ParsedResumeResult | null>(null);
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL 
     const { toasts, removeToast, showSuccess, showError } = useToast();
 
@@ -105,6 +120,60 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(false);
         }
     }
+
+    const parseResumeFile = async (file: File): Promise<ParsedResumeResult | null> => {
+        setIsParsingResume(true);
+        setError(null);
+        try {
+            const formData = new FormData();
+            formData.append("resume", file);
+
+            const response = await fetch(`${API_BASE_URL}/api/resumes/parse`, {
+                method: "POST",
+                body: formData,
+                credentials: "include",
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: "Failed to parse resume" }));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json() as ParsedResumeResult;
+            setLastParsedResume(data);
+
+            if (data.mapped?.profileUpdated) {
+                showSuccess(
+                    "Resume Parsed & Profile Updated",
+                    data.mapped.appliedSections.length
+                        ? `Updated sections: ${data.mapped.appliedSections.join(", ")}`
+                        : "Your profile has been refreshed with resume data.",
+                    5000
+                );
+            } else {
+                showSuccess(
+                    "Resume Parsed Successfully",
+                    "Review the extracted data and warnings if any.",
+                    5000
+                );
+            }
+
+            if (data.mapped?.warnings?.length) {
+                data.mapped.warnings.forEach((warning) => {
+                    showError("Resume Import Warning", warning, 6000);
+                });
+            }
+
+            return data;
+        } catch (err) {
+            const message = (err as Error).message || "Failed to parse resume.";
+            setError(message);
+            showError("Resume Parsing Failed", message, 6000);
+            return null;
+        } finally {
+            setIsParsingResume(false);
+        }
+    };
 
     const generateResume = async (jobDescriptionId: string) => {
         setIsLoading(true);
@@ -302,7 +371,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                 generateResume,
                 deleteResume,
                 showUpgradePrompt,
-                setShowUpgradePrompt
+                setShowUpgradePrompt,
+                parseResumeFile,
+                isParsingResume,
+                lastParsedResume
             }}
         >
             {children}

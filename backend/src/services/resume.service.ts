@@ -34,7 +34,7 @@ function extractJsonFromText(s: string): string {
  * --------------------------------------------------------------------------*/
 
 // Extraction (resume text -> profile-ish fields)
-const ExtractorSchema = z.object({
+export const ExtractorSchema = z.object({
   // Personal Information
   fullName: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
@@ -89,7 +89,7 @@ const ExtractorSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        description: z.string().nullable().optional(),
+        description: z.union([z.string(), z.array(z.string())]).nullable().optional(),
         technologies: z.array(z.string()).optional(),
         startDate: z.string().nullable().optional(),
         endDate: z.string().nullable().optional(),
@@ -146,7 +146,7 @@ const ExtractorSchema = z.object({
         role: z.string().nullable().optional(),
         startDate: z.string().nullable().optional(),
         endDate: z.string().nullable().optional(),
-        description: z.string().nullable().optional(),
+        description: z.union([z.string(), z.array(z.string())]).nullable().optional(),
         achievements: z.array(z.string()).optional(),
       })
     )
@@ -165,10 +165,10 @@ const ExtractorSchema = z.object({
   // Additional Sections
   summary: z.string().nullable().optional(),
   additionalInfo: z.string().nullable().optional(),
-  references: z.string().nullable().optional(),
-  interests: z.string().nullable().optional(),
+  references: z.union([z.string(), z.array(z.string())]).nullable().optional(),
+  interests: z.union([z.string(), z.array(z.string())]).nullable().optional(),
 });
-type ExtractedProfile = z.infer<typeof ExtractorSchema>;
+export type ExtractedProfile = z.infer<typeof ExtractorSchema>;
 
 // Dynamic content that AI will generate (tailored to job description)
 export const DynamicResumeContentSchema = z.object({
@@ -289,6 +289,7 @@ PERSONAL INFORMATION (return these fields directly at root level):
 
 EXPERIENCE:
 - experience[]: {{ title, company, location?, startDate?, endDate?, description?: string[], achievements?: string[], technologies?: string[], responsibilities?: string[] }}
+- Preserve all bullet points exactly as separate strings within the relevant arrays (responsibilities, description, achievements). Never drop or summarize bullet content.
 
 EDUCATION:
 - education[]: {{ institution, degree?, fieldOfStudy?, startDate?, endDate?, gpa?, honors?, relevantCoursework?: string[] }}
@@ -297,7 +298,8 @@ SKILLS:
 - skills[]: string (include all technical skills, soft skills, languages, tools, etc.)
 
 PROJECTS:
-- projects[]: {{ name, description?, technologies?: string[], startDate?, endDate?, url?, github?, achievements?: string[] }}
+- projects[]: {{ name, description? (string or array of strings), technologies?: string[], startDate?, endDate?, url?, github?, achievements?: string[] }}
+- If a project has multiple bullet points in the resume, capture EACH bullet as its own string in the achievements array and keep the full descriptive text (including multi-line content) in description (use an array of strings if needed).
 
 CERTIFICATIONS:
 - certifications[]: {{ name, issuer, date?, expirationDate?, credentialId? }}
@@ -825,6 +827,19 @@ export async function extractProfileDataWithLangChain(text: string) {
     }
     const p = safe.data;
 
+    const toStringValue = (value: unknown): string => {
+      if (Array.isArray(value)) {
+        return value.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean).join(" ");
+      }
+      return typeof value === "string" ? value : "";
+    };
+
+    const toArrayOrString = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === "string") return value;
+      return undefined;
+    };
+
     // normalize return to a stable shape
     return {
       // Personal Information
@@ -868,10 +883,10 @@ export async function extractProfileDataWithLangChain(text: string) {
       languages: Array.isArray(p.languages) ? p.languages : [],
       
       // Additional Sections
-      summary: p.summary ?? "",
-      additionalInfo: p.additionalInfo ?? "",
-      references: p.references ?? "",
-      interests: p.interests ?? "",
+      summary: toStringValue(p.summary),
+      additionalInfo: toStringValue(p.additionalInfo),
+      references: toStringValue(p.references),
+      interests: toStringValue(p.interests),
     };
   } catch (err) {
     console.error("LLM extraction failed:", err);

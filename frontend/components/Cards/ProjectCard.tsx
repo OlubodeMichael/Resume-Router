@@ -72,7 +72,23 @@ export default function ProjectCard({
       </div>
 
       {/* Description */}
-      <p className="text-gray-700 text-sm mb-4 leading-relaxed">{description}</p>
+      {description && (
+        <div className="text-gray-700 text-sm mb-4 leading-relaxed">
+          {description.includes("\n") ? (
+            <ul className="list-disc list-inside space-y-1">
+              {description
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line, index) => (
+                  <li key={index}>{line.replace(/^•\s*/, "")}</li>
+                ))}
+            </ul>
+          ) : (
+            <p>{description.replace(/^•\s*/, "")}</p>
+          )}
+        </div>
+      )}
 
       {/* Technologies */}
       {technologies && technologies.length > 0 && (
