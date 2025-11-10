@@ -84,6 +84,16 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
 
   const token = generateToken(user.id, user.email);
 
+  res.cookie("authToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN
+      ? { domain: process.env.COOKIE_DOMAIN }
+      : {}),
+  });
+
   res.status(201).json({
     message: "User created successfully",
     user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits },
@@ -113,6 +123,16 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
   }
 
   const token = generateToken(user.id, user.email);
+
+  res.cookie("authToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN
+      ? { domain: process.env.COOKIE_DOMAIN }
+      : {}),
+  });
 
   res.status(200).json({
     message: "Login successful",
@@ -183,11 +203,12 @@ export const googleCallback = (req: Request, res: Response) => {
       // Set the cookie first
       res.cookie("authToken", userAuth.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // Set to true in production
-        sameSite: "lax", // Allow cross-origin cookies
-        maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-        // Remove domain for localhost development, or set to proper domain format for production
-        ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {})
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 24 * 60 * 60 * 1000,
+        ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN
+          ? { domain: process.env.COOKIE_DOMAIN }
+          : {})
       });
       
       // Check if user needs to complete profile (for new users)
@@ -268,7 +289,14 @@ export const authFailed = (req: Request, res: Response) => {
 };
 
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie("authToken");
+  res.clearCookie("authToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    ...(process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN
+      ? { domain: process.env.COOKIE_DOMAIN }
+      : {}),
+  });
   res.status(200).json({ message: "Logged out successfully" });
 };
 
