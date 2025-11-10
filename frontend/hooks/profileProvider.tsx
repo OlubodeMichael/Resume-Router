@@ -12,6 +12,14 @@ interface Profile {
   experience?: Experience[];
   projects?: Project[];
   achievements?: string[];
+  certifications?: Certification[];
+  awardsHonors?: AwardHonor[];
+  volunteer?: Volunteer[];
+  leadership?: Leadership[];
+  publications?: Publication[];
+  references?: Reference[];
+  summary?: string | null;
+  objective?: string | null;
 }
 
 interface Education {
@@ -42,6 +50,56 @@ interface Project {
   endDate?: string | null;
 }
 
+interface Certification {
+  name?: string;
+  issuer?: string;
+  date: string;
+  expirationDate?: string;
+  credentialId?: string;
+  url?: string;
+}
+
+interface AwardHonor {
+  title: string;
+  issuer?: string;
+  date?: string;
+  description?: string;
+}
+
+interface Volunteer {
+  org: string;
+  role?: string;
+  startDate?: string;
+  endDate?: string;
+  impact?: string[];
+  url?: string;
+}
+
+interface Leadership {
+  org: string;
+  position?: string;
+  startDate?: string;
+  endDate?: string;
+  achievements?: string[];
+}
+
+interface Publication {
+  title: string;
+  venue?: string;
+  date?: string;
+  url?: string;
+  summary?: string;
+}
+
+interface Reference {
+  name: string;
+  title?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  relation?: string;
+}
+
 interface ProfileContextType {
   profile: Profile | null;
   loading: boolean;
@@ -64,6 +122,26 @@ interface ProfileContextType {
   postProject: (project: Project) => void;
   updateProject: (index: number, project: Project) => void;
   deleteProject: (index: number) => void;
+  addCertification: (certification: Certification) => void;
+  updateCertification: (index: number, certification: Certification) => void;
+  deleteCertification: (index: number) => void;
+  addAwardHonor: (award: AwardHonor) => void;
+  updateAwardHonor: (index: number, award: AwardHonor) => void;
+  deleteAwardHonor: (index: number) => void;
+  addVolunteer: (volunteer: Volunteer) => void;
+  updateVolunteer: (index: number, volunteer: Volunteer) => void;
+  deleteVolunteer: (index: number) => void;
+  addLeadership: (leadership: Leadership) => void;
+  updateLeadership: (index: number, leadership: Leadership) => void;
+  deleteLeadership: (index: number) => void;
+  addPublication: (publication: Publication) => void;
+  updatePublication: (index: number, publication: Publication) => void;
+  deletePublication: (index: number) => void;
+  addReference: (reference: Reference) => void;
+  updateReference: (index: number, reference: Reference) => void;
+  deleteReference: (index: number) => void;
+  updateSummary: (summary: string | null) => void;
+  updateObjective: (objective: string | null) => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -477,6 +555,400 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addCertification = async (certification: Certification) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/certifications`, {
+        method: "POST",
+        body: JSON.stringify(certification),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add certification");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateCertification = async (index: number, certification: Certification) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/certifications/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(certification),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update certification");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deleteCertification = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/certifications/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete certification");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const addAwardHonor = async (award: AwardHonor) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/awards-honors`, {
+        method: "POST",
+        body: JSON.stringify(award),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add award");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateAwardHonor = async (index: number, award: AwardHonor) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/awards-honors/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(award),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update award");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deleteAwardHonor = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/awards-honors/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete award");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const addVolunteer = async (volunteer: Volunteer) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/volunteer`, {
+        method: "POST",
+        body: JSON.stringify(volunteer),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add volunteer experience");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateVolunteer = async (index: number, volunteer: Volunteer) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/volunteer/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(volunteer),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update volunteer experience");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deleteVolunteer = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/volunteer/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete volunteer experience");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const addLeadership = async (leadership: Leadership) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/leadership`, {
+        method: "POST",
+        body: JSON.stringify(leadership),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add leadership activity");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateLeadership = async (index: number, leadership: Leadership) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/leadership/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(leadership),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update leadership activity");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deleteLeadership = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/leadership/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete leadership activity");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const addPublication = async (publication: Publication) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/publications`, {
+        method: "POST",
+        body: JSON.stringify(publication),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add publication");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updatePublication = async (index: number, publication: Publication) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/publications/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(publication),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update publication");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deletePublication = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/publications/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete publication");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const addReference = async (reference: Reference) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/references`, {
+        method: "POST",
+        body: JSON.stringify(reference),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add reference");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateReference = async (index: number, reference: Reference) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/references/${index}`, {
+        method: "PATCH",
+        body: JSON.stringify(reference),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update reference");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const deleteReference = async (index: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/references/${index}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete reference");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateSummary = async (summary: string | null) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/summary`, {
+        method: "PATCH",
+        body: JSON.stringify({ summary }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update summary");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateObjective = async (objective: string | null) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/objective`, {
+        method: "PATCH",
+        body: JSON.stringify({ objective }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update objective");
+      if (data.profile) {
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   return (
     <ProfileContext.Provider
       value={{
@@ -501,6 +973,26 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         postProject,
         updateProject,
         deleteProject,
+        addCertification,
+        updateCertification,
+        deleteCertification,
+        addAwardHonor,
+        updateAwardHonor,
+        deleteAwardHonor,
+        addVolunteer,
+        updateVolunteer,
+        deleteVolunteer,
+        addLeadership,
+        updateLeadership,
+        deleteLeadership,
+        addPublication,
+        updatePublication,
+        deletePublication,
+        addReference,
+        updateReference,
+        deleteReference,
+        updateSummary,
+        updateObjective,
       }}
     >
       {children}

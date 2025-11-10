@@ -7,14 +7,149 @@ import mammoth from "mammoth";
 import fs from "fs/promises";
 import * as fsSync from "fs";
 import { extractProfileDataWithLangChain } from '../services/resume.service';
+import { mapExtractedProfileToProfile } from '../services/profileMapping.service';
 import AppError from '../../utils/appError';
 import { processResumeAsync } from '../../utils/worker';
 import { $Enums } from '@prisma/client';
 import { createDraftAndStart } from '../services/resumeDraft.service';
+import { rdel } from '../../utils/rcache';
 
 // Extend Express Request to include file property
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;
+}
+
+const profileCacheKey = (userId: string) => `rr:v1:profile:${userId}`;
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function mergeCollections<T>(existing: T[], incoming: T[], keyFn: (item: T) => string) {
+  const result = [...existing];
+  const seen = new Set(existing.map((item) => keyFn(item)));
+  let changed = false;
+
+  incoming.forEach((item) => {
+    const key = keyFn(item);
+    if (seen.has(key)) return;
+    result.push(item);
+    seen.add(key);
+    changed = true;
+  });
+
+  return { merged: result, changed };
+}
+
+function mergeStringCollections(existing: unknown, incoming: string[]) {
+  const existingArray = Array.isArray(existing) ? existing : [];
+  const normalizedExisting = existingArray
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => value.length > 0);
+
+  const seen = new Set(normalizedExisting.map((value) => value.toLowerCase()));
+  const merged = [...normalizedExisting];
+  let changed = false;
+
+  incoming.forEach((value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const lower = trimmed.toLowerCase();
+    if (seen.has(lower)) return;
+    merged.push(trimmed);
+    seen.add(lower);
+    changed = true;
+  });
+
+  return { merged, changed };
+}
+
+function mergeProjectEntry(existing: any, incoming: any) {
+  const updated = { ...existing };
+  let changed = false;
+
+  const incomingDescription = typeof incoming.description === "string" ? incoming.description : incoming.description?.join?.(" ") ?? "";
+  const existingDescription = typeof existing.description === "string" ? existing.description : existing.description?.join?.(" ") ?? "";
+
+  if (incomingDescription && incomingDescription.length > existingDescription.length) {
+    updated.description = incomingDescription;
+    changed = true;
+  }
+
+  if (incoming.startDate && !existing.startDate) {
+    updated.startDate = incoming.startDate;
+    changed = true;
+  }
+
+  if (incoming.endDate && !existing.endDate) {
+    updated.endDate = incoming.endDate;
+    changed = true;
+  }
+
+  if (incoming.url && !existing.url) {
+    updated.url = incoming.url;
+    changed = true;
+  }
+
+  if (incoming.github && !existing.github) {
+    updated.github = incoming.github;
+    changed = true;
+  }
+
+  const existingTechnologies = Array.isArray(existing.technologies) ? existing.technologies : [];
+  const incomingTechnologies = Array.isArray(incoming.technologies) ? incoming.technologies : [];
+  const techSet = new Set<string>();
+  existingTechnologies.forEach((tech: string) => {
+    if (typeof tech === "string" && tech.trim()) {
+      techSet.add(tech.trim());
+    }
+  });
+  incomingTechnologies.forEach((tech: string) => {
+    if (typeof tech === "string" && tech.trim()) {
+      if (!techSet.has(tech.trim())) {
+        changed = true;
+      }
+      techSet.add(tech.trim());
+    }
+  });
+  updated.technologies = Array.from(techSet);
+
+  return { project: updated, changed };
+}
+
+function mergeProjects(existingProjects: any[], incomingProjects: any[]) {
+  const mergedProjects = [...existingProjects];
+  let changed = false;
+
+  incomingProjects.forEach((incomingProject) => {
+    const normalizedName = (incomingProject.name || "").toLowerCase().trim();
+    const normalizedStart = (incomingProject.startDate || "").toLowerCase().trim();
+    let matchIndex = mergedProjects.findIndex((project) => {
+      const projectName = (project.name || "").toLowerCase().trim();
+      const projectStart = (project.startDate || "").toLowerCase().trim();
+      if (!normalizedName || !projectName) return false;
+      if (projectName !== normalizedName) return false;
+      if (normalizedStart && projectStart) {
+        return projectStart === normalizedStart;
+      }
+      return true;
+    });
+
+    if (matchIndex === -1) {
+      mergedProjects.push(incomingProject);
+      changed = true;
+      return;
+    }
+
+    const existingProject = mergedProjects[matchIndex];
+    const { project, changed: projectChanged } = mergeProjectEntry(existingProject, incomingProject);
+    if (projectChanged) {
+      mergedProjects[matchIndex] = project;
+      changed = true;
+    }
+  });
+
+  return { merged: mergedProjects, changed };
 }
 
 // Stream-based PDF parsing function
@@ -348,7 +483,189 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
     // Clear text from memory after processing
     text = "";
 
-    res.status(200).json({ message: "Resume processed successfully", data: profileData });
+    const mapping = mapExtractedProfileToProfile(profileData);
+
+    const appliedSections: string[] = [];
+    let profileUpdated = false;
+
+    if (mapping.updatedSections.length) {
+      const existingProfile = await prisma.profile.findUnique({ where: { userId } });
+
+      if (existingProfile) {
+        const updateData: Record<string, unknown> = {};
+
+        if (mapping.update.skills && mapping.update.skills.length) {
+          const { merged, changed } = mergeStringCollections(existingProfile.skills, mapping.update.skills);
+          if (changed) {
+            updateData.skills = merged;
+            appliedSections.push("skills");
+          }
+        }
+
+        if (mapping.update.leadership && mapping.update.leadership.length) {
+          const existingLeadership = asArray<any>(existingProfile.leadership);
+          const { merged, changed } = mergeCollections(
+            existingLeadership,
+            mapping.update.leadership,
+            (item) => `${item.org || ""}|${item.position || ""}|${item.startDate || ""}`,
+          );
+          if (changed) {
+            updateData.leadership = merged;
+            appliedSections.push("leadership");
+          }
+        }
+
+        if (mapping.update.references && mapping.update.references.length) {
+          const existingReferences = asArray<any>(existingProfile.references);
+          const { merged, changed } = mergeCollections(
+            existingReferences,
+            mapping.update.references,
+            (item) => `${item.name || ""}|${item.contact || ""}`,
+          );
+          if (changed) {
+            updateData.references = merged;
+            appliedSections.push("references");
+          }
+        }
+
+        if (mapping.update.experience && mapping.update.experience.length) {
+          const existingExperience = asArray<any>(existingProfile.experience);
+          const { merged, changed } = mergeCollections(
+            existingExperience,
+            mapping.update.experience,
+            (item) => `${item.title || ""}|${item.company || ""}|${item.startDate || ""}`,
+          );
+          if (changed) {
+            updateData.experience = merged;
+            appliedSections.push("experience");
+          }
+        }
+
+        if (mapping.update.education && mapping.update.education.length) {
+          const existingEducation = asArray<any>(existingProfile.education);
+          const { merged, changed } = mergeCollections(
+            existingEducation,
+            mapping.update.education,
+            (item) => `${item.school || ""}|${item.degree || ""}|${item.startDate || ""}`,
+          );
+          if (changed) {
+            updateData.education = merged;
+            appliedSections.push("education");
+          }
+        }
+
+        if (mapping.update.projects && mapping.update.projects.length) {
+          const existingProjects = asArray<any>(existingProfile.projects);
+          const { merged, changed } = mergeProjects(existingProjects, mapping.update.projects);
+          if (changed) {
+            updateData.projects = merged;
+            appliedSections.push("projects");
+          }
+        }
+
+        if (mapping.update.certifications && mapping.update.certifications.length) {
+          const existingCertifications = asArray<any>(existingProfile.certifications);
+          const { merged, changed } = mergeCollections(
+            existingCertifications,
+            mapping.update.certifications,
+            (item) => `${item.name || ""}|${item.issuer || ""}|${item.date || ""}`,
+          );
+          if (changed) {
+            updateData.certifications = merged;
+            appliedSections.push("certifications");
+          }
+        }
+
+        if (mapping.update.awardsHonors && mapping.update.awardsHonors.length) {
+          const existingAwards = asArray<any>(existingProfile.awardsHonors);
+          const { merged, changed } = mergeCollections(
+            existingAwards,
+            mapping.update.awardsHonors,
+            (item) => `${item.title || ""}|${item.issuer || ""}|${item.date || ""}`,
+          );
+          if (changed) {
+            updateData.awardsHonors = merged;
+            appliedSections.push("awardsHonors");
+          }
+        }
+
+        if (mapping.update.volunteer && mapping.update.volunteer.length) {
+          const existingVolunteer = asArray<any>(existingProfile.volunteer);
+          const { merged, changed } = mergeCollections(
+            existingVolunteer,
+            mapping.update.volunteer,
+            (item) => `${item.org || ""}|${item.role || ""}|${item.startDate || ""}`,
+          );
+          if (changed) {
+            updateData.volunteer = merged;
+            appliedSections.push("volunteer");
+          }
+        }
+
+        if (mapping.update.publications && mapping.update.publications.length) {
+          const existingPublications = asArray<any>(existingProfile.publications);
+          const { merged, changed } = mergeCollections(
+            existingPublications,
+            mapping.update.publications,
+            (item) => `${item.title || ""}|${item.venue || ""}|${item.date || ""}`,
+          );
+          if (changed) {
+            updateData.publications = merged;
+            appliedSections.push("publications");
+          }
+        }
+
+        if (mapping.update.summary) {
+          const existingSummary = typeof existingProfile.summary === "string" ? existingProfile.summary.trim() : "";
+          if (!existingSummary || existingSummary !== mapping.update.summary) {
+            updateData.summary = mapping.update.summary;
+            appliedSections.push("summary");
+          }
+        }
+
+        if (Object.keys(updateData).length) {
+          await prisma.profile.update({
+            where: { userId },
+            data: updateData as any,
+          });
+          await rdel(profileCacheKey(userId));
+          profileUpdated = true;
+        }
+      } else if (Object.keys(mapping.update).length) {
+        await prisma.profile.create({
+          data: {
+            userId,
+            skills: mapping.update.skills ?? [],
+            experience: mapping.update.experience ?? [],
+            education: mapping.update.education ?? [],
+            projects: mapping.update.projects ?? [],
+            achievements: [], // default empty
+            certifications: mapping.update.certifications ?? [],
+            volunteer: mapping.update.volunteer ?? [],
+            leadership: mapping.update.leadership ?? [],
+            publications: mapping.update.publications ?? [],
+            awardsHonors: mapping.update.awardsHonors ?? [],
+            references: mapping.update.references ?? [],
+            summary: mapping.update.summary ?? null,
+            objective: mapping.update.objective ?? null,
+            createdAt: new Date(),
+          },
+        });
+        await rdel(profileCacheKey(userId));
+        profileUpdated = true;
+        appliedSections.push(...mapping.updatedSections);
+      }
+    }
+
+    res.status(200).json({
+      message: "Resume processed successfully",
+      data: profileData,
+      mapped: {
+        appliedSections: Array.from(new Set(appliedSections)),
+        warnings: mapping.warnings,
+        profileUpdated,
+      },
+    });
   } catch (error) {
     console.error("Upload error:", error);
     

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Resume" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 0;
+
