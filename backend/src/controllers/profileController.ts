@@ -779,3 +779,21 @@ export const deleteProject = catchAsync(async (req: Request, res: Response): Pro
   });
 });
 
+
+/*
+Professional Summary
+
+Certifications
+
+Awards & Achievements
+
+Volunteer Experience
+
+Leadership & Extracurricular Activities
+
+Languages
+
+Courses / Trainings
+
+Publications or Research (optional if targeting technical/academic users)
+*/ 

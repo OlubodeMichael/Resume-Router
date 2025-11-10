@@ -206,7 +206,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log('Get resumes data:', data);
+            //console.log('Get resumes data:', data);
             setResumes(data.resumes);
         } catch (err) {
             console.error('Get resumes error:', err);
