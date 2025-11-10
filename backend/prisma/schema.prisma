@@ -29,20 +29,38 @@ model User {
 }
 
 model Profile {
-  id           String               @id @default(uuid())
-  userId       String               @unique
-  experience   Json
-  education    Json
-  projects     Json
-  achievements Json
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  skills       Json
-  personalInfo PersonalInformation?
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  userId         String   @unique
+
+  // Core sections
+  experience     Json
+  education      Json
+  projects       Json
+  achievements   Json
+  skills         Json
+
+  // ✅ New strong sections
+  summary        String?
+  objective      String?
+  certifications Json?
+  volunteer      Json?
+  leadership     Json?
+  languages      Json?
+  courses        Json?
+  publications   Json?
+  awardsHonors   Json?      // NEW
+  links          Json?      // NEW
+  workAuth       Json?      // NEW
+  references     Json?      // optional
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  personalInfo   PersonalInformation?
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
+
 
 model PersonalInformation {
   id        String   @id @default(uuid())
@@ -85,6 +103,7 @@ model Resume {
   status           ResumeStatus    @default(processing)
   template         Template?
   title            String          @default("Untitled")
+  version          Int             @default(0)
   jobDescription   JobDescription? @relation(fields: [jobDescriptionId], references: [id])
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 

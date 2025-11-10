@@ -6,18 +6,58 @@ import EducationForm from "../Forms/EducationForm";
 import ProjectForm from "../Forms/ProjectForm";
 import SkillForm from "../Forms/SkillForm";
 import MultiSkillForm from "../Forms/MultiSkillForm";
+import CertificationForm from "../Forms/CertificationForm";
+import AwardHonorForm from "../Forms/AwardHonorForm";
+import VolunteerForm from "../Forms/VolunteerForm";
+import LeadershipForm from "../Forms/LeadershipForm";
+import PublicationForm from "../Forms/PublicationForm";
+import ReferenceForm from "../Forms/ReferenceForm";
+import SummaryForm from "../Forms/SummaryForm";
+import ObjectiveForm from "../Forms/ObjectiveForm";
 import Experience from "../Profile/Experience";
 import Education from "../Profile/Education";
 import Project from "../Profile/Project";
 import Skill from "../Profile/Skill";
+import CertificationSection from "../Profile/Certification";
+import AwardsHonors from "../Profile/AwardsHonors";
+import VolunteerSection from "../Profile/Volunteer";
+import LeadershipSection from "../Profile/Leadership";
+import PublicationSection from "../Profile/Publication";
+import ReferenceSection from "../Profile/Reference";
+import SummarySection from "../Profile/Summary";
+import ObjectiveSection from "../Profile/Objective";
 import Loading from "../loading";
 
 export default function Profile() {
-  const { profile, loading, error, deleteEducation, deleteExperience, deleteProject, deleteSkill } = useProfile();
+  const {
+    profile,
+    loading,
+    error,
+    deleteEducation,
+    deleteExperience,
+    deleteProject,
+    deleteSkill,
+    deleteCertification,
+    deleteAwardHonor,
+    deleteVolunteer,
+    deleteLeadership,
+    deletePublication,
+    deleteReference,
+    updateSummary,
+    updateObjective,
+  } = useProfile();
   const [showExpForm, setShowExpForm] = useState(false);
   const [showEduForm, setShowEduForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showSkillForm, setShowSkillForm] = useState(false);
+  const [showCertificationForm, setShowCertificationForm] = useState(false);
+  const [showAwardHonorForm, setShowAwardHonorForm] = useState(false);
+  const [showVolunteerForm, setShowVolunteerForm] = useState(false);
+  const [showLeadershipForm, setShowLeadershipForm] = useState(false);
+  const [showPublicationForm, setShowPublicationForm] = useState(false);
+  const [showReferenceForm, setShowReferenceForm] = useState(false);
+  const [showSummaryForm, setShowSummaryForm] = useState(false);
+  const [showObjectiveForm, setShowObjectiveForm] = useState(false);
   
   // Education edit state
   const [editingEducation, setEditingEducation] = useState<{
@@ -63,6 +103,68 @@ export default function Profile() {
     index: number;
     data: {
       name: string;
+    };
+  } | null>(null);
+  const [editingCertification, setEditingCertification] = useState<{
+    index: number;
+    data: {
+      name?: string;
+      issuer?: string;
+      date: string;
+      expirationDate?: string;
+      credentialId?: string;
+      url?: string;
+    };
+  } | null>(null);
+  const [editingAwardHonor, setEditingAwardHonor] = useState<{
+    index: number;
+    data: {
+      title: string;
+      issuer?: string;
+      date?: string;
+      description?: string;
+    };
+  } | null>(null);
+  const [editingVolunteer, setEditingVolunteer] = useState<{
+    index: number;
+    data: {
+      org: string;
+      role?: string;
+      startDate?: string;
+      endDate?: string;
+      impact?: string[];
+      url?: string;
+    };
+  } | null>(null);
+  const [editingLeadership, setEditingLeadership] = useState<{
+    index: number;
+    data: {
+      org: string;
+      position?: string;
+      startDate?: string;
+      endDate?: string;
+      achievements?: string[];
+    };
+  } | null>(null);
+  const [editingPublication, setEditingPublication] = useState<{
+    index: number;
+    data: {
+      title: string;
+      venue?: string;
+      date?: string;
+      url?: string;
+      summary?: string;
+    };
+  } | null>(null);
+  const [editingReference, setEditingReference] = useState<{
+    index: number;
+    data: {
+      name: string;
+      title?: string;
+      company?: string;
+      email?: string;
+      phone?: string;
+      relation?: string;
     };
   } | null>(null);
 
@@ -192,6 +294,228 @@ export default function Profile() {
     setEditingSkill(null);
   };
 
+  const handleEditCertification = (index: number) => {
+    if (profile?.certifications && profile.certifications[index]) {
+      const certification = profile.certifications[index];
+      setEditingCertification({
+        index,
+        data: {
+          name: certification.name,
+          issuer: certification.issuer,
+          date: certification.date,
+          expirationDate: certification.expirationDate,
+          credentialId: certification.credentialId,
+          url: certification.url,
+        },
+      });
+      setShowCertificationForm(true);
+    }
+  };
+
+  const handleDeleteCertification = async (index: number) => {
+    if (confirm("Delete this certification?")) {
+      try {
+        await deleteCertification(index);
+      } catch (error) {
+        console.error("Failed to delete certification:", error);
+      }
+    }
+  };
+
+  const handleCloseCertificationForm = () => {
+    setShowCertificationForm(false);
+    setEditingCertification(null);
+  };
+
+  const handleEditAwardHonor = (index: number) => {
+    if (profile?.awardsHonors && profile.awardsHonors[index]) {
+      const award = profile.awardsHonors[index];
+      setEditingAwardHonor({
+        index,
+        data: {
+          title: award.title,
+          issuer: award.issuer,
+          date: award.date,
+          description: award.description,
+        },
+      });
+      setShowAwardHonorForm(true);
+    }
+  };
+
+  const handleDeleteAwardHonor = async (index: number) => {
+    if (confirm("Delete this award or honor?")) {
+      try {
+        await deleteAwardHonor(index);
+      } catch (error) {
+        console.error("Failed to delete award/honor:", error);
+      }
+    }
+  };
+
+  const handleCloseAwardHonorForm = () => {
+    setShowAwardHonorForm(false);
+    setEditingAwardHonor(null);
+  };
+
+  const handleEditVolunteer = (index: number) => {
+    if (profile?.volunteer && profile.volunteer[index]) {
+      const volunteer = profile.volunteer[index];
+      setEditingVolunteer({
+        index,
+        data: {
+          org: volunteer.org,
+          role: volunteer.role,
+          startDate: volunteer.startDate || undefined,
+          endDate: volunteer.endDate || undefined,
+          impact: volunteer.impact,
+          url: volunteer.url,
+        },
+      });
+      setShowVolunteerForm(true);
+    }
+  };
+
+  const handleDeleteVolunteer = async (index: number) => {
+    if (confirm("Delete this volunteer experience?")) {
+      try {
+        await deleteVolunteer(index);
+      } catch (error) {
+        console.error("Failed to delete volunteer experience:", error);
+      }
+    }
+  };
+
+  const handleCloseVolunteerForm = () => {
+    setShowVolunteerForm(false);
+    setEditingVolunteer(null);
+  };
+
+  const handleEditLeadership = (index: number) => {
+    if (profile?.leadership && profile.leadership[index]) {
+      const leadership = profile.leadership[index];
+      setEditingLeadership({
+        index,
+        data: {
+          org: leadership.org,
+          position: leadership.position,
+          startDate: leadership.startDate,
+          endDate: leadership.endDate,
+          achievements: leadership.achievements,
+        },
+      });
+      setShowLeadershipForm(true);
+    }
+  };
+
+  const handleDeleteLeadership = async (index: number) => {
+    if (confirm("Delete this leadership activity?")) {
+      try {
+        await deleteLeadership(index);
+      } catch (error) {
+        console.error("Failed to delete leadership activity:", error);
+      }
+    }
+  };
+
+  const handleCloseLeadershipForm = () => {
+    setShowLeadershipForm(false);
+    setEditingLeadership(null);
+  };
+
+  const handleEditPublication = (index: number) => {
+    if (profile?.publications && profile.publications[index]) {
+      const publication = profile.publications[index];
+      setEditingPublication({
+        index,
+        data: {
+          title: publication.title,
+          venue: publication.venue,
+          date: publication.date,
+          url: publication.url,
+          summary: publication.summary,
+        },
+      });
+      setShowPublicationForm(true);
+    }
+  };
+
+  const handleDeletePublication = async (index: number) => {
+    if (confirm("Delete this publication?")) {
+      try {
+        await deletePublication(index);
+      } catch (error) {
+        console.error("Failed to delete publication:", error);
+      }
+    }
+  };
+
+  const handleClosePublicationForm = () => {
+    setShowPublicationForm(false);
+    setEditingPublication(null);
+  };
+
+  const handleEditReference = (index: number) => {
+    if (profile?.references && profile.references[index]) {
+      const reference = profile.references[index];
+      setEditingReference({
+        index,
+        data: {
+          name: reference.name,
+          title: reference.title,
+          company: reference.company,
+          email: reference.email,
+          phone: reference.phone,
+          relation: reference.relation,
+        },
+      });
+      setShowReferenceForm(true);
+    }
+  };
+
+  const handleDeleteReference = async (index: number) => {
+    if (confirm("Delete this reference?")) {
+      try {
+        await deleteReference(index);
+      } catch (error) {
+        console.error("Failed to delete reference:", error);
+      }
+    }
+  };
+
+  const handleCloseReferenceForm = () => {
+    setShowReferenceForm(false);
+    setEditingReference(null);
+  };
+
+  const handleClearSummary = async () => {
+    if (confirm("Clear your professional summary?")) {
+      try {
+        await updateSummary(null);
+      } catch (error) {
+        console.error("Failed to clear summary:", error);
+      }
+    }
+  };
+
+  const handleClearObjective = async () => {
+    if (confirm("Clear your career objective?")) {
+      try {
+        await updateObjective(null);
+      } catch (error) {
+        console.error("Failed to clear objective:", error);
+      }
+    }
+  };
+
+  const handleCloseSummaryForm = () => {
+    setShowSummaryForm(false);
+  };
+
+  const handleCloseObjectiveForm = () => {
+    setShowObjectiveForm(false);
+  };
+
   if (loading) {
     return <Loading message="Loading profile..." className="flex justify-center items-center h-fit" />;
   }
@@ -230,9 +554,24 @@ export default function Profile() {
           {/* Header */}
           <div className="mb-8 bg-white rounded-xl border-[1px] p-6">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Profile</h1>
-            <p className="text-sm sm:text-base text-gray-600">Build your professional profile by adding your experience, education, skills, and projects.</p>
+            <p className="text-sm sm:text-base text-gray-600">
+              Build your professional profile by adding your summary, objectives, experience, education, skills, projects, and additional highlights.
+            </p>
           </div>
 
+          {/* Summary */}
+          <SummarySection
+            summary={profile?.summary}
+            setShowSummaryForm={setShowSummaryForm}
+            handleClearSummary={handleClearSummary}
+          />
+
+          {/* Objective */}
+          <ObjectiveSection
+            objective={profile?.objective}
+            setShowObjectiveForm={setShowObjectiveForm}
+            handleClearObjective={handleClearObjective}
+          />
 
           {/* Experience Section */}
           <Experience
@@ -264,6 +603,54 @@ export default function Profile() {
             setShowProjectForm={setShowProjectForm}
             handleEditProject={handleEditProject}
             handleDeleteProject={handleDeleteProject}
+          />
+
+          {/* Certifications */}
+          <CertificationSection
+            profile={profile}
+            setShowCertificationForm={setShowCertificationForm}
+            handleEditCertification={handleEditCertification}
+            handleDeleteCertification={handleDeleteCertification}
+          />
+
+          {/* Awards & Honors */}
+          <AwardsHonors
+            profile={profile}
+            setShowAwardHonorForm={setShowAwardHonorForm}
+            handleEditAwardHonor={handleEditAwardHonor}
+            handleDeleteAwardHonor={handleDeleteAwardHonor}
+          />
+
+          {/* Volunteer */}
+          <VolunteerSection
+            profile={profile}
+            setShowVolunteerForm={setShowVolunteerForm}
+            handleEditVolunteer={handleEditVolunteer}
+            handleDeleteVolunteer={handleDeleteVolunteer}
+          />
+
+          {/* Leadership */}
+          <LeadershipSection
+            profile={profile}
+            setShowLeadershipForm={setShowLeadershipForm}
+            handleEditLeadership={handleEditLeadership}
+            handleDeleteLeadership={handleDeleteLeadership}
+          />
+
+          {/* Publications */}
+          <PublicationSection
+            profile={profile}
+            setShowPublicationForm={setShowPublicationForm}
+            handleEditPublication={handleEditPublication}
+            handleDeletePublication={handleDeletePublication}
+          />
+
+          {/* References */}
+          <ReferenceSection
+            profile={profile}
+            setShowReferenceForm={setShowReferenceForm}
+            handleEditReference={handleEditReference}
+            handleDeleteReference={handleDeleteReference}
           />
         </div>
       </div>
@@ -319,6 +706,100 @@ export default function Profile() {
               onClose={handleCloseProjectForm}
               initial={editingProject?.data}
               editIndex={editingProject?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showCertificationForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <CertificationForm
+              onClose={handleCloseCertificationForm}
+              initial={editingCertification?.data}
+              editIndex={editingCertification?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showAwardHonorForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <AwardHonorForm
+              onClose={handleCloseAwardHonorForm}
+              initial={editingAwardHonor?.data}
+              editIndex={editingAwardHonor?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showVolunteerForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <VolunteerForm
+              onClose={handleCloseVolunteerForm}
+              initial={editingVolunteer?.data}
+              editIndex={editingVolunteer?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showLeadershipForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <LeadershipForm
+              onClose={handleCloseLeadershipForm}
+              initial={editingLeadership?.data}
+              editIndex={editingLeadership?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showPublicationForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <PublicationForm
+              onClose={handleClosePublicationForm}
+              initial={editingPublication?.data}
+              editIndex={editingPublication?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showReferenceForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <ReferenceForm
+              onClose={handleCloseReferenceForm}
+              initial={editingReference?.data}
+              editIndex={editingReference?.index ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showSummaryForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <SummaryForm
+              onClose={handleCloseSummaryForm}
+              initial={profile?.summary ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showObjectiveForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <ObjectiveForm
+              onClose={handleCloseObjectiveForm}
+              initial={profile?.objective ?? null}
             />
           </div>
         </div>
