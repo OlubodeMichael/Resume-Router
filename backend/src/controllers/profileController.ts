@@ -31,8 +31,8 @@ export const getProfile = catchAsync(async (req: Request, res: Response): Promis
   if (!userId) {
     res.status(401).json({ message: 'User not authenticated' });
     return;
-  }
-  const key = KProfile(userId);
+    }
+    const key = KProfile(userId);
 
   const cached = await rget<any>(key);
   

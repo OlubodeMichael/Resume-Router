@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useProfile } from "@/hooks/profileProvider";
+import { useResume, ParsedResumeResult } from "@/hooks/resumeProvider";
 import ExperienceForm from "../Forms/ExperienceForm";
 import EducationForm from "../Forms/EducationForm";
 import ProjectForm from "../Forms/ProjectForm";
@@ -45,7 +46,9 @@ export default function Profile() {
     deleteReference,
     updateSummary,
     updateObjective,
+    getProfile,
   } = useProfile();
+  const { parseResumeFile, isParsingResume, lastParsedResume } = useResume();
   const [showExpForm, setShowExpForm] = useState(false);
   const [showEduForm, setShowEduForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -58,6 +61,40 @@ export default function Profile() {
   const [showReferenceForm, setShowReferenceForm] = useState(false);
   const [showSummaryForm, setShowSummaryForm] = useState(false);
   const [showObjectiveForm, setShowObjectiveForm] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [parseResult, setParseResult] = useState<ParsedResumeResult | null>(lastParsedResume);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (lastParsedResume) {
+      setParseResult(lastParsedResume);
+    }
+  }, [lastParsedResume]);
+
+  const handleResumeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setParseError(null);
+    setResumeFile(file ?? null);
+  };
+
+  const handleParseResume = async () => {
+    if (!resumeFile) {
+      setParseError("Please choose a resume file to upload.");
+      return;
+    }
+
+    const result = await parseResumeFile(resumeFile);
+    if (result) {
+      setParseResult(result);
+      setParseError(null);
+      setResumeFile(null);
+      try {
+        await getProfile();
+      } catch (err) {
+        console.error("Failed to refresh profile after parsing resume:", err);
+      }
+    }
+  };
   
   // Education edit state
   const [editingEducation, setEditingEducation] = useState<{
@@ -558,6 +595,93 @@ export default function Profile() {
               Build your professional profile by adding your summary, objectives, experience, education, skills, projects, and additional highlights.
             </p>
           </div>
+
+          {/* Resume Import */}
+          <section className="mb-8">
+            <div className="bg-white rounded-xl border-[1px] p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Import From Resume</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Upload your latest resume and we&apos;ll map the details to their matching profile sections automatically.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Resume File</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      handleResumeChange(e);
+                      if (e.target) {
+                        e.target.value = "";
+                      }
+                    }}
+                    className="w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-gray-300 file:text-sm file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {resumeFile && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      Selected file: <span className="font-medium text-gray-800">{resumeFile.name}</span>
+                    </p>
+                  )}
+                  {parseError && <p className="mt-2 text-sm text-red-600">{parseError}</p>}
+                </div>
+
+                <div className="flex sm:flex-none">
+                  <button
+                    onClick={handleParseResume}
+                    disabled={!resumeFile || isParsingResume}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isParsingResume ? "Parsing Resume..." : "Parse & Import"}
+                  </button>
+                </div>
+              </div>
+
+              {parseResult && (
+                <div className="mt-6 border border-gray-200 rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm text-gray-700">
+                    {parseResult.mapped?.profileUpdated
+                      ? "Your profile was updated with new information from the resume."
+                      : "Resume parsed successfully. Review the extracted data below."}
+                  </p>
+                  {parseResult.message && (
+                    <p className="mt-1 text-xs text-gray-500">{parseResult.message}</p>
+                  )}
+
+                  {parseResult.mapped?.appliedSections?.length ? (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-800">Sections updated:</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {parseResult.mapped.appliedSections.map((section) => (
+                          <span
+                            key={section}
+                            className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"
+                          >
+                            {section}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {parseResult.mapped?.warnings?.length ? (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-amber-700">Warnings:</p>
+                      <ul className="mt-2 space-y-1 text-sm text-amber-800 list-disc list-inside">
+                        {parseResult.mapped.warnings.map((warning, index) => (
+                          <li key={`${warning}-${index}`}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </section>
 
           {/* Summary */}
           <SummarySection
