@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
 import { useProfile } from "@/hooks/profileProvider";
 import { useResume, ParsedResumeResult } from "@/hooks/resumeProvider";
+import { Loader2, Upload, FileText, CheckCircle2, AlertTriangle } from "lucide-react";
 import ExperienceForm from "../Forms/ExperienceForm";
 import EducationForm from "../Forms/EducationForm";
 import ProjectForm from "../Forms/ProjectForm";
@@ -64,6 +65,16 @@ export default function Profile() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<ParsedResumeResult | null>(lastParsedResume);
   const [parseError, setParseError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const parsingMessage = resumeFile?.name ? `Parsing ${resumeFile.name}...` : "Parsing resume...";
+
+  const formatFileSize = (size: number) => {
+    if (size === 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB"];
+    const index = Math.min(Math.floor(Math.log(size) / Math.log(1024)), units.length - 1);
+    const formatted = size / Math.pow(1024, index);
+    return `${formatted.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+  };
 
   useEffect(() => {
     if (lastParsedResume) {
@@ -75,6 +86,9 @@ export default function Profile() {
     const file = event.target.files?.[0];
     setParseError(null);
     setResumeFile(file ?? null);
+    if (file) {
+      setParseResult(null);
+    }
   };
 
   const handleParseResume = async () => {
@@ -88,6 +102,9 @@ export default function Profile() {
       setParseResult(result);
       setParseError(null);
       setResumeFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       try {
         await getProfile();
       } catch (err) {
@@ -582,7 +599,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-scree">
+    <>
+      {isParsingResume && <LoadingModal message={parsingMessage} />}
+      <div className="min-h-scree">
       {/* Full Width Profile Editor */}
       
       <div className="w-full px-3 sm:px-6 md:px-8 lg:px-12">
@@ -597,89 +616,157 @@ export default function Profile() {
           </div>
 
           {/* Resume Import */}
-          <section className="mb-8">
-            <div className="bg-white rounded-xl border-[1px] p-6">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div className="flex-1">
+          <section className="mb-10">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8">
+              <div className="flex flex-col gap-6">
+                <div>
                   <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Import From Resume</h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Upload your latest resume and we&apos;ll map the details to their matching profile sections automatically.
+                  <p className="text-sm text-gray-600 mt-2">
+                    Upload the resume you already have and we&apos;ll map the details into the correct profile sections automatically.
                   </p>
                 </div>
-              </div>
 
-              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Resume File</label>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => {
-                      handleResumeChange(e);
-                      if (e.target) {
-                        e.target.value = "";
-                      }
-                    }}
-                    className="w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-gray-300 file:text-sm file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  {resumeFile && (
-                    <p className="mt-2 text-sm text-gray-600">
-                      Selected file: <span className="font-medium text-gray-800">{resumeFile.name}</span>
-                    </p>
-                  )}
-                  {parseError && <p className="mt-2 text-sm text-red-600">{parseError}</p>}
-                </div>
-
-                <div className="flex sm:flex-none">
-                  <button
-                    onClick={handleParseResume}
-                    disabled={!resumeFile || isParsingResume}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {isParsingResume ? "Parsing Resume..." : "Parse & Import"}
-                  </button>
-                </div>
-              </div>
-
-              {parseResult && (
-                <div className="mt-6 border border-gray-200 rounded-lg bg-gray-50 p-4">
-                  <p className="text-sm text-gray-700">
-                    {parseResult.mapped?.profileUpdated
-                      ? "Your profile was updated with new information from the resume."
-                      : "Resume parsed successfully. Review the extracted data below."}
-                  </p>
-                  {parseResult.message && (
-                    <p className="mt-1 text-xs text-gray-500">{parseResult.message}</p>
-                  )}
-
-                  {parseResult.mapped?.appliedSections?.length ? (
-                    <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-800">Sections updated:</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {parseResult.mapped.appliedSections.map((section) => (
-                          <span
-                            key={section}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium"
-                          >
-                            {section}
-                          </span>
-                        ))}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-dashed border-gray-300 rounded-xl px-6 py-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/40 transition-colors"
+                    >
+                      <div className="h-14 w-14 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-4">
+                        <Upload className="w-6 h-6" />
                       </div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {resumeFile ? "Replace selected resume" : "Drag & drop your resume here"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">PDF, DOC, or DOCX up to 10MB</p>
+                      <button
+                        type="button"
+                        className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Browse files
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleResumeChange}
+                        onClick={(event) => {
+                          event.currentTarget.value = "";
+                        }}
+                        className="hidden"
+                      />
                     </div>
-                  ) : null}
+                    {resumeFile && (
+                      <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-4 h-4 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-gray-900">{resumeFile.name}</p>
+                            <p className="text-xs text-gray-500">{formatFileSize(resumeFile.size)}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setResumeFile(null);
+                            setParseResult(null);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                    {parseError && (
+                      <p className="mt-3 text-sm text-red-600">{parseError}</p>
+                    )}
+                  </div>
 
-                  {parseResult.mapped?.warnings?.length ? (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-amber-700">Warnings:</p>
-                      <ul className="mt-2 space-y-1 text-sm text-amber-800 list-disc list-inside">
-                        {parseResult.mapped.warnings.map((warning, index) => (
-                          <li key={`${warning}-${index}`}>{warning}</li>
-                        ))}
+                  <div className="lg:col-span-1">
+                    <div className="h-full border border-gray-200 rounded-xl p-5 bg-gray-50">
+                      <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                        What gets imported?
+                      </h3>
+                      <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                        <li>• Experience, education, skills, and projects</li>
+                        <li>• Certifications, awards, volunteer work</li>
+                        <li>• Summary and other supporting sections</li>
                       </ul>
+                      <div className="mt-6">
+                        <button
+                          onClick={handleParseResume}
+                          disabled={!resumeFile || isParsingResume}
+                          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isParsingResume && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {isParsingResume ? "Parsing..." : "Parse & Import"}
+                        </button>
+                      </div>
+                      <p className="mt-3 text-xs text-gray-500">
+                        We only update sections with new information—existing content won&apos;t be overwritten.
+                      </p>
                     </div>
-                  ) : null}
+                  </div>
                 </div>
-              )}
+
+                {parseResult && (
+                  <div className="border border-gray-200 rounded-xl p-5 bg-white">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {parseResult.mapped?.profileUpdated
+                              ? "Profile updated with new resume data"
+                              : "Resume parsed successfully"}
+                          </p>
+                          {parseResult.message && (
+                            <p className="text-xs text-gray-500 mt-0.5">{parseResult.message}</p>
+                          )}
+                        </div>
+                      </div>
+                      {parseResult.data && (
+                        <p className="text-xs text-gray-500">Last import: {new Date().toLocaleTimeString()}</p>
+                      )}
+                    </div>
+
+                    {parseResult.mapped?.appliedSections?.length ? (
+                      <div className="mt-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Sections Updated</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {parseResult.mapped.appliedSections.map((section) => (
+                            <span
+                              key={section}
+                              className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              {section}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {parseResult.mapped?.warnings?.length ? (
+                      <div className="mt-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-amber-600 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Things to review
+                        </p>
+                        <ul className="mt-2 space-y-1 text-sm text-amber-800">
+                          {parseResult.mapped.warnings.map((warning, index) => (
+                            <li key={`${warning}-${index}`} className="leading-relaxed">
+                              {warning}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
@@ -928,6 +1015,19 @@ export default function Profile() {
           </div>
         </div>
       )}
+      </div>
+    </>
+  );
+}
+
+function LoadingModal({ message }: { message: string }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white px-6 py-5 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <p className="text-sm font-medium text-gray-900">{message}</p>
+        <p className="text-xs text-gray-500">This usually takes just a few seconds.</p>
+      </div>
     </div>
   );
 }
