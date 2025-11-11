@@ -8,6 +8,7 @@ import { EditableTemplateRenderer } from "@/lib/TemplateEngine";
 import { ryanTemplateSpec } from "@/Templates/html/ryan";
 import { ResumeData } from "@/types/resume";
 import { ResumeRecordSchema } from "@/types/resume-record.schema";
+import type { ResumeRecord } from "@/types/resume-record.schema";
 import { mapRecordToTemplateData } from "@/utils/mapRecordToTemplateData";
 import { DEFAULT_RESUME, transformResumeData } from "@/lib/resumeUtils";
 import { downloadResumeAsPDF } from "@/lib/pdfUtils";
@@ -27,23 +28,81 @@ export default function DocumentPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reorderSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const handleSaveToDBRef = useRef<((options?: { silent?: boolean }) => Promise<void>) | null>(null)
   const { toasts, removeToast, showSuccess, showError } = useToast()
   const { id } = useParams()
   
   // Use SSE to monitor resume processing status
   const status = useResumeSSE(id as string)
 
+  const normalizedResumeRecord = useMemo(() => {
+    if (!generatedResumeContent) return null
+
+    if (
+      generatedResumeContent.content &&
+      typeof generatedResumeContent.content === "string"
+    ) {
+      try {
+        const parsedContent = JSON.parse(generatedResumeContent.content)
+        return {
+          ...generatedResumeContent,
+          content: parsedContent,
+        }
+      } catch (error) {
+        console.warn("Failed to parse resume content string", error)
+        return generatedResumeContent
+      }
+    }
+
+    return generatedResumeContent
+  }, [generatedResumeContent])
+
+  const hasResumeContent = useMemo(() => {
+    if (
+      !normalizedResumeRecord ||
+      !normalizedResumeRecord.content ||
+      typeof normalizedResumeRecord.content !== "object" ||
+      Array.isArray(normalizedResumeRecord.content)
+    ) {
+      return false
+    }
+    return Object.keys(normalizedResumeRecord.content as Record<string, unknown>).length > 0
+  }, [normalizedResumeRecord])
+
   const resumeData: ResumeData = useMemo(() => {
-    if (!generatedResumeContent) return DEFAULT_RESUME
-    
-    const parsed = ResumeRecordSchema.safeParse(generatedResumeContent)
+    if (!normalizedResumeRecord || !hasResumeContent) return DEFAULT_RESUME
+
+    const parsed = ResumeRecordSchema.safeParse(normalizedResumeRecord)
     if (!parsed.success) {
+      console.warn("Failed to parse resume record", parsed.error)
+      if (
+        normalizedResumeRecord &&
+        typeof normalizedResumeRecord === "object" &&
+        normalizedResumeRecord !== null &&
+        "content" in normalizedResumeRecord &&
+        normalizedResumeRecord.content &&
+        typeof normalizedResumeRecord.content === "object"
+      ) {
+        try {
+          return mapRecordToTemplateData({
+            id: (normalizedResumeRecord as { id?: string }).id ?? crypto.randomUUID?.() ?? "00000000-0000-0000-0000-000000000000",
+            userId: (normalizedResumeRecord as { userId?: string }).userId ?? "00000000-0000-0000-0000-000000000000",
+            jobDescriptionId:
+              (normalizedResumeRecord as { jobDescriptionId?: string }).jobDescriptionId ??
+              "00000000-0000-0000-0000-000000000000",
+            content: normalizedResumeRecord.content as ResumeRecord["content"],
+          })
+        } catch (error) {
+          console.warn("Failed to map resume content fallback", error)
+        }
+      }
+
       return DEFAULT_RESUME
     }
-    const mapped = mapRecordToTemplateData(parsed.data)
-  
-    return mapped
-  }, [generatedResumeContent])
+
+    return mapRecordToTemplateData(parsed.data)
+  }, [normalizedResumeRecord, hasResumeContent])
 
   // Transform data for the ryan template
   const templateData = useMemo(() => {
@@ -61,8 +120,18 @@ export default function DocumentPage() {
     setEditedContent(html)
   }, [id, generatedResumeContent?.id])
 
+  const handleSectionsReordered = useCallback((html: string) => {
+    handleContentChange(html)
+    if (reorderSaveTimeoutRef.current) {
+      clearTimeout(reorderSaveTimeoutRef.current)
+    }
+    reorderSaveTimeoutRef.current = setTimeout(() => {
+      handleSaveToDBRef.current?.({ silent: true })
+      reorderSaveTimeoutRef.current = null
+    }, 800)
+  }, [handleContentChange])
   // Save JSON to database manually - converts HTML edits to JSON first
-  const handleSaveToDB = useCallback(async () => {
+  const handleSaveToDB = useCallback(async ({ silent }: { silent?: boolean } = {}) => {
     const resumeId = (id as string) || generatedResumeContent?.id
     if (!resumeId || !generatedResumeContent?.content || isSaving) return;
 
@@ -138,11 +207,13 @@ export default function DocumentPage() {
       }
 
       setHasUnsavedChanges(false);
-      showSuccess(
-        'Resume Saved Successfully!',
-        'Your changes with styling have been saved to the database.',
-        3000
-      );
+      if (!silent) {
+        showSuccess(
+          'Resume Saved Successfully!',
+          'Your changes with styling have been saved to the database.',
+          3000
+        );
+      }
     } catch (error) {
       console.error('Failed to save resume:', error);
       showError(
@@ -154,6 +225,18 @@ export default function DocumentPage() {
       setIsSaving(false);
     }
   }, [id, generatedResumeContent?.id, generatedResumeContent?.content, editedContent, isSaving, showSuccess, showError])
+
+  useEffect(() => {
+    handleSaveToDBRef.current = handleSaveToDB;
+  }, [handleSaveToDB])
+
+  useEffect(() => {
+    return () => {
+      if (reorderSaveTimeoutRef.current) {
+        clearTimeout(reorderSaveTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Check localStorage first (even before DB fetch) using the ID from URL
   useEffect(() => {
@@ -229,28 +312,39 @@ export default function DocumentPage() {
   }, [templateData, showSuccess, showError, id, generatedResumeContent?.id])
 
   // Load resume when status becomes ready or on initial load
-  // Skip DB fetch if localStorage has content (use localStorage content instead)
   useEffect(() => {
-    const getResumeFunction = async () => {
-      // Check if localStorage has content - if so, skip DB fetch
-      const hasLocalStorageContent = id && loadEditedContent(id as string)
-      if (hasLocalStorageContent) {
+    const resumeId = id as string | undefined
+    if (!resumeId) return
+
+    const run = async () => {
+      if (status?.status === "ready" && !hasFetchedForStatus) {
+        setHasFetchedForStatus(true)
+        await getResume(resumeId)
         return
       }
 
-      // When status becomes "ready", fetch the resume once
-      if (status?.status === "ready" && !hasFetchedForStatus) {
+      if (!status && !generatedResumeContent && !hasFetchedForStatus) {
         setHasFetchedForStatus(true)
-        await getResume(id as string)
-      } 
-      // On initial load without SSE status, try to load the resume directly
-      else if (!status && !generatedResumeContent && !hasFetchedForStatus) {
-        setHasFetchedForStatus(true)
-        await getResume(id as string)
+        await getResume(resumeId)
       }
     }
-    getResumeFunction()
+
+    const localContent = loadEditedContent(resumeId)
+    if (!localContent || status?.status === "ready") {
+      void run()
+    }
   }, [status, generatedResumeContent, getResume, id, hasFetchedForStatus])
+
+  useEffect(() => {
+    if (status?.status === "processing") {
+      const resumeId = (id as string) || generatedResumeContent?.id
+      if (resumeId) {
+        clearEditedContent(resumeId)
+      }
+      setEditedContent(null)
+      setHasUnsavedChanges(false)
+    }
+  }, [status?.status, id, generatedResumeContent?.id])
 
   // Reset fetch flag when status changes to processing (for re-generation scenarios)
   useEffect(() => {
@@ -260,20 +354,23 @@ export default function DocumentPage() {
   }, [status?.status])
 
   const isFailed = status?.status === "failed";
+  const shouldRenderEditor =
+    (status?.status === "ready" && hasResumeContent) ||
+    (!!editedContent && status?.status !== "processing");
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200"
               style={{ left: 'var(--sidebar-width, 64px)' }}>
-        <div className="mx-auto max-w-5xl px-4 py-3">
+        <div className="mx-auto max-w-none px-4 py-3">
           <div className="overflow-x-auto">
             <Toolbar editorRef={editorRef} />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 pt-28 sm:pt-24 pb-32 relative z-10">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+      <main className="mx-auto max-w-none pt-28 sm:pt-24 pb-32 relative z-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <div className="flex-1">
             {isFailed ? (
               <div className="flex items-center justify-center min-h-[60vh]">
@@ -295,74 +392,75 @@ export default function DocumentPage() {
               </div>
             ) : (
               <div className="mt-6">
-                {((status?.status === "ready" && generatedResumeContent) || editedContent) ? (
+                {shouldRenderEditor ? (
                   <>
                     <div className="flex justify-center gap-4 mb-6 mt-16 sm:mt-6">
-                    {/* Save Button - appears when there are unsaved changes */}
-                    {hasUnsavedChanges && (
+                      {hasUnsavedChanges && (
+                        <button
+                          onClick={() => handleSaveToDB()}
+                          disabled={isSaving}
+                          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
+                            isSaving 
+                              ? 'bg-gray-400 cursor-not-allowed text-white' 
+                              : 'bg-green-600 hover:bg-green-700 hover:shadow-xl text-white'
+                          }`}
+                        >
+                          {isSaving ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span>Save</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                       <button
-                        onClick={handleSaveToDB}
-                        disabled={isSaving}
+                        onClick={handleDownloadResume}
+                        disabled={isDownloading}
                         className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
-                          isSaving 
-                            ? 'bg-gray-400 cursor-not-allowed text-white' 
-                            : 'bg-green-600 hover:bg-green-700 hover:shadow-xl text-white'
-                        }`}
+                          isDownloading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl'
+                        } text-white`}
                       >
-                        {isSaving ? (
+                        {isDownloading ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Saving...</span>
+                            Generating PDF...
                           </>
                         ) : (
                           <>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>Save</span>
+                            Download Resume PDF
                           </>
                         )}
                       </button>
-                    )}
-                    <button
-                      onClick={handleDownloadResume}
-                      disabled={isDownloading}
-                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
-                        isDownloading 
-                          ? 'bg-gray-400 cursor-not-allowed' 
-                          : 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl'
-                      } text-white`}
-                    >
-                      {isDownloading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Generating PDF...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          Download Resume PDF
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <EditableTemplateRenderer
-                    ref={editorRef}
-                    spec={ryanTemplateSpec}
-                    data={templateData}
-                    initialContent={editedContent}
-                    onContentChange={handleContentChange}
-                    className="resume-editor"
-                  />
-                </>) : (
+                    </div>
+                    <EditableTemplateRenderer
+                      ref={editorRef}
+                      spec={ryanTemplateSpec}
+                      data={templateData}
+                      initialContent={editedContent}
+                      onContentChange={handleContentChange}
+                      className="resume-editor"
+                    />
+                  </>
+                ) : (
                   <ResumeLoading message={status?.status === "processing" ? "tailoring" : "loading"} />
                 )}
               </div>
             )}
           </div>
-          <SectionReorderSidebar editorRef={editorRef} onReorder={handleContentChange} />
+
+          <SectionReorderSidebar editorRef={editorRef} onReorder={handleSectionsReordered} />
         </div>
       </main>
 

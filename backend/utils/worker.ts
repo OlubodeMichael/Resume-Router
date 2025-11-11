@@ -1,6 +1,6 @@
 // utils/worker.ts
 import { prisma } from "../lib/prisma";
-import { $Enums } from "@prisma/client";
+import { $Enums, Prisma } from "@prisma/client";
 import { generateResume } from "../src/services/resume.service";
 
 type ProcessArgs = {
@@ -46,11 +46,13 @@ export async function processResumeAsync(args: ProcessArgs) {
       "generateResume"
     );
 
+    const serializedContent = JSON.parse(JSON.stringify(content)) as Prisma.InputJsonValue;
+
     // 4) persist content → ready
     await prisma.resume.update({
       where: { id: resumeId },
       data: {
-        content,
+        content: serializedContent,
         status: $Enums.ResumeStatus.ready,
         updatedAt: new Date(),
       },
