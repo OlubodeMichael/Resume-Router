@@ -14,6 +14,7 @@ import { downloadResumeAsPDF } from "@/lib/pdfUtils";
 import { saveEditedContent, loadEditedContent, saveEditedContentImmediate, clearEditedContent } from "@/lib/storageUtils";
 import { updateJsonFromHtml } from "@/lib/htmlToJsonConverter";
 import Toolbar from "@/components/Dashboard/Toolbar";
+import SectionReorderSidebar from "@/components/Dashboard/SectionReorderSidebar";
 
 import ResumeLoading from "@/components/resumeLoading";
 
@@ -258,6 +259,8 @@ export default function DocumentPage() {
     }
   }, [status?.status])
 
+  const isFailed = status?.status === "failed";
+
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <header className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200"
@@ -269,94 +272,98 @@ export default function DocumentPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pt-28 sm:pt-24 pb-32 relative z-10">
-        {/* Show error state if processing failed */}
-        {status?.status === "failed" && (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center">
-              <div className="text-red-500 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Resume Generation Failed</h2>
-              <p className="text-gray-600 mb-4">{status?.errorMessage || "Something went wrong while generating your resume."}</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Show loading or content */}
-        {!status?.status || status?.status !== "failed" ? (
-          <div className="mt-6">
-            { ((status?.status === "ready" && generatedResumeContent) || editedContent) ? 
-            <>
-              <div className="flex justify-center gap-4 mb-6 mt-16 sm:mt-6">
-                {/* Save Button - appears when there are unsaved changes */}
-                {hasUnsavedChanges && (
-                  <button
-                    onClick={handleSaveToDB}
-                    disabled={isSaving}
-                    className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
-                      isSaving 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-green-600 hover:bg-green-700 hover:shadow-xl text-white'
-                    }`}
+      <main className="mx-auto max-w-6xl px-6 pt-28 sm:pt-24 pb-32 relative z-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="flex-1">
+            {isFailed ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                  <div className="text-red-500 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Resume Generation Failed</h2>
+                  <p className="text-gray-600 mb-4">{status?.errorMessage || "Something went wrong while generating your resume."}</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {isSaving ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>Save</span>
-                      </>
-                    )}
+                    Try Again
                   </button>
-                )}
-                <button
-                  onClick={handleDownloadResume}
-                  disabled={isDownloading}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
-                    isDownloading 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl'
-                  } text-white`}
-                >
-                  {isDownloading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Generating PDF...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Download Resume PDF
-                    </>
-                  )}
-                </button>
+                </div>
               </div>
-              <EditableTemplateRenderer
-              ref={editorRef}
-              spec={ryanTemplateSpec}
-              data={templateData}
-              initialContent={editedContent}
-              onContentChange={handleContentChange}
-              className="resume-editor"
-            /> </> : <ResumeLoading message={status?.status === "processing" ? "tailoring" : "loading"} />}
+            ) : (
+              <div className="mt-6">
+                {((status?.status === "ready" && generatedResumeContent) || editedContent) ? (
+                  <>
+                    <div className="flex justify-center gap-4 mb-6 mt-16 sm:mt-6">
+                    {/* Save Button - appears when there are unsaved changes */}
+                    {hasUnsavedChanges && (
+                      <button
+                        onClick={handleSaveToDB}
+                        disabled={isSaving}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
+                          isSaving 
+                            ? 'bg-gray-400 cursor-not-allowed text-white' 
+                            : 'bg-green-600 hover:bg-green-700 hover:shadow-xl text-white'
+                        }`}
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Save</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleDownloadResume}
+                      disabled={isDownloading}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 shadow-lg ${
+                        isDownloading 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700 hover:shadow-xl'
+                      } text-white`}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Generating PDF...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Download Resume PDF
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <EditableTemplateRenderer
+                    ref={editorRef}
+                    spec={ryanTemplateSpec}
+                    data={templateData}
+                    initialContent={editedContent}
+                    onContentChange={handleContentChange}
+                    className="resume-editor"
+                  />
+                </>) : (
+                  <ResumeLoading message={status?.status === "processing" ? "tailoring" : "loading"} />
+                )}
+              </div>
+            )}
           </div>
-        ) : null}
+          <SectionReorderSidebar editorRef={editorRef} onReorder={handleContentChange} />
+        </div>
       </main>
 
     
