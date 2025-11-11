@@ -144,6 +144,7 @@ export function SectionReorderSidebar({
   const [hiddenSections, setHiddenSections] = useState<Record<string, boolean>>({});
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState<boolean>(false);
   const sectionKeyMapRef = useRef<WeakMap<Element, string>>(new WeakMap());
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const editorElement = editorRef.current;
 
@@ -427,8 +428,24 @@ export function SectionReorderSidebar({
     [editorRef, onRemoveSection, onReorder, updateSectionsFromDom]
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
+      if (!container.contains(event.target as Node)) {
+        setIsOpen(false);
+        onOpenChange?.(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isOpen, onOpenChange]);
+
   return (
-    <>
+    <div ref={containerRef}>
       <div
         className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${
           isOpen ? "w-72 xl:w-80" : "w-0"
@@ -545,6 +562,27 @@ export function SectionReorderSidebar({
                     </div>
                   );
                 })}
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={handleAddSection}
+                    disabled={!availableSections.length}
+                    className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                      availableSections.length
+                        ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                        : "border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
+                    aria-label="Add section"
+                    title={
+                      availableSections.length
+                        ? "Add a new section to your resume"
+                        : "All available sections are already included"
+                    }
+                  >
+                    <Plus className="h-4 w-4" />
+                    {availableSections.length ? "Add section" : "All sections added"}
+                  </button>
+                </div>
                 <div
                   onDragOver={handleDragOver(null)}
                   onDrop={handleDrop(null)}
@@ -566,27 +604,6 @@ export function SectionReorderSidebar({
                 <p>Use the button below to add the first one.</p>
               </div>
             )}
-          </div>
-          <div className="border-t border-gray-100 px-5 py-4">
-            <button
-              type="button"
-              onClick={handleAddSection}
-              disabled={!availableSections.length}
-              className={`flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                availableSections.length
-                  ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
-                  : "border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-              }`}
-              aria-label="Add section"
-              title={
-                availableSections.length
-                  ? "Add a new section to your resume"
-                  : "All available sections are already included"
-              }
-            >
-              <Plus className="h-4 w-4" />
-              {availableSections.length ? "Add section" : "All sections added"}
-            </button>
           </div>
         </div>
       </aside>
@@ -648,7 +665,7 @@ export function SectionReorderSidebar({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

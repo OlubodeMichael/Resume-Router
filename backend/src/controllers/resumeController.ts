@@ -355,6 +355,7 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
     createdAt: resume.createdAt.toISOString(),
     updatedAt: resume.updatedAt.toISOString(),
   };
+  console.log('Formatted resume:', formattedResume);
 
   res.status(200).json({
     message: 'Resume fetched successfully',

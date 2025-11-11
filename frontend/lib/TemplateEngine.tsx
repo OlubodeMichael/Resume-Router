@@ -209,11 +209,13 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
         
         // Only update content if it's different from what's already there
         const currentHtml = contentRef.current.innerHTML;
-        const nameValue = typeof data.name === 'string' ? data.name : 
-                         typeof data.fullName === 'string' ? data.fullName : 'default';
-        const contentToSet = initialContent && !currentHtml.includes(nameValue)
-          ? DOMPurify.sanitize(initialContent, { ADD_TAGS: ['style', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'br', 'section'], ADD_ATTR: ['target', 'href', 'class', 'style', 'id'] })
-          : cleanHtml;
+        const sanitizedInitial = initialContent
+          ? DOMPurify.sanitize(initialContent, {
+              ADD_TAGS: ['style', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'br', 'section'],
+              ADD_ATTR: ['target', 'href', 'class', 'style', 'id'],
+            })
+          : null;
+        const contentToSet = sanitizedInitial ?? cleanHtml;
 
         // Only update innerHTML if content actually changed
         // Skip update if user is actively editing to preserve cursor position

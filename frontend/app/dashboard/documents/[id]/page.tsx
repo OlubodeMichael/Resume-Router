@@ -12,7 +12,6 @@ import type { ResumeRecord } from "@/types/resume-record.schema";
 import { mapRecordToTemplateData } from "@/utils/mapRecordToTemplateData";
 import { DEFAULT_RESUME, transformResumeData } from "@/lib/resumeUtils";
 import { downloadResumeAsPDF } from "@/lib/pdfUtils";
-import { saveEditedContent, loadEditedContent, saveEditedContentImmediate, clearEditedContent } from "@/lib/storageUtils";
 import { updateJsonFromHtml } from "@/lib/htmlToJsonConverter";
 import Toolbar from "@/components/Dashboard/Toolbar";
 import SectionReorderSidebar from "@/components/Dashboard/SectionReorderSidebar";
@@ -27,9 +26,6 @@ export default function DocumentPage() {
   const [hasFetchedForStatus, setHasFetchedForStatus] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const reorderSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const handleSaveToDBRef = useRef<((options?: { silent?: boolean }) => Promise<void>) | null>(null)
   const { toasts, removeToast, showSuccess, showError } = useToast()
   const { id } = useParams()
   
@@ -112,24 +108,14 @@ export default function DocumentPage() {
 
   // Save content changes when editor content changes (debounced)
   const handleContentChange = useCallback((html: string) => {
-    const resumeId = (id as string) || generatedResumeContent?.id
-    if (resumeId) {
-      saveEditedContent(html, resumeId, debounceTimeoutRef)
-      setHasUnsavedChanges(true) // Mark that there are unsaved changes
-    }
+    setHasUnsavedChanges(true)
     setEditedContent(html)
-  }, [id, generatedResumeContent?.id])
+  }, [])
 
   const handleSectionsReordered = useCallback((html: string) => {
-    handleContentChange(html)
-    if (reorderSaveTimeoutRef.current) {
-      clearTimeout(reorderSaveTimeoutRef.current)
-    }
-    reorderSaveTimeoutRef.current = setTimeout(() => {
-      handleSaveToDBRef.current?.({ silent: true })
-      reorderSaveTimeoutRef.current = null
-    }, 800)
-  }, [handleContentChange])
+    setHasUnsavedChanges(true)
+    setEditedContent(html)
+  }, [])
   // Save JSON to database manually - converts HTML edits to JSON first
   const handleSaveToDB = useCallback(async ({ silent }: { silent?: boolean } = {}) => {
     const resumeId = (id as string) || generatedResumeContent?.id
@@ -207,6 +193,7 @@ export default function DocumentPage() {
       }
 
       setHasUnsavedChanges(false);
+      await getResume(resumeId);
       if (!silent) {
         showSuccess(
           'Resume Saved Successfully!',
@@ -224,68 +211,10 @@ export default function DocumentPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [id, generatedResumeContent?.id, generatedResumeContent?.content, editedContent, isSaving, showSuccess, showError])
-
-  useEffect(() => {
-    handleSaveToDBRef.current = handleSaveToDB;
-  }, [handleSaveToDB])
-
-  useEffect(() => {
-    return () => {
-      if (reorderSaveTimeoutRef.current) {
-        clearTimeout(reorderSaveTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Check localStorage first (even before DB fetch) using the ID from URL
-  useEffect(() => {
-    if (id) {
-      const savedContent = loadEditedContent(id as string)
-      if (savedContent) {
-        // Always use localStorage content if it exists, set it immediately
-        setEditedContent(savedContent)
-      }
-    }
-  }, [id])
-
-  // Only update from localStorage when generatedResumeContent ID changes (fallback)
-  useEffect(() => {
-    if (generatedResumeContent?.id && generatedResumeContent.id !== id) {
-      const savedContent = loadEditedContent(generatedResumeContent.id)
-      if (savedContent) {
-        setEditedContent(savedContent)
-      } else {
-        setEditedContent(null)
-      }
-    }
-  }, [generatedResumeContent?.id, id])
-
-  // Save content to localStorage immediately when editedContent changes (only if different from what's stored)
-  useEffect(() => {
-    const resumeId = (id as string) || generatedResumeContent?.id
-    if (editedContent && resumeId) {
-      const storedContent = loadEditedContent(resumeId)
-      // Only save if content is different to avoid unnecessary writes
-      if (storedContent !== editedContent) {
-        saveEditedContentImmediate(editedContent, resumeId)
-      }
-    }
-  }, [editedContent, id, generatedResumeContent?.id])
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    const debounceTimeout = debounceTimeoutRef.current
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout)
-      }
-    }
-  }, [])
+  }, [id, generatedResumeContent?.id, generatedResumeContent?.content, editedContent, isSaving, showSuccess, showError, getResume])
 
   // Download resume as PDF
   const handleDownloadResume = useCallback(async () => {
-    const resumeId = (id as string) || generatedResumeContent?.id
     await downloadResumeAsPDF(
       editorRef, 
       templateData, 
@@ -296,10 +225,6 @@ export default function DocumentPage() {
           'Your resume has been saved to your device.',
           3000
         );
-        // Clear localStorage after successful download
-        if (resumeId) {
-          clearEditedContent(resumeId);
-        }
       },
       (error) => {
         showError(
@@ -309,7 +234,7 @@ export default function DocumentPage() {
         );
       }
     )
-  }, [templateData, showSuccess, showError, id, generatedResumeContent?.id])
+  }, [templateData, showSuccess, showError])
 
   // Load resume when status becomes ready or on initial load
   useEffect(() => {
@@ -329,22 +254,8 @@ export default function DocumentPage() {
       }
     }
 
-    const localContent = loadEditedContent(resumeId)
-    if (!localContent || status?.status === "ready") {
-      void run()
-    }
+    void run()
   }, [status, generatedResumeContent, getResume, id, hasFetchedForStatus])
-
-  useEffect(() => {
-    if (status?.status === "processing") {
-      const resumeId = (id as string) || generatedResumeContent?.id
-      if (resumeId) {
-        clearEditedContent(resumeId)
-      }
-      setEditedContent(null)
-      setHasUnsavedChanges(false)
-    }
-  }, [status?.status, id, generatedResumeContent?.id])
 
   // Reset fetch flag when status changes to processing (for re-generation scenarios)
   useEffect(() => {
@@ -352,6 +263,11 @@ export default function DocumentPage() {
       setHasFetchedForStatus(false)
     }
   }, [status?.status])
+
+  useEffect(() => {
+    setEditedContent(null)
+    setHasUnsavedChanges(false)
+  }, [normalizedResumeRecord?.id])
 
   const isFailed = status?.status === "failed";
   const shouldRenderEditor =
