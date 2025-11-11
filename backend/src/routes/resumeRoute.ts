@@ -1,3 +1,4 @@
+import { existsSync, mkdirSync } from 'fs';
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -7,10 +8,24 @@ import { requireEntitlement } from '../middleware/requireEntitlement';
 
 const router = express.Router();
 
+const UPLOAD_ROOT =
+  process.env.UPLOAD_DIR && process.env.UPLOAD_DIR.trim().length
+    ? path.resolve(process.env.UPLOAD_DIR)
+    : path.join(process.cwd(), "uploads");
+
+function ensureUploadDir() {
+  if (!existsSync(UPLOAD_ROOT)) {
+    mkdirSync(UPLOAD_ROOT, { recursive: true });
+  }
+}
+
+ensureUploadDir();
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Files will be stored in uploads directory
+    ensureUploadDir();
+    cb(null, UPLOAD_ROOT); // Files will be stored in uploads directory
   },
   filename: (req, file, cb) => {
     // Generate unique filename
