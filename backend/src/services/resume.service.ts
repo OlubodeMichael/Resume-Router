@@ -476,13 +476,13 @@ const generationPrompt = PromptTemplate.fromTemplate(`
   You are a professional resume writer. Generate ONLY the dynamic content that needs to be tailored to the job description.
 
   CRITICAL: WORD COUNT REQUIREMENT - The entire resume content (experience + projects + summary) must be 400-600 words total:
-  - Target: ~600 words for optimal impact
-  - Minimum: 500 words (if less, expand bullet points with more detail)
-  - Maximum: 700 words (if more, condense while keeping metrics and impact)
+  - Target: ~650 words for optimal impact
+  - Minimum: 520 words (if less, expand bullet points with more detail)
+  - Maximum: 720 words (if more, condense while keeping metrics and impact)
   - Track word count as you write and adjust bullet point length accordingly
   - Prioritize quality over quantity, but stay within range
-  - Each experience bullet should be 20-35 words
-  - Each project bullet should be 15-25 words
+  - Each experience bullet must be 25-40 words and read as a multi-clause sentence that explains the action, the method, and the quantified outcome
+  - Each project bullet must be 20-30 words and include both the technical approach and the measurable impact
   - Summary should be 50-100 words
   
   CRITICAL: ZERO-TOLERANCE WORD REPETITION POLICY - Using the same words over and over again is STRICTLY FORBIDDEN:

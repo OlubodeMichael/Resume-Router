@@ -17,6 +17,38 @@ interface Profile {
 
 const TTL_SEC = 60 * 60 * 24; // 24 hours
 const KProfile = (userId: string) => `rr:v1:profile:${userId}`;
+
+function sanitizeLinksInput(input: unknown): Links[] {
+  if (!Array.isArray(input)) return [];
+
+  const sanitized: Links[] = [];
+  const seen = new Set<string>();
+
+  input.forEach((item) => {
+    if (!item || typeof item !== 'object') return;
+
+    const rawName =
+      typeof (item as any).name === 'string'
+        ? (item as any).name
+        : typeof (item as any).label === 'string'
+        ? (item as any).label
+        : '';
+    const rawUrl = typeof (item as any).url === 'string' ? (item as any).url : '';
+
+    const name = rawName.trim();
+    const url = rawUrl.trim();
+
+    if (!name || !url) return;
+
+    const key = `${name.toLowerCase()}|${url.toLowerCase()}`;
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    sanitized.push({ name, url });
+  });
+
+  return sanitized;
+}
 async function writeThroughProfileCache(userId: string, profile: any) {
   await rset<any>(KProfile(userId), profile, { ttlSec: TTL_SEC });
 }
@@ -97,6 +129,7 @@ export const getProfile = catchAsync(async (req: Request, res: Response): Promis
         education: [],
         projects: [],
         achievements: [],
+        links: [],
         certifications: [],
         volunteer: [],
         leadership: [],
@@ -1923,3 +1956,127 @@ export const getObjective = catchAsync(async (req: Request, res: Response): Prom
   });
 });
 
+export const addLinks = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { links } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+  if (!Array.isArray(links)) {
+    res.status(400).json({ message: 'Links must be an array of { name, url } objects' });
+    return;
+  }
+
+  const sanitizedLinks = sanitizeLinksInput(links);
+
+  if (!sanitizedLinks.length) {
+    res.status(400).json({ message: 'At least one valid link with both name and url is required' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({ where: { userId } });
+  const currentLinks = sanitizeLinksInput((profile as any)?.links);
+
+  const existingKeys = new Set(
+    currentLinks.map((link) => `${link.name.toLowerCase()}|${link.url.toLowerCase()}`)
+  );
+
+  const mergedLinks = [...currentLinks];
+  sanitizedLinks.forEach((link) => {
+    const key = `${link.name.toLowerCase()}|${link.url.toLowerCase()}`;
+    if (existingKeys.has(key)) {
+      return;
+    }
+    existingKeys.add(key);
+    mergedLinks.push(link);
+  });
+
+  const updatedProfile = await prisma.profile.upsert({
+    where: { userId },
+    update: { links: mergedLinks as any },
+    create: {
+      userId,
+      skills: [],
+      experience: [],
+      education: [],
+      projects: [],
+      achievements: [],
+      links: mergedLinks as any,
+      createdAt: new Date(),
+    },
+  });
+
+  await writeThroughProfileCache(userId, updatedProfile);
+
+  res.status(200).json({
+    message: 'Links added successfully',
+    links: mergedLinks,
+  });
+});
+
+export const getLinks = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    select: { links: true },
+  });
+
+  const sanitizedLinks = sanitizeLinksInput(profile?.links ?? []);
+
+  res.status(200).json({
+    message: 'Links fetched successfully',
+    links: sanitizedLinks,
+  });
+});
+
+export const updateLinks = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { links } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  if (!Array.isArray(links)) {
+    res.status(400).json({ message: 'Links must be an array of { name, url } objects' });
+    return;
+  }
+
+  const sanitizedLinks = sanitizeLinksInput(links);
+
+  const updatedProfile = await prisma.profile.upsert({
+    where: { userId },
+    update: { links: sanitizedLinks as any },
+    create: {
+      userId,
+      skills: [],
+      experience: [],
+      education: [],
+      projects: [],
+      achievements: [],
+      links: sanitizedLinks as any,
+      createdAt: new Date(),
+    },
+  });
+
+  await writeThroughProfileCache(userId, updatedProfile);
+
+  res.status(200).json({
+    message: 'Links updated successfully',
+    links: sanitizedLinks,
+  });
+});
+
+
+export const deleteLinks = catchAsync(async (req: Request, res: Response): Promise<void> => {})
+
+export const addCourses = catchAsync(async (req: Request, res: Response): Promise<void> => {})

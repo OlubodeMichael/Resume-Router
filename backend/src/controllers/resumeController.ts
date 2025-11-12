@@ -355,7 +355,7 @@ export const getResume = catchAsync(async (req: Request, res: Response): Promise
     createdAt: resume.createdAt.toISOString(),
     updatedAt: resume.updatedAt.toISOString(),
   };
-  console.log('Formatted resume:', formattedResume);
+  //console.log('Formatted resume:', formattedResume);
 
   res.status(200).json({
     message: 'Resume fetched successfully',
@@ -624,6 +624,24 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
           }
         }
 
+        if (mapping.update.links && mapping.update.links.length) {
+          const existingLinks = asArray<any>(existingProfile.links);
+          const existingKeys = new Set(
+            existingLinks.map((link) => `${(link.name || "").toLowerCase()}|${(link.url || "").toLowerCase()}`)
+          );
+          
+          const newLinks = mapping.update.links.filter((link) => {
+            const key = `${(link.name || "").toLowerCase()}|${(link.url || "").toLowerCase()}`;
+            return !existingKeys.has(key);
+          });
+
+          if (newLinks.length > 0) {
+            const mergedLinks = [...existingLinks, ...newLinks];
+            updateData.links = mergedLinks;
+            appliedSections.push("links");
+          }
+        }
+
         if (Object.keys(updateData).length) {
           await prisma.profile.update({
             where: { userId },
@@ -647,6 +665,7 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
             publications: mapping.update.publications ?? [],
             awardsHonors: mapping.update.awardsHonors ?? [],
             references: mapping.update.references ?? [],
+            links: mapping.update.links ?? [],
             summary: mapping.update.summary ?? null,
             objective: mapping.update.objective ?? null,
             createdAt: new Date(),
@@ -658,6 +677,121 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
       }
     }
 
+    // Save personal information if extracted
+    let personalInfoUpdated = false;
+    if (mapping.personalInfo) {
+      // Ensure profile exists first
+      let profile = await prisma.profile.findUnique({ 
+        where: { userId },
+        select: { id: true },
+      });
+
+      if (!profile) {
+        // Create profile if it doesn't exist
+        profile = await prisma.profile.create({
+          data: {
+            userId,
+            skills: [],
+            experience: [],
+            education: [],
+            projects: [],
+            achievements: [],
+            certifications: [],
+            volunteer: [],
+            leadership: [],
+            publications: [],
+            awardsHonors: [],
+            references: [],
+            summary: null,
+            objective: null,
+            createdAt: new Date(),
+          },
+          select: { id: true },
+        });
+        await rdel(profileCacheKey(userId));
+      }
+
+      if (profile) {
+        // Check if personal info already exists
+        const existingPersonalInfo = await prisma.personalInformation.findUnique({
+          where: { profileId: profile.id },
+        });
+
+        // Only update fields that are provided and different from existing
+        const updateData: Record<string, any> = {};
+        if (mapping.personalInfo.fullName !== undefined) {
+          const cleanFullName = mapping.personalInfo.fullName?.trim() || null;
+          if (!existingPersonalInfo?.fullName || cleanFullName !== existingPersonalInfo.fullName) {
+            updateData.fullName = cleanFullName;
+          }
+        }
+        if (mapping.personalInfo.email !== undefined) {
+          const cleanEmail = mapping.personalInfo.email?.trim() || null;
+          if (!existingPersonalInfo?.email || cleanEmail !== existingPersonalInfo.email) {
+            updateData.email = cleanEmail;
+          }
+        }
+        // Save phone number if extracted
+        if (mapping.personalInfo.phone !== undefined) {
+          const cleanPhone = mapping.personalInfo.phone?.trim() || null;
+          // Update if no existing phone or if the extracted phone is different
+          if (!existingPersonalInfo?.phone || cleanPhone !== existingPersonalInfo.phone) {
+            updateData.phone = cleanPhone;
+          }
+        }
+        if (mapping.personalInfo.location !== undefined) {
+          const cleanLocation = mapping.personalInfo.location?.trim() || null;
+          if (!existingPersonalInfo?.location || cleanLocation !== existingPersonalInfo.location) {
+            updateData.location = cleanLocation;
+          }
+        }
+        if (mapping.personalInfo.linkedIn !== undefined) {
+          const cleanLinkedIn = mapping.personalInfo.linkedIn?.trim() || null;
+          if (!existingPersonalInfo?.linkedIn || cleanLinkedIn !== existingPersonalInfo.linkedIn) {
+            updateData.linkedIn = cleanLinkedIn;
+          }
+        }
+        if (mapping.personalInfo.portfolio !== undefined) {
+          const cleanPortfolio = mapping.personalInfo.portfolio?.trim() || null;
+          if (!existingPersonalInfo?.portfolio || cleanPortfolio !== existingPersonalInfo.portfolio) {
+            updateData.portfolio = cleanPortfolio;
+          }
+        }
+        if (mapping.personalInfo.jobTitle !== undefined) {
+          const cleanJobTitle = mapping.personalInfo.jobTitle?.trim() || null;
+          if (!existingPersonalInfo?.jobTitle || cleanJobTitle !== existingPersonalInfo.jobTitle) {
+            updateData.jobTitle = cleanJobTitle;
+          }
+        }
+        if (mapping.personalInfo.pronouns !== undefined) {
+          const cleanPronouns = mapping.personalInfo.pronouns?.trim() || null;
+          if (!existingPersonalInfo?.pronouns || cleanPronouns !== existingPersonalInfo.pronouns) {
+            updateData.pronouns = cleanPronouns;
+          }
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await prisma.personalInformation.upsert({
+            where: { profileId: profile.id },
+            update: updateData,
+            create: {
+              profileId: profile.id,
+              fullName: mapping.personalInfo.fullName?.trim() || null,
+              email: mapping.personalInfo.email?.trim() || null,
+              phone: mapping.personalInfo.phone?.trim() || null,
+              location: mapping.personalInfo.location?.trim() || null,
+              linkedIn: mapping.personalInfo.linkedIn?.trim() || null,
+              portfolio: mapping.personalInfo.portfolio?.trim() || null,
+              jobTitle: mapping.personalInfo.jobTitle?.trim() || null,
+              pronouns: mapping.personalInfo.pronouns?.trim() || null,
+            },
+          });
+          personalInfoUpdated = true;
+          appliedSections.push("personalInfo");
+        }
+      }
+    }
+
     res.status(200).json({
       message: "Resume processed successfully",
       data: profileData,
@@ -665,6 +799,7 @@ export const parseResume = catchAsync(async (req: RequestWithFile, res: Response
         appliedSections: Array.from(new Set(appliedSections)),
         warnings: mapping.warnings,
         profileUpdated,
+        personalInfoUpdated,
       },
     });
   } catch (error) {
