@@ -33,6 +33,13 @@ interface EditableTemplateRendererProps {
   onContentChange?: (html: string) => void;
 }
 
+// Register Handlebars helpers
+if (!Handlebars.helpers.eq) {
+  Handlebars.registerHelper('eq', function(a: unknown, b: unknown) {
+    return a === b;
+  });
+}
+
 // Cache for compiled templates
 const templateCache = new Map<string, HandlebarsTemplateDelegate>();
 
@@ -209,11 +216,13 @@ export const EditableTemplateRenderer = forwardRef<HTMLDivElement, EditableTempl
         
         // Only update content if it's different from what's already there
         const currentHtml = contentRef.current.innerHTML;
-        const nameValue = typeof data.name === 'string' ? data.name : 
-                         typeof data.fullName === 'string' ? data.fullName : 'default';
-        const contentToSet = initialContent && !currentHtml.includes(nameValue)
-          ? DOMPurify.sanitize(initialContent, { ADD_TAGS: ['style', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'br', 'section'], ADD_ATTR: ['target', 'href', 'class', 'style', 'id'] })
-          : cleanHtml;
+        const sanitizedInitial = initialContent
+          ? DOMPurify.sanitize(initialContent, {
+              ADD_TAGS: ['style', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'br', 'section'],
+              ADD_ATTR: ['target', 'href', 'class', 'style', 'id'],
+            })
+          : null;
+        const contentToSet = sanitizedInitial ?? cleanHtml;
 
         // Only update innerHTML if content actually changed
         // Skip update if user is actively editing to preserve cursor position

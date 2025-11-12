@@ -18,6 +18,8 @@ export const DEFAULT_RESUME: ResumeData = {
   linkedIn: 'https://linkedin.com/in/yourprofile',
   portfolio: 'https://yourportfolio.com',
   contacts: [],
+  summaryHTML: '<p>Experienced developer with a passion for building delightful products.</p>',
+  objective: 'Seeking a role where I can contribute to impactful web experiences while growing with a collaborative team.',
   education: [
     {
       school: 'University Name',
@@ -49,7 +51,53 @@ export const DEFAULT_RESUME: ResumeData = {
   skills: [
     'JavaScript', 'Python', 'React', 'Node.js', 'Git', 'Docker',
   ],
-  summaryHTML: undefined,
+  certifications: [
+    {
+      title: 'Certification Name',
+      issuedBy: 'Issuing Organization',
+      end: '2024'
+    }
+  ],
+  volunteer: [
+    {
+      organization: 'Community Group',
+      role: 'Volunteer Coordinator',
+      start: '2021',
+      end: '2023',
+      bullets: ['Coordinated events', 'Managed volunteer outreach']
+    }
+  ],
+  leadership: [
+    {
+      organization: 'Tech Club',
+      role: 'President',
+      start: '2022',
+      end: '2023',
+      bullets: ['Organized weekly workshops', 'Mentored 10+ members']
+    }
+  ],
+  awardsHonors: [
+    {
+      title: 'Dean’s List',
+      issuer: 'University Name',
+      date: '2023'
+    }
+  ],
+  publications: [
+    {
+      title: 'Understanding Modern Web Architecture',
+      venue: 'Tech Journal',
+      date: '2024',
+      link: 'https://example.com/article'
+    }
+  ],
+  references: [
+    {
+      name: 'Jane Doe',
+      contact: 'jane.doe@example.com | (555) 987-6543',
+      relationship: 'Former Manager'
+    }
+  ]
 }
 
 /**
@@ -86,6 +134,211 @@ const extractAllSkills = (data: ResumeDataWithCategorizedSkills): string[] => {
  * Transform ResumeData to match ryan template data structure
  */
 export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
+  const toDateRange = (start?: string | null, end?: string | null) => {
+    const clean = (value?: string | null) =>
+      typeof value === 'string' ? value.trim() : '';
+    const startClean = clean(start);
+    const endClean = clean(end);
+    if (startClean && endClean) return `${startClean} – ${endClean}`;
+    return startClean || endClean || '';
+  };
+
+  const ensureArray = <T = unknown>(value: unknown): T[] =>
+    Array.isArray(value) ? (value as T[]) : [];
+
+  const asRecord = (value: unknown): Record<string, unknown> =>
+    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+
+  const pickString = (record: Record<string, unknown>, ...keys: string[]): string => {
+    for (const key of keys) {
+      const raw = record[key];
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (trimmed.length) {
+          return trimmed;
+        }
+      }
+    }
+    return '';
+  };
+
+  const toTextArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value.split(/\n+/).map((part) => part.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const toBulletObjects = (value: unknown) =>
+    toTextArray(value).map((item) => ({ item }));
+
+  const summary =
+    typeof data.summaryHTML === 'string'
+      ? data.summaryHTML
+      : typeof data.summary === 'string'
+      ? data.summary
+      : '';
+
+  const objective =
+    typeof data.objective === 'string'
+      ? data.objective
+      : '';
+
+  const certifications =
+    (data.certifications || []).map((cert) => {
+      const record = asRecord(cert);
+      const startRaw = pickString(record, 'start', 'startDate');
+      const endRaw = pickString(record, 'end', 'endDate');
+      return {
+        name: cert.title || pickString(record, 'name'),
+        issuer:
+          cert.issuedBy ||
+          pickString(record, 'issuer', 'organization'),
+        date: toDateRange(startRaw || cert.start, endRaw || cert.end) || pickString(record, 'date', 'awardedDate'),
+        description: pickString(record, 'description'),
+        bullets: toBulletObjects(record.details ?? record.highlights),
+      };
+    }).filter((cert) => cert.name || cert.issuer || cert.date || cert.description || cert.bullets.length);
+
+  const volunteerEntries = ensureArray((data as { volunteer?: unknown[] }).volunteer);
+  const volunteer = volunteerEntries
+    .map((entry): {
+      organization: string;
+      role: string;
+      location: string;
+      start: string;
+      end: string;
+      dateRange: string;
+      bullets: { item: string }[];
+    } => {
+      const record = asRecord(entry);
+      const startRaw = pickString(record, 'startDate', 'start', 'from');
+      const endRaw = pickString(record, 'endDate', 'end', 'to');
+      return {
+        organization: pickString(record, 'org', 'organization', 'company', 'name'),
+        role: pickString(record, 'role', 'position', 'title'),
+        location: pickString(record, 'location', 'city'),
+        start: startRaw,
+        end: endRaw,
+        dateRange: toDateRange(startRaw, endRaw),
+        bullets: toBulletObjects(
+          record.responsibilities ??
+            record.bullets ??
+            record.points ??
+            record.description ??
+            record.summary
+        ),
+      };
+    })
+    .filter((item) => item.organization || item.role || item.bullets.length);
+
+  const leadershipEntries = ensureArray(data.leadership);
+  const leadership = leadershipEntries
+    .map((entry): {
+      organization: string;
+      role: string;
+      location: string;
+      start: string;
+      end: string;
+      dateRange: string;
+      bullets: { item: string }[];
+    } => {
+      const record = asRecord(entry);
+      const startRaw = pickString(record, 'startDate', 'start', 'from');
+      const endRaw = pickString(record, 'endDate', 'end', 'to');
+      return {
+        organization: pickString(record, 'organization', 'org', 'group', 'name'),
+        role: pickString(record, 'role', 'position', 'title'),
+        location: pickString(record, 'location', 'city'),
+        start: startRaw,
+        end: endRaw,
+        dateRange: toDateRange(startRaw, endRaw),
+        bullets: toBulletObjects(
+          record.responsibilities ??
+            record.bullets ??
+            record.points ??
+            record.description ??
+            record.summary
+        ),
+      };
+    })
+    .filter((item) => item.organization || item.role || item.bullets.length);
+
+  const publicationsEntries = ensureArray((data as { publications?: unknown[] }).publications);
+  const publications = publicationsEntries
+    .map((entry): {
+      title: string;
+      venue: string;
+      date: string;
+      link: string;
+      bullets: { item: string }[];
+    } => {
+      const record = asRecord(entry);
+      return {
+        title: pickString(record, 'title', 'name'),
+        venue: pickString(record, 'venue', 'publisher', 'journal'),
+        date: pickString(record, 'date', 'publishedDate'),
+        link: pickString(record, 'url', 'link'),
+        bullets: toBulletObjects(
+          record.highlights ??
+            record.summary ??
+            record.description
+        ),
+      };
+    })
+    .filter((item) => item.title || item.venue || item.date || item.link || item.bullets.length);
+
+  const awardsEntries = ensureArray((data as { awardsHonors?: unknown[] }).awardsHonors);
+  const awardsHonors = awardsEntries
+    .map((entry): {
+      title: string;
+      issuer: string;
+      date: string;
+      description: string;
+      bullets: { item: string }[];
+    } => {
+      const record = asRecord(entry);
+      return {
+        title: pickString(record, 'title', 'name'),
+        issuer: pickString(record, 'issuer', 'organization'),
+        date: pickString(record, 'date', 'awardedDate'),
+        description: pickString(record, 'description'),
+        bullets: toBulletObjects(record.highlights ?? record.summary),
+      };
+    })
+    .filter((item) => item.title || item.issuer || item.date || item.description || item.bullets.length);
+
+  const referencesEntries = ensureArray((data as { references?: unknown[] }).references);
+  const references = referencesEntries
+    .map((entry): {
+      name: string;
+      contact: string;
+      relationship: string;
+      notes: string;
+    } => {
+      const record = asRecord(entry);
+      const contactParts = [
+        pickString(record, 'contact'),
+        pickString(record, 'email'),
+        pickString(record, 'phone'),
+        pickString(record, 'linkedin'),
+        pickString(record, 'location'),
+      ].filter(Boolean);
+
+      return {
+        name: pickString(record, 'name'),
+        contact: contactParts.join(' | '),
+        relationship: pickString(record, 'relationship', 'title'),
+        notes: pickString(record, 'notes', 'summary'),
+      };
+    })
+    .filter((item) => item.name || item.contact || item.relationship || item.notes);
+
   // Clean up LinkedIn URL for display
   const cleanLinkedInDisplay = (url: string) => {
     if (!url) return '';
@@ -119,6 +372,8 @@ export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
     portfolio: portfolio,
     linkedInDisplay: cleanLinkedInDisplay(linkedIn),
     portfolioDisplay: cleanPortfolioDisplay(portfolio),
+    summary,
+    objective,
     education: (data.education || []).map(ed => {
       return {
         school: ed.school,
@@ -145,12 +400,27 @@ export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
       bullets: proj.bullets?.map(b => ({ item: b })) || []
     })),
     skills: (() => {
+      const normalizeToStringArray = (value: unknown): string[] => {
+        if (Array.isArray(value)) {
+          return value
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .filter(Boolean);
+        }
+        if (typeof value === 'string') {
+          return value
+            .split(/[,;\n]/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+        }
+        return [];
+      };
+
       // Helper to clean and join skills (removes any leading colons)
-      const cleanAndJoin = (skills: string[] | undefined): string => {
-        if (!skills || skills.length === 0) return '';
-        return skills
-          .map(s => {
-            // Remove any leading colon and space, then capitalize
+      const cleanAndJoin = (skills: unknown): string => {
+        const list = normalizeToStringArray(skills);
+        if (!list.length) return '';
+        return list
+          .map((s) => {
             const cleaned = s.trim().replace(/^:\s*/, '').trim();
             return capitalize(cleaned);
           })
@@ -165,7 +435,9 @@ export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
           frameworks: cleanAndJoin(data.categorizedSkills.librariesFrameworks),
           tools: cleanAndJoin(data.categorizedSkills.developerTools),
           libraries: cleanAndJoin(data.categorizedSkills.librariesFrameworks),
-          skills: (data.skills || []).map(capitalize).join(', ') // For templates that expect flat skills
+          skills: normalizeToStringArray(data.skills)
+            .map(capitalize)
+            .join(', ')
         };
       } else {
         // Fallback: Use basic skill extraction (AI should handle most categorization)
@@ -179,6 +451,28 @@ export const transformResumeData = (data: ResumeDataWithCategorizedSkills) => {
           skills: allSkills.map(capitalize).join(', ') // For templates that expect flat skills
         };
       }
-    })()
+    })(),
+    certifications,
+    volunteer: volunteer.map((item) => ({
+      company: item.organization,
+      role: item.role,
+      location: item.location,
+      start: item.start,
+      end: item.end,
+      dateRange: item.dateRange,
+      bullets: item.bullets,
+    })),
+    leadership: leadership.map((item) => ({
+      company: item.organization,
+      role: item.role,
+      location: item.location,
+      start: item.start,
+      end: item.end,
+      dateRange: item.dateRange,
+      bullets: item.bullets,
+    })),
+    publications,
+    awardsHonors,
+    references,
   }
 }

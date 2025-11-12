@@ -7,6 +7,75 @@ import { setAtPath } from "./path";
 import { sanitizeHtml } from "./sanitize";
 import { isPlainTextPath } from "./fieldConfig";
 
+type ResumeJsonShape = Record<string, unknown> & {
+  education?: Array<{
+    school?: string;
+    degree?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+  }>;
+  experience?: Array<{
+    title?: string;
+    company?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    responsibilities?: string[];
+  }>;
+  projects?: Array<{
+    title?: string;
+    bullets?: string[];
+  }>;
+  skills?: string[];
+  categorizedSkills?: {
+    languages: string[];
+    librariesFrameworks: string[];
+    developerTools: string[];
+  };
+  certifications?: Array<{
+    title: string;
+    issuer?: string;
+    date?: string;
+    description?: string;
+  }>;
+  awardsHonors?: Array<{
+    title: string;
+    issuer?: string;
+    date?: string;
+    description?: string;
+  }>;
+  volunteer?: Array<{
+    organization: string;
+    role?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    bullets?: string[];
+  }>;
+  leadership?: Array<{
+    organization: string;
+    role?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    bullets?: string[];
+  }>;
+  publications?: Array<{
+    title: string;
+    venue?: string;
+    date?: string;
+    link?: string;
+    bullets?: string[];
+  }>;
+  references?: Array<{
+    name: string;
+    contact?: string;
+    relationship?: string;
+    notes?: string;
+  }>;
+};
+
 /**
  * Extract HTML content from an element (preserving styling)
  */
@@ -42,6 +111,7 @@ export function updateJsonFromHtml(
   const doc = parser.parseFromString(html, 'text/html');
   
   let updatedJson = JSON.parse(JSON.stringify(currentJson)); // Deep clone
+  const mutableJson = updatedJson as ResumeJsonShape;
   
   // First, try to find elements with data-path attributes (if template has them)
   const elementsWithPath = doc.querySelectorAll('[data-path]');
@@ -116,12 +186,41 @@ export function updateJsonFromHtml(
     });
     
     if (educationSection) {
+      // Get display preferences from section data attributes
+      const schoolRightSideAttr = educationSection.getAttribute('data-education-school-right');
+      const schoolRightSide = (schoolRightSideAttr || 'date') as 'date' | 'location';
+      const degreeLocationShow = educationSection.getAttribute('data-education-location-show') === 'true';
+      const degreeLocationPositionAttr = educationSection.getAttribute('data-education-location-pos');
+      const degreeLocationPosition = (degreeLocationPositionAttr || 'right') as 'left' | 'right';
+      const degreeGpaShow = educationSection.getAttribute('data-education-gpa-show') === 'true';
+      
+      // Debug logging
+      console.log('Education display preferences extracted:', {
+        schoolRightSide,
+        degreeLocationShow,
+        degreeLocationPosition,
+        degreeGpaShow,
+        hasAttributes: {
+          schoolRightSide: !!schoolRightSideAttr,
+          locationShow: educationSection.hasAttribute('data-education-location-show'),
+          locationPos: !!degreeLocationPositionAttr,
+          gpaShow: educationSection.hasAttribute('data-education-gpa-show'),
+        }
+      });
+      
       const educationItems: Array<{
         school: string;
         degree: string;
         location?: string;
         startDate?: string;
         endDate?: string;
+        gpa?: string;
+        schoolRightSide?: 'date' | 'location';
+        schoolLocation?: string;
+        degreeLocationShow?: boolean;
+        degreeLocationPosition?: 'left' | 'right';
+        degreeLocation?: string;
+        degreeGpaShow?: boolean;
       }> = [];
       const educationGroups = educationSection.querySelectorAll('h3');
       
@@ -131,20 +230,76 @@ export function updateJsonFromHtml(
         const dateSpan = group.querySelector('.normal')?.textContent?.trim() || '';
         const dates = dateSpan.split('–').map(d => d.trim()).filter(Boolean);
         
+        // Extract school location if schoolRightSide is 'location'
+        let schoolLocation: string | undefined;
+        if (schoolRightSide === 'location' && spans.length >= 2) {
+          schoolLocation = spans[1]?.textContent?.trim() || undefined;
+        }
+        
         const h4 = group.nextElementSibling;
         if (h4 && h4.tagName === 'H4') {
           const h4Spans = h4.querySelectorAll('span');
-          const degree = h4Spans[0]?.textContent?.trim() || '';
-          const location = h4Spans[1]?.textContent?.trim() || '';
+          const firstSpanText = h4Spans[0]?.textContent?.trim() || '';
+          
+          // Extract degree location and GPA from the HTML structure
+          let degreeLocation: string | undefined;
+          let gpa: string | undefined;
+          let cleanDegreeText = firstSpanText;
+          
+          // Check if location is on the left (inline with degree, separated by |)
+          if (degreeLocationShow && degreeLocationPosition === 'left') {
+            const parts = firstSpanText.split(' | ');
+            if (parts.length >= 2) {
+              cleanDegreeText = parts[0].trim();
+              degreeLocation = parts.slice(1).join(' | ').trim() || undefined;
+            }
+          } else {
+            // Remove any inline location that might be there (for safety)
+            cleanDegreeText = firstSpanText.split(' | ')[0].trim();
+          }
+          
+          // Check if location or GPA is on the right (in a separate span)
+          if (h4Spans.length >= 2) {
+            const rightText = h4Spans[1]?.textContent?.trim() || '';
+            // Check if it's GPA
+            const gpaMatch = rightText.match(/GPA[:\s]*([\d]+\.?[\d]*)/i);
+            if (gpaMatch && gpaMatch[1]) {
+              gpa = gpaMatch[1].trim();
+            } else if (degreeLocationShow && degreeLocationPosition === 'right' && !degreeGpaShow) {
+              // It's location on the right
+              degreeLocation = rightText || undefined;
+            }
+          }
           
           // Capture education entry if it has at least a school or degree (handles partial/new entries)
-          if (school || degree) {
-            const eduItem = {
+          if (school || cleanDegreeText) {
+            const eduItem: {
+              school: string;
+              degree: string;
+              location?: string;
+              startDate?: string;
+              endDate?: string;
+              gpa?: string;
+              schoolRightSide?: 'date' | 'location';
+              schoolLocation?: string;
+              degreeLocationShow?: boolean;
+              degreeLocationPosition?: 'left' | 'right';
+              degreeLocation?: string;
+              degreeGpaShow?: boolean;
+            } = {
               school: school ? sanitizeHtml(extractElementHtml(spans[0] || group)) : '',
-              degree: degree ? sanitizeHtml(extractElementHtml(h4Spans[0] || h4)) : '',
-              location: location || undefined,
+              degree: cleanDegreeText ? sanitizeHtml(cleanDegreeText) : '',
+              location: degreeLocation || undefined, // Keep for backward compatibility
               startDate: dates[0] || undefined,
               endDate: dates[1] || undefined,
+              gpa: gpa || undefined,
+              // Always save display preferences (even if they match defaults, so they persist)
+              schoolRightSide: schoolRightSide,
+              ...(schoolLocation && { schoolLocation }),
+              degreeLocationShow: degreeLocationShow,
+              degreeLocationPosition: degreeLocationPosition,
+              ...(degreeLocation && { degreeLocation }),
+              degreeGpaShow: degreeGpaShow,
             };
             educationItems.push(eduItem);
           }
@@ -156,13 +311,28 @@ export function updateJsonFromHtml(
             location: undefined,
             startDate: dates[0] || undefined,
             endDate: dates[1] || undefined,
+            // Always save display preferences for school
+            schoolRightSide: schoolRightSide,
+            ...(schoolLocation && { schoolLocation }),
+            degreeLocationShow: degreeLocationShow,
+            degreeLocationPosition: degreeLocationPosition,
+            degreeGpaShow: degreeGpaShow,
           });
         }
       });
       
       // Replace entire education array with what's found in HTML (includes new entries)
       if (educationItems.length > 0) {
-        updatedJson.education = educationItems;
+        mutableJson.education = educationItems;
+        // Debug logging
+        console.log('Education items with preferences saved to JSON:', educationItems.map(item => ({
+          school: item.school,
+          degree: item.degree,
+          schoolRightSide: item.schoolRightSide,
+          degreeLocationShow: item.degreeLocationShow,
+          degreeLocationPosition: item.degreeLocationPosition,
+          degreeGpaShow: item.degreeGpaShow,
+        })));
       }
     }
     
@@ -235,7 +405,7 @@ export function updateJsonFromHtml(
       
       // Replace entire experience array with what's found in HTML (includes new entries)
       if (experienceItems.length > 0) {
-        updatedJson.experience = experienceItems;
+        mutableJson.experience = experienceItems;
       }
     }
     
@@ -280,7 +450,7 @@ export function updateJsonFromHtml(
       
       // Replace entire projects array with what's found in HTML (includes new entries)
       if (projectItems.length > 0) {
-        updatedJson.projects = projectItems;
+        mutableJson.projects = projectItems;
       }
     }
     
@@ -381,7 +551,7 @@ export function updateJsonFromHtml(
       });
       
       // Always update categorizedSkills (even if empty arrays, to preserve structure)
-      updatedJson.categorizedSkills = categorizedSkills;
+      mutableJson.categorizedSkills = categorizedSkills;
       
       // Also update flat skills array for backward compatibility
       const allSkills = [
@@ -391,10 +561,356 @@ export function updateJsonFromHtml(
       ];
       
       if (allSkills.length > 0) {
-        updatedJson.skills = allSkills;
-      } else if (!updatedJson.skills) {
+        mutableJson.skills = allSkills;
+      } else if (!mutableJson.skills) {
         // Preserve existing skills if no new skills found
-        updatedJson.skills = [];
+        mutableJson.skills = [];
+      }
+    }
+
+    const certificationsSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('certification');
+    });
+
+    if (certificationsSection) {
+      const certificationItems: Array<{
+        title: string;
+        issuer?: string;
+        date?: string;
+        description?: string;
+      }> = [];
+
+      const certificationEntries = certificationsSection.querySelectorAll('h3');
+
+      certificationEntries.forEach(entry => {
+        const spans = entry.querySelectorAll('span');
+        const titleSpan = spans[0];
+        const dateSpan = entry.querySelector('.normal');
+        const title = titleSpan ? titleSpan.textContent?.trim() : '';
+        const date = dateSpan ? dateSpan.textContent?.trim() : '';
+        const issuerParagraph = entry.nextElementSibling;
+        let issuer: string | undefined;
+        let description: string | undefined;
+
+        if (issuerParagraph && issuerParagraph.tagName === 'P') {
+          const issuerText = issuerParagraph.textContent?.trim() || '';
+          const issuerHtml = sanitizeHtml(extractElementHtml(issuerParagraph));
+          issuer = issuerText ? issuerHtml : undefined;
+
+          const maybeDescription = issuerParagraph.nextElementSibling;
+          if (maybeDescription && maybeDescription.tagName === 'P') {
+            const descHtml = sanitizeHtml(extractElementHtml(maybeDescription));
+            description = descHtml || undefined;
+          }
+        }
+
+        if (title || issuer || date || description) {
+          certificationItems.push({
+            title: title ? sanitizeHtml(extractElementHtml(titleSpan || entry)) : '',
+            issuer,
+            date: date || undefined,
+            description,
+          });
+        }
+      });
+
+      if (certificationItems.length > 0) {
+        mutableJson.certifications = certificationItems;
+      }
+    }
+
+    const awardsSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('award');
+    });
+
+    if (awardsSection) {
+      const awardsItems: Array<{
+        title: string;
+        issuer?: string;
+        date?: string;
+        description?: string;
+      }> = [];
+
+      const awardsEntries = awardsSection.querySelectorAll('h3');
+
+      awardsEntries.forEach(entry => {
+        const spans = entry.querySelectorAll('span');
+        const titleSpan = spans[0];
+        const dateSpan = entry.querySelector('.normal');
+        const title = titleSpan ? titleSpan.textContent?.trim() : '';
+        const date = dateSpan ? dateSpan.textContent?.trim() : '';
+
+        let issuer: string | undefined;
+        let description: string | undefined;
+
+        const issuerParagraph = entry.nextElementSibling;
+        if (issuerParagraph && issuerParagraph.tagName === 'P') {
+          const issuerText = issuerParagraph.textContent?.trim() || '';
+          const issuerHtml = sanitizeHtml(extractElementHtml(issuerParagraph));
+          issuer = issuerText ? issuerHtml : undefined;
+
+          const maybeDescription = issuerParagraph.nextElementSibling;
+          if (maybeDescription && maybeDescription.tagName === 'P') {
+            const descHtml = sanitizeHtml(extractElementHtml(maybeDescription));
+            description = descHtml || undefined;
+          }
+        }
+
+        if (title || issuer || date || description) {
+          awardsItems.push({
+            title: title ? sanitizeHtml(extractElementHtml(titleSpan || entry)) : '',
+            issuer,
+            date: date || undefined,
+            description,
+          });
+        }
+      });
+
+      if (awardsItems.length > 0) {
+        mutableJson.awardsHonors = awardsItems;
+      }
+    }
+
+    const volunteerSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('volunteer');
+    });
+
+    if (volunteerSection) {
+      const volunteerItems: Array<{
+        organization: string;
+        role?: string;
+        location?: string;
+        startDate?: string;
+        endDate?: string;
+        bullets?: string[];
+      }> = [];
+
+      const volunteerEntries = volunteerSection.querySelectorAll('h3');
+
+      volunteerEntries.forEach(entry => {
+        const spans = entry.querySelectorAll('span');
+        const roleSpan = spans[0];
+        const dateSpan = entry.querySelector('.normal');
+        const role = roleSpan ? roleSpan.textContent?.trim() : '';
+        const dateRange = dateSpan ? dateSpan.textContent?.trim() : '';
+        const dates = dateRange ? dateRange.split('–').map(d => d.trim()).filter(Boolean) : [];
+
+        const h4 = entry.nextElementSibling;
+        let organization = '';
+        let location: string | undefined;
+
+        if (h4 && h4.tagName === 'H4') {
+          const h4Spans = h4.querySelectorAll('span');
+          organization = h4Spans[0]?.textContent?.trim() || '';
+          location = h4Spans[1]?.textContent?.trim() || undefined;
+        }
+
+        const bullets: string[] = [];
+        const pointer = h4 ? h4.nextElementSibling : entry.nextElementSibling;
+        if (pointer && pointer.tagName === 'UL') {
+          pointer.querySelectorAll('li').forEach(li => {
+            const htmlContent = sanitizeHtml(extractElementHtml(li));
+            if (htmlContent.trim()) bullets.push(htmlContent);
+          });
+        }
+
+        if (organization || role || bullets.length > 0) {
+          volunteerItems.push({
+            organization: organization ? sanitizeHtml(extractElementHtml((h4?.querySelectorAll('span') || [])[0] || h4 || entry)) : '',
+            role: role ? sanitizeHtml(extractElementHtml(roleSpan || entry)) : undefined,
+            location,
+            startDate: dates[0] || undefined,
+            endDate: dates[1] || undefined,
+            bullets: bullets.length > 0 ? bullets : undefined,
+          });
+        }
+      });
+
+      if (volunteerItems.length > 0) {
+        mutableJson.volunteer = volunteerItems;
+      }
+    }
+
+    const leadershipSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('leadership');
+    });
+
+    if (leadershipSection) {
+      const leadershipItems: Array<{
+        organization: string;
+        role?: string;
+        location?: string;
+        startDate?: string;
+        endDate?: string;
+        bullets?: string[];
+      }> = [];
+
+      const leadershipEntries = leadershipSection.querySelectorAll('h3');
+
+      leadershipEntries.forEach(entry => {
+        const spans = entry.querySelectorAll('span');
+        const roleSpan = spans[0];
+        const dateSpan = entry.querySelector('.normal');
+        const role = roleSpan ? roleSpan.textContent?.trim() : '';
+        const dateRange = dateSpan ? dateSpan.textContent?.trim() : '';
+        const dates = dateRange ? dateRange.split('–').map(d => d.trim()).filter(Boolean) : [];
+
+        const h4 = entry.nextElementSibling;
+        let organization = '';
+        let location: string | undefined;
+
+        if (h4 && h4.tagName === 'H4') {
+          const h4Spans = h4.querySelectorAll('span');
+          organization = h4Spans[0]?.textContent?.trim() || '';
+          location = h4Spans[1]?.textContent?.trim() || undefined;
+        }
+
+        const bullets: string[] = [];
+        const pointer = h4 ? h4.nextElementSibling : entry.nextElementSibling;
+        if (pointer && pointer.tagName === 'UL') {
+          pointer.querySelectorAll('li').forEach(li => {
+            const htmlContent = sanitizeHtml(extractElementHtml(li));
+            if (htmlContent.trim()) bullets.push(htmlContent);
+          });
+        }
+
+        if (organization || role || bullets.length > 0) {
+          leadershipItems.push({
+            organization: organization ? sanitizeHtml(extractElementHtml((h4?.querySelectorAll('span') || [])[0] || h4 || entry)) : '',
+            role: role ? sanitizeHtml(extractElementHtml(roleSpan || entry)) : undefined,
+            location,
+            startDate: dates[0] || undefined,
+            endDate: dates[1] || undefined,
+            bullets: bullets.length > 0 ? bullets : undefined,
+          });
+        }
+      });
+
+      if (leadershipItems.length > 0) {
+        mutableJson.leadership = leadershipItems;
+      }
+    }
+
+    const publicationsSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('publication');
+    });
+
+    if (publicationsSection) {
+      const publicationItems: Array<{
+        title: string;
+        venue?: string;
+        date?: string;
+        link?: string;
+        bullets?: string[];
+      }> = [];
+
+      const publicationEntries = publicationsSection.querySelectorAll('h3');
+
+      publicationEntries.forEach(entry => {
+        const span = entry.querySelector('span');
+        let title = '';
+        let link: string | undefined;
+        let anchorElement: HTMLAnchorElement | null = null;
+
+        if (span) {
+          const anchorCandidate = span.querySelector('a');
+          if (anchorCandidate) {
+            anchorElement = anchorCandidate;
+            title = anchorCandidate.textContent?.trim() || '';
+            link = anchorCandidate.getAttribute('href') || undefined;
+          } else {
+            title = span.textContent?.trim() || '';
+          }
+        }
+
+        const dateSpan = entry.querySelector('.normal');
+        const date = dateSpan ? dateSpan.textContent?.trim() : '';
+
+        const venueParagraph = entry.nextElementSibling;
+        let venue: string | undefined;
+
+        if (venueParagraph && venueParagraph.tagName === 'P') {
+          const venueText = venueParagraph.textContent?.trim() || '';
+          const venueHtml = sanitizeHtml(extractElementHtml(venueParagraph));
+          venue = venueText ? venueHtml : undefined;
+        }
+
+        const bullets: string[] = [];
+        const pointer = venueParagraph ? venueParagraph.nextElementSibling : entry.nextElementSibling;
+        if (pointer && pointer.tagName === 'UL') {
+          pointer.querySelectorAll('li').forEach(li => {
+            const htmlContent = sanitizeHtml(extractElementHtml(li));
+            if (htmlContent.trim()) bullets.push(htmlContent);
+          });
+        }
+
+        if (title || venue || date || bullets.length > 0) {
+          publicationItems.push({
+            title: title ? sanitizeHtml(extractElementHtml(anchorElement || span || entry)) : '',
+            venue,
+            date: date || undefined,
+            link,
+            bullets: bullets.length > 0 ? bullets : undefined,
+          });
+        }
+      });
+
+      if (publicationItems.length > 0) {
+        mutableJson.publications = publicationItems;
+      }
+    }
+
+    const referencesSection = Array.from(doc.querySelectorAll('section')).find(section => {
+      const h2 = section.querySelector('h2');
+      return h2?.textContent?.toLowerCase().includes('reference');
+    });
+
+    if (referencesSection) {
+      const referencesItems: Array<{
+        name: string;
+        contact?: string;
+        relationship?: string;
+        notes?: string;
+      }> = [];
+
+      const listItems = referencesSection.querySelectorAll('li');
+
+      listItems.forEach(li => {
+        const strong = li.querySelector('strong');
+        const name = strong ? strong.textContent?.trim() : '';
+
+        const contactParts: string[] = [];
+        const rest = li.innerHTML.replace(/<strong>.*?<\/strong>/, '').trim();
+
+        if (rest) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = rest;
+          const text = tempDiv.textContent || '';
+
+          const segments = text.split(/[\n\r]/).map(s => s.trim()).filter(Boolean);
+          contactParts.push(...segments);
+        }
+
+        const notesSpan = li.querySelector('.reference-notes');
+        const notes = notesSpan ? sanitizeHtml(extractElementHtml(notesSpan)) : undefined;
+
+        if (name || contactParts.length > 0 || notes) {
+          referencesItems.push({
+            name: name ? sanitizeHtml(extractElementHtml(strong || li)) : '',
+            contact: contactParts.length > 0 ? contactParts.join(' ') : undefined,
+            relationship: undefined,
+            notes,
+          });
+        }
+      });
+
+      if (referencesItems.length > 0) {
+        mutableJson.references = referencesItems;
       }
     }
   }

@@ -135,12 +135,26 @@ export type ProfileSectionUpdate = {
     name: string;
     contact?: string;
   }>;
+  links?: Array<{
+    name: string;
+    url: string;
+  }>;
   summary?: string | null;
   objective?: string | null;
 };
 
 export type ProfileMappingResult = {
   update: ProfileSectionUpdate;
+  personalInfo?: {
+    fullName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    location?: string | null;
+    linkedIn?: string | null;
+    portfolio?: string | null;
+    jobTitle?: string | null;
+    pronouns?: string | null;
+  };
   updatedSections: string[];
   warnings: string[];
 };
@@ -392,6 +406,75 @@ export function mapExtractedProfileToProfile(extracted: ExtractedProfile): Profi
   const update: ProfileSectionUpdate = {};
   const updatedSections: string[] = [];
 
+  // Map personal information
+  const personalInfo: ProfileMappingResult["personalInfo"] = {};
+  let hasPersonalInfo = false;
+
+  if (extracted.fullName) {
+    const fullName = cleanString(extracted.fullName);
+    if (fullName) {
+      personalInfo.fullName = fullName;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.email) {
+    const email = cleanString(extracted.email);
+    if (email) {
+      personalInfo.email = email;
+      hasPersonalInfo = true;
+    }
+  }
+
+  // Extract and map phone number
+  if (extracted.phone) {
+    const phone = cleanString(extracted.phone);
+    if (phone) {
+      personalInfo.phone = phone;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.location) {
+    const location = cleanString(extracted.location);
+    if (location) {
+      personalInfo.location = location;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.linkedIn) {
+    const linkedIn = cleanString(extracted.linkedIn);
+    if (linkedIn) {
+      personalInfo.linkedIn = linkedIn;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.portfolio) {
+    const portfolio = cleanString(extracted.portfolio);
+    if (portfolio) {
+      personalInfo.portfolio = portfolio;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.jobTitle) {
+    const jobTitle = cleanString(extracted.jobTitle);
+    if (jobTitle) {
+      personalInfo.jobTitle = jobTitle;
+      hasPersonalInfo = true;
+    }
+  }
+
+  if (extracted.pronouns) {
+    const pronouns = cleanString(extracted.pronouns);
+    if (pronouns) {
+      personalInfo.pronouns = pronouns;
+      hasPersonalInfo = true;
+    }
+  }
+
   const experience = mapExperience(extracted.experience ?? [], warnings);
   if (experience.length) {
     update.experience = experience;
@@ -455,8 +538,56 @@ export function mapExtractedProfileToProfile(extracted: ExtractedProfile): Profi
     updatedSections.push("summary");
   }
 
+  // Map links from extracted personal information
+  const links: Array<{ name: string; url: string }> = [];
+  
+  if (extracted.linkedIn) {
+    const linkedIn = cleanString(extracted.linkedIn);
+    if (linkedIn) {
+      links.push({ name: "LinkedIn", url: linkedIn });
+    }
+  }
+  
+  if (extracted.portfolio) {
+    const portfolio = cleanString(extracted.portfolio);
+    if (portfolio) {
+      links.push({ name: "Portfolio", url: portfolio });
+    }
+  }
+  
+  if (extracted.github) {
+    const github = cleanString(extracted.github);
+    if (github) {
+      links.push({ name: "GitHub", url: github });
+    }
+  }
+  
+  if (extracted.website) {
+    const website = cleanString(extracted.website);
+    if (website) {
+      links.push({ name: "Website", url: website });
+    }
+  }
+  
+  if (extracted.twitter) {
+    const twitter = cleanString(extracted.twitter);
+    if (twitter) {
+      links.push({ name: "Twitter", url: twitter });
+    }
+  }
+
+  if (links.length > 0) {
+    update.links = links;
+    updatedSections.push("links");
+  }
+
   // Objective isn't always parsed; we leave it undefined unless you decide to map another field.
 
-  return { update, updatedSections, warnings };
+  return { 
+    update, 
+    personalInfo: hasPersonalInfo ? personalInfo : undefined,
+    updatedSections, 
+    warnings 
+  };
 }
 

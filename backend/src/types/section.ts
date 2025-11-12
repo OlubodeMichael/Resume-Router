@@ -96,3 +96,8 @@ export interface Education {
     name: string;
     url: string;
   }
+
+  export interface Course {
+    name: string;
+    url: string;
+  }
