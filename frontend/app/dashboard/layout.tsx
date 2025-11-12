@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Setting from "@/components/Setting/Setting";
 import Subscription from "@/components/Subscription/subscription";
+import CreditsDisplay from "@/components/Dashboard/CreditsDisplay";
 
 const navItems = [
   { icon: Plus, label: "New", href: "/dashboard/" },
@@ -161,8 +162,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </div>
         {/* Navigation */}
-        <div className={`flex-1 p-2 flex flex-col ${sidebarOpen ? '' : 'items-center'}`}>
-          <nav className="space-y-1 mt-2 flex-1">
+        <div className={`flex-1 p-2 flex flex-col overflow-hidden ${sidebarOpen ? '' : 'items-center'}`}>
+          <nav className="space-y-1 mt-2 overflow-y-auto flex-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -189,6 +190,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
           </nav>
         </div>
+
+        {/* Credits Display */}
+        {user && sidebarOpen && (
+          <div className="px-3 pb-3 flex-shrink-0">
+            <CreditsDisplay />
+          </div>
+        )}
 
         {/* User avatar at the bottom */}
         {user && (
@@ -239,6 +247,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       ? 'fixed bottom-20 left-4 right-4'
                       : 'fixed bottom-32 left-20'
                 }`} style={{ backgroundColor: 'white' }}>
+                  {/* Credits Display in Modal */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <CreditsDisplay compact showLabel={false} />
+                  </div>
                   <button 
                     className="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                     onClick={handleSettingsClick}
