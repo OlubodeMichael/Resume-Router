@@ -696,7 +696,7 @@ export function updateJsonFromHtml(
         const dateSpan = entry.querySelector('.normal');
         const role = roleSpan ? roleSpan.textContent?.trim() : '';
         const dateRange = dateSpan ? dateSpan.textContent?.trim() : '';
-        const dates = dateRange.split('–').map(d => d.trim()).filter(Boolean);
+        const dates = dateRange ? dateRange.split('–').map(d => d.trim()).filter(Boolean) : [];
 
         const h4 = entry.nextElementSibling;
         let organization = '';
@@ -757,7 +757,7 @@ export function updateJsonFromHtml(
         const dateSpan = entry.querySelector('.normal');
         const role = roleSpan ? roleSpan.textContent?.trim() : '';
         const dateRange = dateSpan ? dateSpan.textContent?.trim() : '';
-        const dates = dateRange.split('–').map(d => d.trim()).filter(Boolean);
+        const dates = dateRange ? dateRange.split('–').map(d => d.trim()).filter(Boolean) : [];
 
         const h4 = entry.nextElementSibling;
         let organization = '';
