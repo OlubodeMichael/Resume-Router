@@ -8,6 +8,7 @@ interface User {
   name: string;
   picture?: string;
   avatarUrl?: string;
+  credits?: number;
 }
 
 interface AuthContextType {
@@ -22,6 +23,7 @@ interface AuthContextType {
   verifyResetCode: (email: string, resetCode: string) => Promise<VerifyResetCodeResponse>;
   resetPassword: (resetToken: string, newPassword: string) => Promise<ResetPasswordResponse>;
   checkProfileCompletion: () => Promise<{ needsProfileCompletion: boolean; message: string }>;
+  refreshCredits: () => Promise<void>;
 }
 
 interface ForgotPasswordResponse {
@@ -76,10 +78,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (response.ok) {
           const data = await response.json();
           // Map avatarUrl to picture field for frontend compatibility
+          let credits = data.user?.credits;
+          
+          // If credits not in auth response, fetch from users endpoint
+          if (credits === undefined || credits === null) {
+            try {
+              const userResponse = await fetch(`${API_BASE_URL}/api/users/me`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+              });
+              if (userResponse.ok) {
+                const userDataResponse = await userResponse.json();
+                credits = userDataResponse.user?.credits ?? 0;
+              } else {
+                credits = 0;
+              }
+            } catch (error) {
+              console.error('Failed to fetch credits:', error);
+              credits = 0;
+            }
+          }
+          
           const userData = {
             ...data.user,
-            picture: data.user.avatarUrl || data.user.picture
+            picture: data.user.avatarUrl || data.user.picture,
+            credits
           };
+          
           setUser(userData);
         } else {
           setUser(null);
@@ -128,7 +154,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Map avatarUrl to picture field for frontend compatibility
       const userData = {
         ...data.user,
-        picture: data.user.avatarUrl || data.user.picture
+        picture: data.user.avatarUrl || data.user.picture,
+        credits: data.user.credits ?? 0
       };
       setUser(userData);
       Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
@@ -165,7 +192,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Map avatarUrl to picture field for frontend compatibility
       const userData = {
         ...data.user,
-        picture: data.user.avatarUrl || data.user.picture
+        picture: data.user.avatarUrl || data.user.picture,
+        credits: data.user.credits ?? 0
       };
       setUser(userData);
       Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
@@ -337,9 +365,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const refreshCredits = async (): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser((prevUser) => {
+          if (!prevUser) return prevUser;
+          return {
+            ...prevUser,
+            credits: data.user?.credits ?? 0
+          };
+        });
+      }
+    } catch (error) {
+      console.error('Failed to refresh credits:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword, checkProfileCompletion }}
+      value={{ user, loading, error, login, signup, logout, googleLogin, forgotPassword, verifyResetCode, resetPassword, checkProfileCompletion, refreshCredits }}
     >
       {children}
     </AuthContext.Provider>
