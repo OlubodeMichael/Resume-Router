@@ -1,18 +1,21 @@
   // @/lib/templates/jakeRyan.ts
   export const ryanTemplateSpec = {
   html: `
-    <!-- NAME -->
-    <h1>{{{fullName}}}</h1>
+    <!-- HEADER SECTION (Always at top, non-deletable) -->
+    <section class="mb6 header-section" data-section-type="header" data-section-key="header-section" data-section-index="0" data-section-locked="true">
+      <!-- NAME -->
+      <h1 contenteditable="true">{{{fullName}}}</h1>
 
-    <!-- HEADER CONTACT LINE -->
-    <div class="section headerInfo">
-      <ul>
-        {{#if phone}}<li>{{{phone}}}</li>{{/if}}
-        {{#if email}}<li><a href="mailto:{{email}}">{{{email}}}</a></li>{{/if}}
-        {{#if linkedIn}}<li><a href="{{linkedIn}}">{{{linkedInDisplay}}}</a></li>{{/if}}
-        {{#if portfolio}}<li><a href="{{portfolio}}">{{{portfolioDisplay}}}</a></li>{{/if}}
-      </ul>
-    </div>
+      <!-- HEADER CONTACT LINE -->
+      <div class="section headerInfo" contenteditable="true">
+        <ul>
+          {{#if phone}}<li>{{{phone}}}</li>{{/if}}
+          {{#if email}}<li><a href="mailto:{{email}}">{{{email}}}</a></li>{{/if}}
+          {{#if linkedIn}}<li><a href="{{linkedIn}}">{{{linkedInDisplay}}}</a></li>{{/if}}
+          {{#if portfolio}}<li><a href="{{portfolio}}">{{{portfolioDisplay}}}</a></li>{{/if}}
+        </ul>
+      </div>
+    </section>
 
     <!-- SUMMARY -->
     {{#if summary}}
@@ -32,16 +35,58 @@
 
     <!-- EDUCATION -->
     {{#if education}}
-      <section class="mb6" data-section-type="education">
+      {{#with (lookup education 0)}}
+        <section class="mb6" data-section-type="education" 
+          {{#if schoolRightSide}}data-education-school-right="{{schoolRightSide}}"{{/if}}
+          {{#if degreeLocationShow}}data-education-location-show="true"{{/if}}
+          {{#if degreeLocationPosition}}data-education-location-pos="{{degreeLocationPosition}}"{{/if}}
+          {{#if degreeGpaShow}}data-education-gpa-show="true"{{/if}}
+        >
+      {{else}}
+        <section class="mb6" data-section-type="education">
+      {{/with}}
         <h2>Education</h2>
         {{#each education}}
           <h3>
             <span>{{{school}}}</span>
-            <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+            {{#if schoolRightSide}}
+              {{#if (eq schoolRightSide "location")}}
+                {{#if schoolLocation}}
+                  <span>{{{schoolLocation}}}</span>
+                {{else}}
+                  <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+                {{/if}}
+              {{else}}
+                <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+              {{/if}}
+            {{else}}
+              <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+            {{/if}}
           </h3>
           <h4>
-            <span>{{{degree}}}</span>
-            <span>{{{location}}}</span>
+            <span>
+              {{{degree}}}
+              {{#if degreeLocationShow}}
+                {{#if (eq degreeLocationPosition "left")}}
+                  {{#if degreeLocation}}
+                    | {{{degreeLocation}}}
+                  {{/if}}
+                {{/if}}
+              {{/if}}
+            </span>
+            {{#if degreeGpaShow}}
+              {{#if gpa}}
+                <span>GPA: {{{gpa}}}</span>
+              {{/if}}
+            {{else}}
+              {{#if degreeLocationShow}}
+                {{#if (eq degreeLocationPosition "right")}}
+                  {{#if degreeLocation}}
+                    <span>{{{degreeLocation}}}</span>
+                  {{/if}}
+                {{/if}}
+              {{/if}}
+            {{/if}}
           </h4>
         {{/each}}
       </section>

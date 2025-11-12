@@ -145,6 +145,8 @@ export default function DocumentPage() {
           librariesFrameworks?: string[];
           developerTools?: string[];
         } | undefined;
+        const education = updatedJson.education as Array<Record<string, unknown>> | undefined;
+        const firstEdu = education?.[0];
         console.log('Updated JSON with styling:', {
           headerName,
           sampleExperience: sampleExp?.[0],
@@ -152,6 +154,12 @@ export default function DocumentPage() {
           experienceCount: Array.isArray(updatedJson.experience) ? updatedJson.experience.length : 0,
           projectsCount: Array.isArray(updatedJson.projects) ? updatedJson.projects.length : 0,
           educationCount: Array.isArray(updatedJson.education) ? updatedJson.education.length : 0,
+          educationPreferences: firstEdu ? {
+            schoolRightSide: firstEdu.schoolRightSide,
+            degreeLocationShow: firstEdu.degreeLocationShow,
+            degreeLocationPosition: firstEdu.degreeLocationPosition,
+            degreeGpaShow: firstEdu.degreeGpaShow,
+          } : null,
           categorizedSkills: categorizedSkills ? {
             languagesCount: categorizedSkills.languages?.length || 0,
             librariesCount: categorizedSkills.librariesFrameworks?.length || 0,

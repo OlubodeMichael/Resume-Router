@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GripVertical, Settings, Eye, EyeOff, X, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Settings, Eye, EyeOff, X, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
 type SectionDefinition = {
   type: string;
@@ -143,6 +143,23 @@ export function SectionReorderSidebar({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [hiddenSections, setHiddenSections] = useState<Record<string, boolean>>({});
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState<boolean>(false);
+  const [expandedHeaderSection, setExpandedHeaderSection] = useState<string | null>(null);
+  const [headerContactInfo, setHeaderContactInfo] = useState<{
+    phone: string;
+    email: string;
+    linkedIn: string;
+    portfolio: string;
+  }>({ phone: "", email: "", linkedIn: "", portfolio: "" });
+  const [expandedEducationSection, setExpandedEducationSection] = useState<string | null>(null);
+  const [educationDisplayOptions, setEducationDisplayOptions] = useState<Record<string, {
+    schoolRightSide: "date" | "location";
+    degreeLocationShow: boolean;
+    degreeLocationPosition: "left" | "right";
+    degreeGpaShow: boolean;
+    schoolLocation?: string;
+    degreeLocation?: string;
+    gpa?: string;
+  }>>({});
   const sectionKeyMapRef = useRef<WeakMap<Element, string>>(new WeakMap());
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -165,33 +182,56 @@ export function SectionReorderSidebar({
       }
       node.setAttribute("data-section-index", String(index));
 
+      const type = node.getAttribute("data-section-type") || undefined;
+      
+      // Special handling for header section
+      if (type === "header") {
+        const h1 = node.querySelector("h1");
+        const title = h1?.textContent?.trim() || "Header";
+        return { key, title: `Header (${title})`, type };
+      }
+      
       const heading = node.querySelector("h2");
       const title = heading?.textContent?.trim() || `Section ${index + 1}`;
-      const type = node.getAttribute("data-section-type") || undefined;
 
       return { key, title, type };
     });
+    
+    // Ensure header is always first
+    const headerSection = nextSections.find(s => s.type === "header");
+    const otherSections = nextSections.filter(s => s.type !== "header");
+    const sortedSections = headerSection ? [headerSection, ...otherSections] : nextSections;
 
     setSections((prev) => {
       if (
-        prev.length === nextSections.length &&
+        prev.length === sortedSections.length &&
         prev.every((item, idx) => {
-          const next = nextSections[idx];
+          const next = sortedSections[idx];
           return next && item.key === next.key && item.title === next.title && item.type === next.type;
         })
       ) {
         return prev;
       }
-      return nextSections;
+      return sortedSections;
     });
 
     setHiddenSections((prev) => {
       const next: Record<string, boolean> = { ...prev };
       let changed = false;
-      const validKeys = new Set(nextSections.map((section) => section.key));
+      const validKeys = new Set(sortedSections.map((section) => section.key));
 
-      nextSections.forEach((section) => {
+      sortedSections.forEach((section) => {
         if (!(section.key in next)) {
+          // Header section can never be hidden
+          if (section.type === "header") {
+            next[section.key] = false;
+          } else {
+            next[section.key] = false;
+          }
+          changed = true;
+        }
+        // Ensure header is never hidden
+        if (section.type === "header" && next[section.key] === true) {
           next[section.key] = false;
           changed = true;
         }
@@ -213,9 +253,14 @@ export function SectionReorderSidebar({
       const editor = editorRef.current;
       if (!editor) return;
 
+      // Ensure header is always first
+      const headerSection = orderedSections.find(s => s.type === "header");
+      const otherSections = orderedSections.filter(s => s.type !== "header");
+      const finalOrder = headerSection ? [headerSection, ...otherSections] : orderedSections;
+
       const fragment = document.createDocumentFragment();
 
-      orderedSections.forEach((sectionItem, orderIndex) => {
+      finalOrder.forEach((sectionItem, orderIndex) => {
         const node = editor.querySelector<HTMLElement>(`[data-section-key="${sectionItem.key}"]`);
         if (node) {
           node.setAttribute("data-section-index", String(orderIndex));
@@ -238,18 +283,39 @@ export function SectionReorderSidebar({
       setSections((prev) => {
         if (sourceKey === targetKey) return prev;
 
+        // Prevent moving header section
+        const sourceSection = prev.find(s => s.key === sourceKey);
+        if (sourceSection?.type === "header") return prev;
+
         const working = [...prev];
         const sourceIndex = working.findIndex((item) => item.key === sourceKey);
         if (sourceIndex === -1) return prev;
 
-        const [moved] = working.splice(sourceIndex, 1);
-        let insertIndex =
-          targetKey === null ? working.length : working.findIndex((item) => item.key === targetKey);
-        if (insertIndex < 0) {
-          insertIndex = working.length;
+        // Prevent moving sections above header
+        const headerSection = working.find(s => s.type === "header");
+        if (headerSection) {
+          let insertIndex =
+            targetKey === null ? working.length : working.findIndex((item) => item.key === targetKey);
+          if (insertIndex < 0) {
+            insertIndex = working.length;
+          }
+          // Ensure insertIndex is never 0 (header must stay at top)
+          if (insertIndex === 0) {
+            insertIndex = 1;
+          }
+          
+          const [moved] = working.splice(sourceIndex, 1);
+          working.splice(insertIndex, 0, moved);
+        } else {
+          const [moved] = working.splice(sourceIndex, 1);
+          let insertIndex =
+            targetKey === null ? working.length : working.findIndex((item) => item.key === targetKey);
+          if (insertIndex < 0) {
+            insertIndex = working.length;
+          }
+          working.splice(insertIndex, 0, moved);
         }
-
-        working.splice(insertIndex, 0, moved);
+        
         applyDomOrder(working);
         return working;
       });
@@ -295,12 +361,361 @@ export function SectionReorderSidebar({
     setDropTargetKey(null);
   }, []);
 
-  const toggleSectionVisibility = useCallback((sectionKey: string) => {
+  const toggleSectionVisibility = useCallback((sectionKey: string, sectionType?: string) => {
+    // Prevent hiding header section
+    if (sectionType === "header") return;
+    
     setHiddenSections((prev) => ({
       ...prev,
       [sectionKey]: !(prev[sectionKey] ?? false),
     }));
   }, []);
+
+  const extractHeaderContactInfo = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return { phone: "", email: "", linkedIn: "", portfolio: "" };
+
+    const headerSection = editor.querySelector('[data-section-type="header"]');
+    if (!headerSection) return { phone: "", email: "", linkedIn: "", portfolio: "" };
+
+    const headerInfo = headerSection.querySelector('.headerInfo');
+    if (!headerInfo) return { phone: "", email: "", linkedIn: "", portfolio: "" };
+
+    const links = headerInfo.querySelectorAll('a');
+    const listItems = headerInfo.querySelectorAll('li');
+    
+    let phone = "";
+    let email = "";
+    let linkedIn = "";
+    let portfolio = "";
+
+    links.forEach(link => {
+      const href = link.getAttribute('href') || '';
+      const text = link.textContent?.trim() || '';
+      
+      if (href.startsWith('mailto:')) {
+        email = text;
+      } else if (href.includes('linkedin.com')) {
+        linkedIn = href;
+      } else if (href && !href.includes('linkedin.com') && !href.startsWith('mailto:')) {
+        portfolio = href;
+      }
+    });
+
+    listItems.forEach(li => {
+      const text = li.textContent?.trim() || '';
+      const link = li.querySelector('a');
+      if (!link && text) {
+        // Check if it's a phone number pattern
+        if (/[\d\s\-\(\)]+/.test(text) && text.length >= 10 && !text.includes('@') && !text.includes('http')) {
+          phone = text;
+        }
+      }
+    });
+
+    return { phone, email, linkedIn, portfolio };
+  }, [editorRef]);
+
+  const handleToggleHeaderDropdown = useCallback((sectionKey: string) => {
+    if (expandedHeaderSection === sectionKey) {
+      setExpandedHeaderSection(null);
+    } else {
+      setExpandedHeaderSection(sectionKey);
+      // Extract current contact info when opening
+      const currentInfo = extractHeaderContactInfo();
+      setHeaderContactInfo(currentInfo);
+    }
+  }, [expandedHeaderSection, extractHeaderContactInfo]);
+
+  const handleSaveHeaderContactInfo = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const headerSection = editor.querySelector('[data-section-type="header"]');
+    if (!headerSection) return;
+
+    const headerInfo = headerSection.querySelector('.headerInfo');
+    if (!headerInfo) return;
+
+    const ul = headerInfo.querySelector('ul');
+    if (!ul) return;
+
+    // Clear existing content
+    ul.innerHTML = '';
+
+    // Add phone if provided
+    if (headerContactInfo.phone) {
+      const li = document.createElement('li');
+      li.textContent = headerContactInfo.phone;
+      li.setAttribute('contenteditable', 'true');
+      ul.appendChild(li);
+    }
+
+    // Add email if provided
+    if (headerContactInfo.email) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = `mailto:${headerContactInfo.email}`;
+      a.textContent = headerContactInfo.email;
+      a.setAttribute('contenteditable', 'true');
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+
+    // Add LinkedIn if provided
+    if (headerContactInfo.linkedIn) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = headerContactInfo.linkedIn;
+      a.textContent = headerContactInfo.linkedIn.includes('linkedin.com') 
+        ? headerContactInfo.linkedIn.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '') 
+        : headerContactInfo.linkedIn;
+      a.setAttribute('contenteditable', 'true');
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+
+    // Add portfolio if provided
+    if (headerContactInfo.portfolio) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = headerContactInfo.portfolio;
+      a.textContent = headerContactInfo.portfolio.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      a.setAttribute('contenteditable', 'true');
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+
+    // Close dropdown
+    setExpandedHeaderSection(null);
+
+    // Trigger reorder callback to save changes
+    if (onReorder) {
+      const htmlSnapshot = editor.innerHTML;
+      requestAnimationFrame(() => onReorder(htmlSnapshot));
+    }
+  }, [headerContactInfo, editorRef, onReorder]);
+
+  const getEducationDisplayOptions = useCallback((sectionKey: string) => {
+    const editor = editorRef.current;
+    if (!editor) return { 
+      schoolRightSide: "date" as const, 
+      degreeLocationShow: true,
+      degreeLocationPosition: "right" as const,
+      degreeGpaShow: false,
+      schoolLocation: "",
+      degreeLocation: "",
+      gpa: "",
+    };
+
+    const section = editor.querySelector(`[data-section-key="${sectionKey}"]`);
+    if (!section) return { 
+      schoolRightSide: "date" as const, 
+      degreeLocationShow: true,
+      degreeLocationPosition: "right" as const,
+      degreeGpaShow: false,
+      schoolLocation: "",
+      degreeLocation: "",
+      gpa: "",
+    };
+
+    // Extract current values from HTML
+    let schoolLocation = "";
+    let degreeLocation = "";
+    let gpa = "";
+    let degreeLocationShow = true;
+    let degreeLocationPosition: "left" | "right" = "right";
+    let degreeGpaShow = false;
+
+    const h3Elements = section.querySelectorAll('h3');
+    const h4Elements = section.querySelectorAll('h4');
+
+    // Try to extract location from h3 if it's on the right side
+    h3Elements.forEach((h3) => {
+      const spans = h3.querySelectorAll('span');
+      if (spans.length >= 2) {
+        const rightSpan = spans[1];
+        if (!rightSpan.classList.contains('normal')) {
+          schoolLocation = rightSpan.textContent?.trim() || "";
+        }
+      }
+    });
+
+    // Extract location and GPA from h4
+    h4Elements.forEach((h4) => {
+      const spans = h4.querySelectorAll('span');
+      const h4Text = h4.textContent || "";
+      
+      // Check if location is in the degree text (left position with |)
+      const degreeSpan = spans[0];
+      if (degreeSpan) {
+        const degreeText = degreeSpan.textContent || "";
+        if (degreeText.includes(' | ')) {
+          const parts = degreeText.split(' | ');
+          if (parts.length > 1) {
+            degreeLocation = parts[1].trim();
+            degreeLocationPosition = "left";
+            degreeLocationShow = true;
+          }
+        }
+      }
+      
+      // Check if location is in a separate span (right position)
+      if (spans.length >= 2) {
+        const rightSpan = spans[1];
+        const rightText = rightSpan.textContent?.trim() || "";
+        // Check if it's GPA - extract just the number part
+        const gpaMatch = rightText.match(/GPA[:\s]*([\d]+\.?[\d]*)/i);
+        if (gpaMatch && gpaMatch[1]) {
+          gpa = gpaMatch[1].trim();
+          degreeGpaShow = true;
+        } else if (rightText && !rightText.includes('GPA')) {
+          degreeLocation = rightText;
+          degreeLocationPosition = "right";
+          degreeLocationShow = true;
+        }
+      }
+      
+      // Check if GPA is mentioned anywhere in the h4 text
+      const gpaMatch = h4Text.match(/GPA[:\s]*([\d]+\.?[\d]*)/i);
+      if (gpaMatch && gpaMatch[1] && !gpa) {
+        gpa = gpaMatch[1].trim();
+        degreeGpaShow = true;
+      }
+    });
+
+    return {
+      schoolRightSide: (section.getAttribute('data-education-school-right') || 'date') as "date" | "location",
+      degreeLocationShow: degreeLocationShow,
+      degreeLocationPosition: (section.getAttribute('data-education-location-pos') || degreeLocationPosition) as "left" | "right",
+      degreeGpaShow: (section.getAttribute('data-education-gpa-show') === 'true') || degreeGpaShow,
+      schoolLocation: schoolLocation,
+      degreeLocation: degreeLocation,
+      gpa: gpa,
+    };
+  }, [editorRef]);
+
+  const handleToggleEducationDropdown = useCallback((sectionKey: string) => {
+    if (expandedEducationSection === sectionKey) {
+      setExpandedEducationSection(null);
+    } else {
+      setExpandedEducationSection(sectionKey);
+      // Load current options
+      const currentOptions = getEducationDisplayOptions(sectionKey);
+      setEducationDisplayOptions(prev => ({
+        ...prev,
+        [sectionKey]: currentOptions,
+      }));
+    }
+  }, [expandedEducationSection, getEducationDisplayOptions]);
+
+  const handleSaveEducationDisplayOptions = useCallback((sectionKey: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const section = editor.querySelector(`[data-section-key="${sectionKey}"]`);
+    if (!section) return;
+
+    const options = educationDisplayOptions[sectionKey];
+    if (!options) return;
+
+    // Save options to data attributes
+    section.setAttribute('data-education-school-right', options.schoolRightSide);
+    section.setAttribute('data-education-location-show', String(options.degreeLocationShow));
+    section.setAttribute('data-education-location-pos', options.degreeLocationPosition);
+    section.setAttribute('data-education-gpa-show', String(options.degreeGpaShow));
+
+    // Update the HTML structure based on options
+    const h3Elements = section.querySelectorAll('h3');
+    const h4Elements = section.querySelectorAll('h4');
+
+    h3Elements.forEach((h3) => {
+      const spans = h3.querySelectorAll('span');
+      if (spans.length < 2) {
+        // Create second span if it doesn't exist
+        const schoolSpan = spans[0] || document.createElement('span');
+        const rightSpan = document.createElement('span');
+        h3.innerHTML = '';
+        h3.appendChild(schoolSpan);
+        h3.appendChild(rightSpan);
+        schoolSpan.textContent = schoolSpan.textContent || 'School Name';
+      }
+
+      const rightSpan = spans[1];
+
+      // Update right side based on preference
+      if (options.schoolRightSide === 'location') {
+        rightSpan.textContent = options.schoolLocation || '';
+        rightSpan.className = '';
+      } else {
+        // Keep date on right side (default) - preserve existing date or show placeholder
+        if (!rightSpan.textContent?.trim() || !rightSpan.classList.contains('normal')) {
+          // Try to get date from existing content or use placeholder
+          const existingDate = rightSpan.textContent?.trim() || 'Year – Year';
+          rightSpan.textContent = existingDate;
+        }
+        rightSpan.className = 'normal';
+      }
+    });
+
+    h4Elements.forEach((h4) => {
+      const spans = h4.querySelectorAll('span');
+      if (spans.length === 0) {
+        // Create degree span if it doesn't exist
+        const degreeSpan = document.createElement('span');
+        degreeSpan.textContent = 'Degree';
+        h4.appendChild(degreeSpan);
+      }
+
+      const degreeSpan = spans[0];
+      let rightSpan = spans[1];
+      const degreeText = degreeSpan.textContent?.trim() || '';
+
+      // Clean up existing location/GPA from degree text if it was inline
+      const cleanDegreeText = degreeText.split(' | ')[0].trim();
+      degreeSpan.textContent = cleanDegreeText;
+
+      // Remove existing right span to rebuild
+      if (rightSpan) {
+        rightSpan.remove();
+      }
+
+      // Handle location on left (after degree with |)
+      if (options.degreeLocationShow && options.degreeLocationPosition === 'left') {
+        const locationText = options.degreeLocation || '';
+        if (locationText) {
+          degreeSpan.innerHTML = `${cleanDegreeText} | ${locationText}`;
+        }
+      }
+
+      // Handle right side - can be location OR GPA (if both are selected, location goes left and GPA goes right)
+      if (options.degreeLocationShow && options.degreeLocationPosition === 'right' && !options.degreeGpaShow) {
+        // Show location on right (only if GPA is not shown)
+        rightSpan = document.createElement('span');
+        h4.appendChild(rightSpan);
+        rightSpan.textContent = options.degreeLocation || '';
+      } else if (options.degreeGpaShow) {
+        // Show GPA on right (takes priority if both location and GPA are selected)
+        rightSpan = document.createElement('span');
+        h4.appendChild(rightSpan);
+        // Clean GPA value - remove any "GPA:" prefix if it exists, then add it back
+        let cleanGpa = (options.gpa || '').trim();
+        // Remove "GPA:" prefix if present
+        cleanGpa = cleanGpa.replace(/^GPA[:\s]*/i, '').trim();
+        const gpaText = cleanGpa ? `GPA: ${cleanGpa}` : '';
+        rightSpan.textContent = gpaText;
+      }
+    });
+
+    // Close dropdown
+    setExpandedEducationSection(null);
+
+    // Trigger reorder callback to save changes
+    if (onReorder) {
+      const htmlSnapshot = editor.innerHTML;
+      requestAnimationFrame(() => onReorder(htmlSnapshot));
+    }
+  }, [educationDisplayOptions, editorRef, onReorder]);
 
   useEffect(() => {
     if (!editorElement) return;
@@ -399,6 +814,9 @@ export function SectionReorderSidebar({
 
   const handleRemoveSection = useCallback(
     (sectionKey: string, sectionType?: string) => {
+      // Prevent removing header section
+      if (sectionType === "header") return;
+      
       if (onRemoveSection) {
         onRemoveSection(sectionKey, sectionType);
         return;
@@ -505,60 +923,462 @@ export function SectionReorderSidebar({
             {hasSections ? (
               <div className="flex flex-col gap-2">
                 {sections.map((section) => {
+                  const isHeader = section.type === "header";
                   const isHidden = hiddenSections[section.key] ?? false;
                   const isDragging = draggingKey === section.key;
                   const isDropTarget = dropTargetKey === section.key;
                   return (
-                    <div
-                      key={section.key}
-                      draggable
-                      onDragStart={handleDragStart(section.key)}
-                      onDragOver={handleDragOver(section.key)}
-                      onDrop={handleDrop(section.key)}
-                      onDragEnd={handleDragEnd}
-                      className={`group relative flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
-                        isDragging
-                          ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md"
-                          : isDropTarget
-                          ? "border-blue-400 bg-blue-50/70"
-                          : isHidden
-                          ? "border-gray-200 bg-gray-50 text-gray-400 opacity-70"
-                          : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/60 text-gray-700"
-                      }`}
-                    >
-                      <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
-                      <span className="flex-1 truncate">{section.title}</span>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          toggleSectionVisibility(section.key);
-                        }}
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                        aria-pressed={isHidden}
-                        aria-label={isHidden ? "Show section" : "Hide section"}
-                        title={isHidden ? "Show section" : "Hide section"}
+                    <div key={section.key} className="flex flex-col gap-2">
+                      <div
+                        draggable={!isHeader}
+                        onDragStart={isHeader ? undefined : handleDragStart(section.key)}
+                        onDragOver={handleDragOver(section.key)}
+                        onDrop={handleDrop(section.key)}
+                        onDragEnd={handleDragEnd}
+                        className={`group relative flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                          isHeader
+                            ? "border-blue-200 bg-blue-50/50 text-gray-700 cursor-default"
+                            : isDragging
+                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md"
+                            : isDropTarget
+                            ? "border-blue-400 bg-blue-50/70"
+                            : isHidden
+                            ? "border-gray-200 bg-gray-50 text-gray-400 opacity-70"
+                            : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/60 text-gray-700"
+                        }`}
                       >
-                        {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          handleRemoveSection(section.key, section.type);
-                        }}
-                        onMouseDown={(event) => event.stopPropagation()}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        className="rounded-full p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                        aria-label="Remove section"
-                        title="Remove section"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        {isHeader ? (
+                          <div className="h-4 w-4 flex items-center justify-center">
+                            <div className="h-2 w-2 rounded-full bg-blue-500" title="Header (always at top)" />
+                          </div>
+                        ) : (
+                          <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                        )}
+                        <span className="flex-1 truncate">{section.title}</span>
+                        {isHeader ? (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleToggleHeaderDropdown(section.key);
+                            }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            className="rounded-full p-1 text-blue-600 transition-colors hover:bg-blue-100"
+                            aria-label="Edit contact info"
+                            title="Edit contact info"
+                          >
+                            {expandedHeaderSection === section.key ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+                        ) : section.type === "education" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleToggleEducationDropdown(section.key);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-blue-600 transition-colors hover:bg-blue-100"
+                              aria-label="Education display options"
+                              title="Education display options"
+                            >
+                              {expandedEducationSection === section.key ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleSectionVisibility(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                              aria-pressed={isHidden}
+                              aria-label={isHidden ? "Show section" : "Hide section"}
+                              title={isHidden ? "Show section" : "Hide section"}
+                            >
+                              {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleRemoveSection(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              aria-label="Remove section"
+                              title="Remove section"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleSectionVisibility(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                              aria-pressed={isHidden}
+                              aria-label={isHidden ? "Show section" : "Hide section"}
+                              title={isHidden ? "Show section" : "Hide section"}
+                            >
+                              {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleRemoveSection(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              aria-label="Remove section"
+                              title="Remove section"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      {isHeader && expandedHeaderSection === section.key && (
+                        <div className="rounded-lg border border-blue-200 bg-white p-4 space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Phone
+                            </label>
+                            <input
+                              type="text"
+                              value={headerContactInfo.phone}
+                              onChange={(e) => setHeaderContactInfo(prev => ({ ...prev, phone: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="(555) 123-4567"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Email
+                            </label>
+                            <input
+                              type="email"
+                              value={headerContactInfo.email}
+                              onChange={(e) => setHeaderContactInfo(prev => ({ ...prev, email: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="your.email@example.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              LinkedIn
+                            </label>
+                            <input
+                              type="url"
+                              value={headerContactInfo.linkedIn}
+                              onChange={(e) => setHeaderContactInfo(prev => ({ ...prev, linkedIn: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="https://linkedin.com/in/yourprofile"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Portfolio/Website
+                            </label>
+                            <input
+                              type="url"
+                              value={headerContactInfo.portfolio}
+                              onChange={(e) => setHeaderContactInfo(prev => ({ ...prev, portfolio: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="https://yourwebsite.com"
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSaveHeaderContactInfo();
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedHeaderSection(null);
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {section.type === "education" && expandedEducationSection === section.key && (
+                        <div className="rounded-lg border border-blue-200 bg-white p-4 space-y-4">
+                          {/* School Name Section */}
+                          <div className="space-y-2 pb-3 border-b border-gray-200">
+                            <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">School Name</h4>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                Show on right side
+                              </label>
+                              <select
+                                value={educationDisplayOptions[section.key]?.schoolRightSide || "date"}
+                                onChange={(e) => setEducationDisplayOptions(prev => ({
+                                  ...prev,
+                                  [section.key]: {
+                                    ...prev[section.key],
+                                  schoolRightSide: e.target.value as "date" | "location",
+                                  degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                  degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                  degreeGpaShow: prev[section.key]?.degreeGpaShow || false,
+                                  schoolLocation: prev[section.key]?.schoolLocation || "",
+                                  degreeLocation: prev[section.key]?.degreeLocation || "",
+                                  gpa: prev[section.key]?.gpa || "",
+                                  }
+                                }))}
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              >
+                                <option value="date">Date (default)</option>
+                                <option value="location">Location</option>
+                              </select>
+                              <p className="text-xs text-gray-500 mt-1">Choose what appears on the right side of the school name</p>
+                            </div>
+                            {educationDisplayOptions[section.key]?.schoolRightSide === "location" && (
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Enter location
+                                </label>
+                                <input
+                                  type="text"
+                                  value={educationDisplayOptions[section.key]?.schoolLocation || ""}
+                                  onChange={(e) => setEducationDisplayOptions(prev => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...prev[section.key],
+                                      schoolLocation: e.target.value,
+                                      degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                      degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                      degreeGpaShow: prev[section.key]?.degreeGpaShow || false,
+                                      degreeLocation: prev[section.key]?.degreeLocation || "",
+                                      gpa: prev[section.key]?.gpa || "",
+                                    }
+                                  }))}
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="e.g., New York, NY"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Degree Section */}
+                          <div className="space-y-2 pb-3 border-b border-gray-200">
+                            <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Degree</h4>
+                            
+                            {/* Location Options */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`location-show-${section.key}`}
+                                  checked={educationDisplayOptions[section.key]?.degreeLocationShow ?? true}
+                                  onChange={(e) => setEducationDisplayOptions(prev => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...prev[section.key],
+                                      degreeLocationShow: e.target.checked,
+                                      schoolRightSide: prev[section.key]?.schoolRightSide || "date",
+                                      degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                      degreeGpaShow: prev[section.key]?.degreeGpaShow || false,
+                                      schoolLocation: prev[section.key]?.schoolLocation || "",
+                                      degreeLocation: prev[section.key]?.degreeLocation || "",
+                                      gpa: prev[section.key]?.gpa || "",
+                                    }
+                                  }))}
+                                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor={`location-show-${section.key}`} className="text-xs font-medium text-gray-700">
+                                  Show location
+                                </label>
+                              </div>
+                              {educationDisplayOptions[section.key]?.degreeLocationShow && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                      Location position
+                                    </label>
+                                    <select
+                                      value={educationDisplayOptions[section.key]?.degreeLocationPosition || "right"}
+                                      onChange={(e) => setEducationDisplayOptions(prev => ({
+                                        ...prev,
+                                        [section.key]: {
+                                          ...prev[section.key],
+                                          degreeLocationPosition: e.target.value as "left" | "right",
+                                          schoolRightSide: prev[section.key]?.schoolRightSide || "date",
+                                          degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                          degreeGpaShow: prev[section.key]?.degreeGpaShow || false,
+                                          schoolLocation: prev[section.key]?.schoolLocation || "",
+                                          degreeLocation: prev[section.key]?.degreeLocation || "",
+                                          gpa: prev[section.key]?.gpa || "",
+                                        }
+                                      }))}
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                      <option value="left">Left (after degree with |)</option>
+                                      <option value="right">Right</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">Where to place the location</p>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                      Enter location
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={educationDisplayOptions[section.key]?.degreeLocation || ""}
+                                      onChange={(e) => setEducationDisplayOptions(prev => ({
+                                        ...prev,
+                                        [section.key]: {
+                                          ...prev[section.key],
+                                          degreeLocation: e.target.value,
+                                          schoolRightSide: prev[section.key]?.schoolRightSide || "date",
+                                          degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                          degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                          degreeGpaShow: prev[section.key]?.degreeGpaShow || false,
+                                          schoolLocation: prev[section.key]?.schoolLocation || "",
+                                          gpa: prev[section.key]?.gpa || "",
+                                        }
+                                      }))}
+                                      className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      placeholder="e.g., New York, NY"
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+
+                            {/* GPA Options */}
+                            <div className="space-y-2 pt-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`gpa-show-${section.key}`}
+                                  checked={educationDisplayOptions[section.key]?.degreeGpaShow ?? false}
+                                  onChange={(e) => setEducationDisplayOptions(prev => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...prev[section.key],
+                                      degreeGpaShow: e.target.checked,
+                                      schoolRightSide: prev[section.key]?.schoolRightSide || "date",
+                                      degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                      degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                      schoolLocation: prev[section.key]?.schoolLocation || "",
+                                      degreeLocation: prev[section.key]?.degreeLocation || "",
+                                      gpa: prev[section.key]?.gpa || "",
+                                    }
+                                  }))}
+                                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor={`gpa-show-${section.key}`} className="text-xs font-medium text-gray-700">
+                                  Show GPA
+                                </label>
+                              </div>
+                              {educationDisplayOptions[section.key]?.degreeGpaShow && (
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Enter GPA
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={educationDisplayOptions[section.key]?.gpa || ""}
+                                    onChange={(e) => {
+                                      // Clean the input - remove "GPA:" prefix if user types it, and ensure valid format
+                                      let cleanValue = e.target.value.trim();
+                                      cleanValue = cleanValue.replace(/^GPA[:\s]*/i, '').trim();
+                                      // Only allow digits and one decimal point
+                                      cleanValue = cleanValue.replace(/[^\d.]/g, '');
+                                      // Ensure only one decimal point
+                                      const parts = cleanValue.split('.');
+                                      if (parts.length > 2) {
+                                        cleanValue = parts[0] + '.' + parts.slice(1).join('');
+                                      }
+                                      
+                                      setEducationDisplayOptions(prev => ({
+                                        ...prev,
+                                        [section.key]: {
+                                          ...prev[section.key],
+                                          gpa: cleanValue,
+                                          schoolRightSide: prev[section.key]?.schoolRightSide || "date",
+                                          degreeLocationShow: prev[section.key]?.degreeLocationShow ?? true,
+                                          degreeLocationPosition: prev[section.key]?.degreeLocationPosition || "right",
+                                          degreeGpaShow: prev[section.key]?.degreeGpaShow ?? false,
+                                          schoolLocation: prev[section.key]?.schoolLocation || "",
+                                          degreeLocation: prev[section.key]?.degreeLocation || "",
+                                        }
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g., 3.8"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">Enter your GPA value (e.g., 3.8, 4.0)</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSaveEducationDisplayOptions(section.key);
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedEducationSection(null);
+                              }}
+                              className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

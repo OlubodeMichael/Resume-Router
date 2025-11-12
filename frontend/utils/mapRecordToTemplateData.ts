@@ -270,15 +270,24 @@ export function mapRecordToTemplateData(rec: ResumeRecord): ResumeData {
     : []
 
   const education = (c.education ?? []).map(e => {
+    const edu = e as typeof e & {
+      schoolRightSide?: 'date' | 'location';
+      schoolLocation?: string;
+      degreeLocationShow?: boolean;
+      degreeLocationPosition?: 'left' | 'right';
+      degreeLocation?: string;
+      degreeGpaShow?: boolean;
+    };
+    
     let startDate = '';
     let endDate = '';
 
-    if (e.startDate && e.endDate) {
-      startDate = e.startDate;
-      endDate = e.endDate;
-    } else if (e.graduationYear) {
-      startDate = (parseInt(e.graduationYear) - 4).toString();
-      endDate = e.graduationYear;
+    if (edu.startDate && edu.endDate) {
+      startDate = edu.startDate;
+      endDate = edu.endDate;
+    } else if (edu.graduationYear) {
+      startDate = (parseInt(edu.graduationYear) - 4).toString();
+      endDate = edu.graduationYear;
     } else {
       const currentYear = new Date().getFullYear();
       startDate = (currentYear - 4).toString();
@@ -286,13 +295,20 @@ export function mapRecordToTemplateData(rec: ResumeRecord): ResumeData {
     }
 
     return {
-      school: e.school,
-      degree: formatDegree(e.degree, e.fieldOfStudy),
-      fieldOfStudy: e.fieldOfStudy,
-      location: e.location,
+      school: edu.school,
+      degree: formatDegree(edu.degree, edu.fieldOfStudy),
+      fieldOfStudy: edu.fieldOfStudy,
+      location: edu.location,
       start: startDate,
       end: endDate,
-      gpa: e.gpa,
+      gpa: edu.gpa,
+      // Display preferences
+      schoolRightSide: edu.schoolRightSide || 'date',
+      schoolLocation: edu.schoolLocation,
+      degreeLocationShow: edu.degreeLocationShow || false,
+      degreeLocationPosition: edu.degreeLocationPosition || 'right',
+      degreeLocation: edu.degreeLocation,
+      degreeGpaShow: edu.degreeGpaShow || false,
     };
   }).filter((entry) => entry.school || entry.degree);
 

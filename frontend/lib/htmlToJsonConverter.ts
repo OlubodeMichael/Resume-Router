@@ -186,12 +186,41 @@ export function updateJsonFromHtml(
     });
     
     if (educationSection) {
+      // Get display preferences from section data attributes
+      const schoolRightSideAttr = educationSection.getAttribute('data-education-school-right');
+      const schoolRightSide = (schoolRightSideAttr || 'date') as 'date' | 'location';
+      const degreeLocationShow = educationSection.getAttribute('data-education-location-show') === 'true';
+      const degreeLocationPositionAttr = educationSection.getAttribute('data-education-location-pos');
+      const degreeLocationPosition = (degreeLocationPositionAttr || 'right') as 'left' | 'right';
+      const degreeGpaShow = educationSection.getAttribute('data-education-gpa-show') === 'true';
+      
+      // Debug logging
+      console.log('Education display preferences extracted:', {
+        schoolRightSide,
+        degreeLocationShow,
+        degreeLocationPosition,
+        degreeGpaShow,
+        hasAttributes: {
+          schoolRightSide: !!schoolRightSideAttr,
+          locationShow: educationSection.hasAttribute('data-education-location-show'),
+          locationPos: !!degreeLocationPositionAttr,
+          gpaShow: educationSection.hasAttribute('data-education-gpa-show'),
+        }
+      });
+      
       const educationItems: Array<{
         school: string;
         degree: string;
         location?: string;
         startDate?: string;
         endDate?: string;
+        gpa?: string;
+        schoolRightSide?: 'date' | 'location';
+        schoolLocation?: string;
+        degreeLocationShow?: boolean;
+        degreeLocationPosition?: 'left' | 'right';
+        degreeLocation?: string;
+        degreeGpaShow?: boolean;
       }> = [];
       const educationGroups = educationSection.querySelectorAll('h3');
       
@@ -201,20 +230,76 @@ export function updateJsonFromHtml(
         const dateSpan = group.querySelector('.normal')?.textContent?.trim() || '';
         const dates = dateSpan.split('–').map(d => d.trim()).filter(Boolean);
         
+        // Extract school location if schoolRightSide is 'location'
+        let schoolLocation: string | undefined;
+        if (schoolRightSide === 'location' && spans.length >= 2) {
+          schoolLocation = spans[1]?.textContent?.trim() || undefined;
+        }
+        
         const h4 = group.nextElementSibling;
         if (h4 && h4.tagName === 'H4') {
           const h4Spans = h4.querySelectorAll('span');
-          const degree = h4Spans[0]?.textContent?.trim() || '';
-          const location = h4Spans[1]?.textContent?.trim() || '';
+          const firstSpanText = h4Spans[0]?.textContent?.trim() || '';
+          
+          // Extract degree location and GPA from the HTML structure
+          let degreeLocation: string | undefined;
+          let gpa: string | undefined;
+          let cleanDegreeText = firstSpanText;
+          
+          // Check if location is on the left (inline with degree, separated by |)
+          if (degreeLocationShow && degreeLocationPosition === 'left') {
+            const parts = firstSpanText.split(' | ');
+            if (parts.length >= 2) {
+              cleanDegreeText = parts[0].trim();
+              degreeLocation = parts.slice(1).join(' | ').trim() || undefined;
+            }
+          } else {
+            // Remove any inline location that might be there (for safety)
+            cleanDegreeText = firstSpanText.split(' | ')[0].trim();
+          }
+          
+          // Check if location or GPA is on the right (in a separate span)
+          if (h4Spans.length >= 2) {
+            const rightText = h4Spans[1]?.textContent?.trim() || '';
+            // Check if it's GPA
+            const gpaMatch = rightText.match(/GPA[:\s]*([\d]+\.?[\d]*)/i);
+            if (gpaMatch && gpaMatch[1]) {
+              gpa = gpaMatch[1].trim();
+            } else if (degreeLocationShow && degreeLocationPosition === 'right' && !degreeGpaShow) {
+              // It's location on the right
+              degreeLocation = rightText || undefined;
+            }
+          }
           
           // Capture education entry if it has at least a school or degree (handles partial/new entries)
-          if (school || degree) {
-            const eduItem = {
+          if (school || cleanDegreeText) {
+            const eduItem: {
+              school: string;
+              degree: string;
+              location?: string;
+              startDate?: string;
+              endDate?: string;
+              gpa?: string;
+              schoolRightSide?: 'date' | 'location';
+              schoolLocation?: string;
+              degreeLocationShow?: boolean;
+              degreeLocationPosition?: 'left' | 'right';
+              degreeLocation?: string;
+              degreeGpaShow?: boolean;
+            } = {
               school: school ? sanitizeHtml(extractElementHtml(spans[0] || group)) : '',
-              degree: degree ? sanitizeHtml(extractElementHtml(h4Spans[0] || h4)) : '',
-              location: location || undefined,
+              degree: cleanDegreeText ? sanitizeHtml(cleanDegreeText) : '',
+              location: degreeLocation || undefined, // Keep for backward compatibility
               startDate: dates[0] || undefined,
               endDate: dates[1] || undefined,
+              gpa: gpa || undefined,
+              // Always save display preferences (even if they match defaults, so they persist)
+              schoolRightSide: schoolRightSide,
+              ...(schoolLocation && { schoolLocation }),
+              degreeLocationShow: degreeLocationShow,
+              degreeLocationPosition: degreeLocationPosition,
+              ...(degreeLocation && { degreeLocation }),
+              degreeGpaShow: degreeGpaShow,
             };
             educationItems.push(eduItem);
           }
@@ -226,6 +311,12 @@ export function updateJsonFromHtml(
             location: undefined,
             startDate: dates[0] || undefined,
             endDate: dates[1] || undefined,
+            // Always save display preferences for school
+            schoolRightSide: schoolRightSide,
+            ...(schoolLocation && { schoolLocation }),
+            degreeLocationShow: degreeLocationShow,
+            degreeLocationPosition: degreeLocationPosition,
+            degreeGpaShow: degreeGpaShow,
           });
         }
       });
@@ -233,6 +324,15 @@ export function updateJsonFromHtml(
       // Replace entire education array with what's found in HTML (includes new entries)
       if (educationItems.length > 0) {
         mutableJson.education = educationItems;
+        // Debug logging
+        console.log('Education items with preferences saved to JSON:', educationItems.map(item => ({
+          school: item.school,
+          degree: item.degree,
+          schoolRightSide: item.schoolRightSide,
+          degreeLocationShow: item.degreeLocationShow,
+          degreeLocationPosition: item.degreeLocationPosition,
+          degreeGpaShow: item.degreeGpaShow,
+        })));
       }
     }
     

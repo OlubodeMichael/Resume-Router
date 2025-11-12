@@ -33,6 +33,13 @@ interface EditableTemplateRendererProps {
   onContentChange?: (html: string) => void;
 }
 
+// Register Handlebars helpers
+if (!Handlebars.helpers.eq) {
+  Handlebars.registerHelper('eq', function(a: unknown, b: unknown) {
+    return a === b;
+  });
+}
+
 // Cache for compiled templates
 const templateCache = new Map<string, HandlebarsTemplateDelegate>();
 

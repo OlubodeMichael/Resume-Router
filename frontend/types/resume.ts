@@ -18,6 +18,13 @@ export type EducationItem = {
   start?: string
   end?: string
   gpa?: string
+  // Display preferences
+  schoolRightSide?: 'date' | 'location' // What to show on the right side of school name
+  schoolLocation?: string // Location value for school (when schoolRightSide is 'location')
+  degreeLocationShow?: boolean // Whether to show location for degree
+  degreeLocationPosition?: 'left' | 'right' // Position of location relative to degree
+  degreeLocation?: string // Location value for degree
+  degreeGpaShow?: boolean // Whether to show GPA for degree
 }
 
 export type ProjectItem = {
