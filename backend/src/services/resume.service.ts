@@ -171,99 +171,234 @@ export const ExtractorSchema = z.object({
 export type ExtractedProfile = z.infer<typeof ExtractorSchema>;
 
 // Dynamic content that AI will generate (tailored to job description)
-export const DynamicResumeContentSchema = z.object({
-  summary: z.string().optional(),
-  skills: z.array(z.string()).default([]),
-  allSkills: z.array(z.string()).default([]), // All skills extracted from database
-  categorizedSkills: z.object({
-    languages: z.array(z.string()).default([]),
-    librariesFrameworks: z.array(z.string()).default([]),
-    developerTools: z.array(z.string()).default([]),
-  }).optional(),
-  experience: z
-    .array(
-      z.object({
-        title: z.string(),
-        company: z.string(),
-        location: z.string().optional(),
-        startDate: z.string(),
-        endDate: z.string().optional(),
-        responsibilities: z.array(z.string()).default([]),
+const DynamicVolunteerSchema = z
+  .object({
+    organization: z.string().optional(),
+    org: z.string().optional(),
+    company: z.string().optional(),
+    name: z.string().optional(),
+    role: z.string().optional(),
+    position: z.string().optional(),
+    title: z.string().optional(),
+    location: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    responsibilities: z.array(z.string()).optional(),
+    bullets: z.array(z.string()).optional(),
+    points: z.array(z.string()).optional(),
+    description: z.string().optional(),
+    summary: z.string().optional(),
+  })
+  .passthrough();
+
+const DynamicLeadershipSchema = z
+  .object({
+    organization: z.string().optional(),
+    org: z.string().optional(),
+    group: z.string().optional(),
+    name: z.string().optional(),
+    role: z.string().optional(),
+    position: z.string().optional(),
+    title: z.string().optional(),
+    location: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    responsibilities: z.array(z.string()).optional(),
+    bullets: z.array(z.string()).optional(),
+    points: z.array(z.string()).optional(),
+    description: z.string().optional(),
+    summary: z.string().optional(),
+  })
+  .passthrough();
+
+const DynamicCertificationSchema = z
+  .object({
+    title: z.string().optional(),
+    name: z.string().optional(),
+    issuedBy: z.string().optional(),
+    issuer: z.string().optional(),
+    organization: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    date: z.string().optional(),
+    description: z.string().optional(),
+    details: z.array(z.string()).optional(),
+    highlights: z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+const DynamicAwardSchema = z
+  .object({
+    title: z.string().optional(),
+    name: z.string().optional(),
+    issuer: z.string().optional(),
+    organization: z.string().optional(),
+    date: z.string().optional(),
+    awardedDate: z.string().optional(),
+    description: z.string().optional(),
+    highlights: z.array(z.string()).optional(),
+    summary: z.string().optional(),
+  })
+  .passthrough();
+
+const DynamicPublicationSchema = z
+  .object({
+    title: z.string().optional(),
+    name: z.string().optional(),
+    venue: z.string().optional(),
+    publisher: z.string().optional(),
+    journal: z.string().optional(),
+    date: z.string().optional(),
+    publishedDate: z.string().optional(),
+    url: z.string().optional(),
+    link: z.string().optional(),
+    highlights: z.array(z.string()).optional(),
+    summary: z.string().optional(),
+    description: z.string().optional(),
+  })
+  .passthrough();
+
+const DynamicReferenceSchema = z
+  .object({
+    name: z.string().optional(),
+    contact: z.string().optional(),
+    email: z.string().optional(),
+    phone: z.string().optional(),
+    linkedin: z.string().optional(),
+    location: z.string().optional(),
+    relationship: z.string().optional(),
+    title: z.string().optional(),
+    notes: z.string().optional(),
+    summary: z.string().optional(),
+  })
+  .passthrough();
+
+export const DynamicResumeContentSchema = z
+  .object({
+    summary: z.string().optional(),
+    objective: z.string().optional(),
+    skills: z.array(z.string()).default([]),
+    allSkills: z.array(z.string()).default([]), // All skills extracted from database
+    categorizedSkills: z
+      .object({
+        languages: z.array(z.string()).default([]),
+        librariesFrameworks: z.array(z.string()).default([]),
+        developerTools: z.array(z.string()).default([]),
       })
-    )
-    .default([]),
-  projects: z
-    .array(
-      z.object({
-        title: z.string(),
-        bullets: z.array(z.string()).default([]),
-      })
-    )
-    .default([]),
-  achievements: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        issuedBy: z.string().optional(),
-      })
-    )
-    .default([]),
-});
+      .optional(),
+    experience: z
+      .array(
+        z.object({
+          title: z.string(),
+          company: z.string(),
+          location: z.string().optional(),
+          startDate: z.string(),
+          endDate: z.string().optional(),
+          responsibilities: z.array(z.string()).default([]),
+        })
+      )
+      .default([]),
+    projects: z
+      .array(
+        z.object({
+          title: z.string(),
+          bullets: z.array(z.string()).default([]),
+        })
+      )
+      .default([]),
+    achievements: z
+      .array(
+        z.object({
+          title: z.string(),
+          description: z.string().optional(),
+          issuedBy: z.string().optional(),
+        })
+      )
+      .default([]),
+    certifications: z.array(DynamicCertificationSchema).default([]),
+    volunteer: z.array(DynamicVolunteerSchema).default([]),
+    leadership: z.array(DynamicLeadershipSchema).default([]),
+    awardsHonors: z.array(DynamicAwardSchema).default([]),
+    publications: z.array(DynamicPublicationSchema).default([]),
+    references: z.array(DynamicReferenceSchema).default([]),
+  })
+  .passthrough();
 export type DynamicResumeContent = z.infer<typeof DynamicResumeContentSchema>;
 
 // Final resume JSON shape (static + dynamic)
-export const ResumeContentSchema = z.object({
-  header: z.object({
-    name: z.string(),
-    email: z.string(),
-    phone: z.string().optional(),
-    linkedIn: z.string().optional(),
-    portfolio: z.string().optional(),
+export const ResumeContentSchema = z
+  .object({
+    header: z.object({
+      name: z.string(),
+      email: z.string(),
+      phone: z.string().optional(),
+      linkedIn: z.string().optional(),
+      portfolio: z.string().optional(),
+      summary: z.string().optional(),
+      objective: z.string().optional(),
+    }),
     summary: z.string().optional(),
-  }),
-  skills: z.array(z.string()).default([]),
-  experience: z
-    .array(
-      z.object({
-        title: z.string(),
-        company: z.string(),
-        location: z.string().optional(),
-        startDate: z.string(),
-        endDate: z.string().optional(),
-        responsibilities: z.array(z.string()).default([]),
+    objective: z.string().optional(),
+    skills: z.array(z.string()).default([]),
+    categorizedSkills: z
+      .object({
+        languages: z.array(z.string()).default([]),
+        librariesFrameworks: z.array(z.string()).default([]),
+        developerTools: z.array(z.string()).default([]),
       })
-    )
-    .default([]),
-  education: z
-    .array(
-      z.object({
-        degree: z.string(),
-        school: z.string(),
-        location: z.string().optional(),
-        graduationYear: z.string().optional(),
-        gpa: z.string().optional(),
-      })
-    )
-    .default([]),
-  projects: z
-    .array(
-      z.object({
-        title: z.string(),
-        bullets: z.array(z.string()).default([]),
-      })
-    )
-    .default([]),
-  achievements: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        issuedBy: z.string().optional(),
-      })
-    )
-    .default([]),
-});
+      .optional(),
+    experience: z
+      .array(
+        z.object({
+          title: z.string(),
+          company: z.string(),
+          location: z.string().optional(),
+          startDate: z.string(),
+          endDate: z.string().optional(),
+          responsibilities: z.array(z.string()).default([]),
+        })
+      )
+      .default([]),
+    education: z
+      .array(
+        z.object({
+          degree: z.string(),
+          school: z.string(),
+          location: z.string().optional(),
+          graduationYear: z.string().optional(),
+          gpa: z.string().optional(),
+        })
+      )
+      .default([]),
+    projects: z
+      .array(
+        z.object({
+          title: z.string(),
+          bullets: z.array(z.string()).default([]),
+        })
+      )
+      .default([]),
+    achievements: z
+      .array(
+        z.object({
+          title: z.string(),
+          description: z.string().optional(),
+          issuedBy: z.string().optional(),
+        })
+      )
+      .default([]),
+    certifications: z.array(DynamicCertificationSchema).default([]),
+    volunteer: z.array(DynamicVolunteerSchema).default([]),
+    leadership: z.array(DynamicLeadershipSchema).default([]),
+    awardsHonors: z.array(DynamicAwardSchema).default([]),
+    publications: z.array(DynamicPublicationSchema).default([]),
+    references: z.array(DynamicReferenceSchema).default([]),
+  })
+  .passthrough();
 export type ResumeContent = z.infer<typeof ResumeContentSchema>;
 
 /* ----------------------------------------------------------------------------
@@ -341,13 +476,13 @@ const generationPrompt = PromptTemplate.fromTemplate(`
   You are a professional resume writer. Generate ONLY the dynamic content that needs to be tailored to the job description.
 
   CRITICAL: WORD COUNT REQUIREMENT - The entire resume content (experience + projects + summary) must be 400-600 words total:
-  - Target: ~600 words for optimal impact
-  - Minimum: 500 words (if less, expand bullet points with more detail)
-  - Maximum: 700 words (if more, condense while keeping metrics and impact)
+  - Target: ~650 words for optimal impact
+  - Minimum: 520 words (if less, expand bullet points with more detail)
+  - Maximum: 720 words (if more, condense while keeping metrics and impact)
   - Track word count as you write and adjust bullet point length accordingly
   - Prioritize quality over quantity, but stay within range
-  - Each experience bullet should be 20-35 words
-  - Each project bullet should be 15-25 words
+  - Each experience bullet must be 25-40 words and read as a multi-clause sentence that explains the action, the method, and the quantified outcome
+  - Each project bullet must be 20-30 words and include both the technical approach and the measurable impact
   - Summary should be 50-100 words
   
   CRITICAL: ZERO-TOLERANCE WORD REPETITION POLICY - Using the same words over and over again is STRICTLY FORBIDDEN:
@@ -964,12 +1099,21 @@ function defaultResumeContent(
       linkedIn: personalInfo?.linkedIn || "",
       portfolio: personalInfo?.portfolio || "",
       summary: "Professional with relevant skills and experience.",
+      objective: "",
     },
+    summary: "Professional with relevant skills and experience.",
+    objective: "",
     skills: [],
     experience: [],
     education: [],
     projects: [],
     achievements: [],
+    certifications: [],
+    volunteer: [],
+    leadership: [],
+    awardsHonors: [],
+    publications: [],
+    references: [],
   };
 }
 
@@ -981,7 +1125,20 @@ export const generateResume = async (
   // Fetch or create profile shell
   let profile = await prisma.profile.findUnique({
     where: { userId },
-    select: { id: true, skills: true, experience: true, education: true, projects: true, achievements: true },
+    select: { 
+      id: true, 
+      skills: true, 
+      experience: true, 
+      education: true, 
+      projects: true, 
+      achievements: true,
+      certifications: true,
+      volunteer: true,
+      leadership: true,
+      awardsHonors: true,
+      publications: true,
+      references: true,
+    },
   });
 
   if (!profile) {
@@ -993,8 +1150,27 @@ export const generateResume = async (
         education: [],
         projects: [],
         achievements: [],
+        certifications: [],
+        volunteer: [],
+        leadership: [],
+        awardsHonors: [],
+        publications: [],
+        references: [],
       },
-      select: { id: true, skills: true, experience: true, education: true, projects: true, achievements: true },
+      select: { 
+        id: true, 
+        skills: true, 
+        experience: true, 
+        education: true, 
+        projects: true, 
+        achievements: true,
+        certifications: true,
+        volunteer: true,
+        leadership: true,
+        awardsHonors: true,
+        publications: true,
+        references: true,
+      },
     });
   }
 
@@ -1034,6 +1210,12 @@ export const generateResume = async (
   const education = Array.isArray(profile.education) ? profile.education : [];
   const projects = Array.isArray(profile.projects) ? profile.projects : [];
   const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
+  const certificationsProfile = Array.isArray(profile.certifications) ? profile.certifications : [];
+  const volunteerProfile = Array.isArray(profile.volunteer) ? profile.volunteer : [];
+  const leadershipProfile = Array.isArray(profile.leadership) ? profile.leadership : [];
+  const awardsHonorsProfile = Array.isArray(profile.awardsHonors) ? profile.awardsHonors : [];
+  const publicationsProfile = Array.isArray(profile.publications) ? profile.publications : [];
+  const referencesProfile = Array.isArray(profile.references) ? profile.references : [];
 
   // Normalize skills to string[]
   const skills: string[] = Array.isArray(profile.skills)
@@ -1120,6 +1302,27 @@ export const generateResume = async (
   console.log('Unique skills:', uniqueSkills);
   console.log('========================');
 
+  const mergeByKey = <T>(
+    primary: T[] = [],
+    secondary: T[] = [],
+    getKey: (item: T, index: number) => string
+  ): T[] => {
+    const map = new Map<string, T>();
+
+    const addItem = (item: T, index: number, prefix: string) => {
+      const raw = getKey(item, index);
+      const key = raw && raw.trim().length ? raw.trim().toLowerCase() : `${prefix}-${index}`;
+      if (!map.has(key)) {
+        map.set(key, item);
+      }
+    };
+
+    primary.forEach((item, idx) => addItem(item, idx, "primary"));
+    secondary.forEach((item, idx) => addItem(item, idx, "secondary"));
+
+    return Array.from(map.values());
+  };
+
   // Start with sensible defaults
   let resumeContent: ResumeContent = {
     ...defaultResumeContent(user, personalInfo),
@@ -1128,7 +1331,23 @@ export const generateResume = async (
     education: education as any,
     projects: projects as any,
     achievements: achievements as any,
+    certifications: certificationsProfile as any,
+    volunteer: volunteerProfile as any,
+    leadership: leadershipProfile as any,
+    awardsHonors: awardsHonorsProfile as any,
+    publications: publicationsProfile as any,
+    references: referencesProfile as any,
   };
+  const originalExperience = Array.isArray(resumeContent.experience) ? (resumeContent.experience as any[]) : [];
+  const originalProjects = Array.isArray(resumeContent.projects) ? (resumeContent.projects as any[]) : [];
+  const originalAchievements = Array.isArray(resumeContent.achievements) ? (resumeContent.achievements as any[]) : [];
+  const originalCertifications = Array.isArray(resumeContent.certifications) ? (resumeContent.certifications as any[]) : [];
+  const originalVolunteer = Array.isArray(resumeContent.volunteer) ? (resumeContent.volunteer as any[]) : [];
+  const originalLeadership = Array.isArray(resumeContent.leadership) ? (resumeContent.leadership as any[]) : [];
+  const originalAwards = Array.isArray(resumeContent.awardsHonors) ? (resumeContent.awardsHonors as any[]) : [];
+  const originalPublications = Array.isArray(resumeContent.publications) ? (resumeContent.publications as any[]) : [];
+  const originalReferences = Array.isArray(resumeContent.references) ? (resumeContent.references as any[]) : [];
+  const originalCategorizedSkills = resumeContent.categorizedSkills;
 
   try {
     // Prepare static content (user-provided, doesn't change)
@@ -1139,6 +1358,8 @@ export const generateResume = async (
         phone: personalInfo?.phone || "",
         linkedIn: personalInfo?.linkedIn || "",
         portfolio: personalInfo?.portfolio || "",
+        summary: resumeContent.summary || defaultResumeContent(user, personalInfo).summary,
+        objective: resumeContent.objective || "",
       },
       education: education as any, // Education is static
     };
@@ -1173,18 +1394,99 @@ export const generateResume = async (
     const safe = DynamicResumeContentSchema.safeParse(parsed);
     if (safe.success) {
       const dynamicContent = safe.data;
-      
-      // Merge static and dynamic content
+
+      const mergedExperience = mergeByKey(
+        dynamicContent.experience ?? [],
+        originalExperience,
+        (item, idx) =>
+          `${(item as any).title || ''}|${(item as any).company || ''}|${idx}`
+      );
+
+      const mergedProjects = mergeByKey(
+        dynamicContent.projects ?? [],
+        originalProjects,
+        (item, idx) =>
+          `${(item as any).title || (item as any).name || ''}|${idx}`
+      );
+
+      const mergedAchievements = mergeByKey(
+        dynamicContent.achievements ?? [],
+        originalAchievements,
+        (item, idx) =>
+          `${(item as any).title || ''}|${idx}`
+      );
+
+      const mergedCertifications = mergeByKey(
+        dynamicContent.certifications ?? [],
+        originalCertifications,
+        (item, idx) =>
+          `${(item as any).title || (item as any).name || ''}|${(item as any).issuer || (item as any).organization || ''}|${idx}`
+      );
+
+      const mergedVolunteer = mergeByKey(
+        dynamicContent.volunteer ?? [],
+        originalVolunteer,
+        (item, idx) =>
+          `${(item as any).organization || (item as any).company || (item as any).name || ''}|${(item as any).role || (item as any).title || ''}|${idx}`
+      );
+
+      const mergedLeadership = mergeByKey(
+        dynamicContent.leadership ?? [],
+        originalLeadership,
+        (item, idx) =>
+          `${(item as any).organization || (item as any).company || (item as any).name || ''}|${(item as any).role || (item as any).title || ''}|${idx}`
+      );
+
+      const mergedAwards = mergeByKey(
+        dynamicContent.awardsHonors ?? [],
+        originalAwards,
+        (item, idx) =>
+          `${(item as any).title || (item as any).name || ''}|${(item as any).issuer || ''}|${idx}`
+      );
+
+      const mergedPublications = mergeByKey(
+        dynamicContent.publications ?? [],
+        originalPublications,
+        (item, idx) =>
+          `${(item as any).title || (item as any).name || ''}|${idx}`
+      );
+
+      const mergedReferences = mergeByKey(
+        dynamicContent.references ?? [],
+        originalReferences,
+        (item, idx) =>
+          `${(item as any).name || ''}|${idx}`
+      );
+
       resumeContent = {
         ...staticContent,
-        ...dynamicContent,
-        education: staticContent.education, // Keep static education
+        summary: dynamicContent.summary ?? resumeContent.summary,
+        objective: dynamicContent.objective ?? resumeContent.objective,
+        skills:
+          Array.isArray(dynamicContent.skills) && dynamicContent.skills.length
+            ? dynamicContent.skills
+            : resumeContent.skills,
+        categorizedSkills:
+          dynamicContent.categorizedSkills ?? originalCategorizedSkills ?? undefined,
+        experience: mergedExperience as any,
+        education: staticContent.education,
+        projects: mergedProjects as any,
+        achievements: mergedAchievements as any,
+        certifications: mergedCertifications as any,
+        volunteer: mergedVolunteer as any,
+        leadership: mergedLeadership as any,
+        awardsHonors: mergedAwards as any,
+        publications: mergedPublications as any,
+        references: mergedReferences as any,
         header: {
           ...staticContent.header,
-          summary: dynamicContent.summary, // Add AI-generated summary to header
+          summary: dynamicContent.summary ?? staticContent.header.summary,
+          objective:
+            dynamicContent.objective ??
+            staticContent.header.objective,
         },
       };
-      
+
       console.log('=== GENERATED RESUME CONTENT ===');
       console.log('Static Content:', JSON.stringify(staticContent, null, 2));
       console.log('Dynamic Content:', JSON.stringify(dynamicContent, null, 2));

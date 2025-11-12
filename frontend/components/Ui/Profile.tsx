@@ -16,6 +16,7 @@ import PublicationForm from "../Forms/PublicationForm";
 import ReferenceForm from "../Forms/ReferenceForm";
 import SummaryForm from "../Forms/SummaryForm";
 import ObjectiveForm from "../Forms/ObjectiveForm";
+import LinksForm from "../Forms/LinksForm";
 import Experience from "../Profile/Experience";
 import Education from "../Profile/Education";
 import Project from "../Profile/Project";
@@ -28,6 +29,7 @@ import PublicationSection from "../Profile/Publication";
 import ReferenceSection from "../Profile/Reference";
 import SummarySection from "../Profile/Summary";
 import ObjectiveSection from "../Profile/Objective";
+import LinksSection from "../Profile/Links";
 import Loading from "../loading";
 
 export default function Profile() {
@@ -62,6 +64,7 @@ export default function Profile() {
   const [showReferenceForm, setShowReferenceForm] = useState(false);
   const [showSummaryForm, setShowSummaryForm] = useState(false);
   const [showObjectiveForm, setShowObjectiveForm] = useState(false);
+  const [showLinksForm, setShowLinksForm] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<ParsedResumeResult | null>(lastParsedResume);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -570,6 +573,14 @@ export default function Profile() {
     setShowObjectiveForm(false);
   };
 
+  const handleEditLinks = () => {
+    setShowLinksForm(true);
+  };
+
+  const handleCloseLinksForm = () => {
+    setShowLinksForm(false);
+  };
+
   if (loading) {
     return <Loading message="Loading profile..." className="flex justify-center items-center h-fit" />;
   }
@@ -863,6 +874,13 @@ export default function Profile() {
             handleEditReference={handleEditReference}
             handleDeleteReference={handleDeleteReference}
           />
+
+          {/* Links */}
+          <LinksSection
+            profile={profile}
+            setShowLinksForm={setShowLinksForm}
+            handleEditLinks={handleEditLinks}
+          />
         </div>
       </div>
 
@@ -1011,6 +1029,17 @@ export default function Profile() {
             <ObjectiveForm
               onClose={handleCloseObjectiveForm}
               initial={profile?.objective ?? null}
+            />
+          </div>
+        </div>
+      )}
+
+      {showLinksForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-h-full flex items-center justify-center min-h-full">
+            <LinksForm
+              onClose={handleCloseLinksForm}
+              initial={profile?.links}
             />
           </div>
         </div>

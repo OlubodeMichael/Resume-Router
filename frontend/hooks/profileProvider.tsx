@@ -18,6 +18,7 @@ interface Profile {
   leadership?: Leadership[];
   publications?: Publication[];
   references?: Reference[];
+  links?: Links[];
   summary?: string | null;
   objective?: string | null;
 }
@@ -100,6 +101,11 @@ interface Reference {
   relation?: string;
 }
 
+interface Links {
+  name: string;
+  url: string;
+}
+
 interface ProfileContextType {
   profile: Profile | null;
   loading: boolean;
@@ -140,6 +146,9 @@ interface ProfileContextType {
   addReference: (reference: Reference) => void;
   updateReference: (index: number, reference: Reference) => void;
   deleteReference: (index: number) => void;
+  getLinks: () => Promise<Links[]>;
+  addLinks: (links: Links[]) => Promise<void>;
+  updateLinks: (links: Links[]) => Promise<void>;
   updateSummary: (summary: string | null) => void;
   updateObjective: (objective: string | null) => void;
 }
@@ -949,6 +958,80 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getLinks = async (): Promise<Links[]> => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/links`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to fetch links");
+      return data.links || [];
+    } catch (err) {
+      setError((err as Error).message);
+      return [];
+    }
+  };
+
+  const addLinks = async (links: Links[]) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/links`, {
+        method: "POST",
+        body: JSON.stringify({ links }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to add links");
+      
+      // Update local state with merged links from backend
+      if (profile) {
+        setProfile({
+          ...profile,
+          links: data.links || []
+        });
+      } else {
+        // If no profile, refetch to get updated links
+        await getProfile();
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const updateLinks = async (links: Links[]) => {
+    try {
+      const response = await fetch(`${API_URL}/api/profile/links`, {
+        method: "PATCH",
+        body: JSON.stringify({ links }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update links");
+      
+      // Update local state
+      if (profile) {
+        setProfile({
+          ...profile,
+          links: data.links || links
+        });
+      } else {
+        // If no profile, refetch to get updated links
+        await getProfile();
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   return (
     <ProfileContext.Provider
       value={{
@@ -991,6 +1074,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         addReference,
         updateReference,
         deleteReference,
+        getLinks,
+        addLinks,
+        updateLinks,
         updateSummary,
         updateObjective,
       }}

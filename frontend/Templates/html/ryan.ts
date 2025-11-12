@@ -1,42 +1,101 @@
   // @/lib/templates/jakeRyan.ts
   export const ryanTemplateSpec = {
   html: `
-    <!-- NAME -->
-    <h1>{{{fullName}}}</h1>
+    <!-- HEADER SECTION (Always at top, non-deletable) -->
+    <section class="mb6 header-section" data-section-type="header" data-section-key="header-section" data-section-index="0" data-section-locked="true">
+      <!-- NAME -->
+      <h1 contenteditable="true">{{{fullName}}}</h1>
 
-    <!-- HEADER CONTACT LINE -->
-    <div class="section headerInfo">
-      <ul>
-        {{#if phone}}<li>{{{phone}}}</li>{{/if}}
-        {{#if email}}<li><a href="mailto:{{email}}">{{{email}}}</a></li>{{/if}}
-        {{#if linkedIn}}<li><a href="{{linkedIn}}">{{{linkedInDisplay}}}</a></li>{{/if}}
-        {{#if portfolio}}<li><a href="{{portfolio}}">{{{portfolioDisplay}}}</a></li>{{/if}}
-      </ul>
-    </div>
+      <!-- HEADER CONTACT LINE -->
+      <div class="section headerInfo" contenteditable="true">
+        <ul>
+          {{#if phone}}<li>{{{phone}}}</li>{{/if}}
+          {{#if email}}<li><a href="mailto:{{email}}">{{{email}}}</a></li>{{/if}}
+          {{#if linkedIn}}<li><a href="{{linkedIn}}">{{{linkedInDisplay}}}</a></li>{{/if}}
+          {{#if portfolio}}<li><a href="{{portfolio}}">{{{portfolioDisplay}}}</a></li>{{/if}}
+        </ul>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    {{#if summary}}
+      <section class="mb6" data-section-type="summary">
+        <h2>Summary</h2>
+        <div class="indent">{{{summary}}}</div>
+      </section>
+    {{/if}}
+
+    <!-- OBJECTIVE -->
+    {{#if objective}}
+      <section class="mb6" data-section-type="objective">
+        <h2>Objective</h2>
+        <p class="indent">{{{objective}}}</p>
+      </section>
+    {{/if}}
 
     <!-- EDUCATION -->
-    <section class="mb6">
-      <h2>Education</h2>
-      {{#if education}}
+    {{#if education}}
+      {{#with (lookup education 0)}}
+        <section class="mb6" data-section-type="education" 
+          {{#if schoolRightSide}}data-education-school-right="{{schoolRightSide}}"{{/if}}
+          {{#if degreeLocationShow}}data-education-location-show="true"{{/if}}
+          {{#if degreeLocationPosition}}data-education-location-pos="{{degreeLocationPosition}}"{{/if}}
+          {{#if degreeGpaShow}}data-education-gpa-show="true"{{/if}}
+        >
+      {{else}}
+        <section class="mb6" data-section-type="education">
+      {{/with}}
+        <h2>Education</h2>
         {{#each education}}
           <h3>
             <span>{{{school}}}</span>
-            <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+            {{#if schoolRightSide}}
+              {{#if (eq schoolRightSide "location")}}
+                {{#if schoolLocation}}
+                  <span>{{{schoolLocation}}}</span>
+                {{else}}
+                  <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+                {{/if}}
+              {{else}}
+                <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+              {{/if}}
+            {{else}}
+              <span class="normal">{{{start}}} &ndash; {{{end}}}</span>
+            {{/if}}
           </h3>
           <h4>
-            <span>{{{degree}}}</span>
-            <span>{{{location}}}</span>
+            <span>
+              {{{degree}}}
+              {{#if degreeLocationShow}}
+                {{#if (eq degreeLocationPosition "left")}}
+                  {{#if degreeLocation}}
+                    | {{{degreeLocation}}}
+                  {{/if}}
+                {{/if}}
+              {{/if}}
+            </span>
+            {{#if degreeGpaShow}}
+              {{#if gpa}}
+                <span>GPA: {{{gpa}}}</span>
+              {{/if}}
+            {{else}}
+              {{#if degreeLocationShow}}
+                {{#if (eq degreeLocationPosition "right")}}
+                  {{#if degreeLocation}}
+                    <span>{{{degreeLocation}}}</span>
+                  {{/if}}
+                {{/if}}
+              {{/if}}
+            {{/if}}
           </h4>
         {{/each}}
-      {{else}}
-        <p class="indent">Add your education details here</p>
-      {{/if}}
-    </section>
+      </section>
+    {{/if}}
 
     <!-- EXPERIENCE -->
-    <section class="mb6">
-      <h2>Experience</h2>
-      {{#if experiences}}
+    {{#if experiences}}
+      <section class="mb6" data-section-type="experience">
+        <h2>Experience</h2>
         {{#each experiences}}
           <h3>
             <span>{{{role}}}</span>
@@ -46,19 +105,19 @@
             <span>{{{company}}}</span>
             <span>{{{location}}}</span>
           </h4>
-          <ul>
-            {{#each bullets}}<li>{{{item}}}</li>{{/each}}
-          </ul>
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
         {{/each}}
-      {{else}}
-        <p class="indent">Add your work experience here</p>
-      {{/if}}
-    </section>
+      </section>
+    {{/if}}
 
     <!-- PROJECTS -->
-    <section class="mb6">
-      <h2>Projects</h2>
-      {{#if projects}}
+    {{#if projects}}
+      <section class="mb6" data-section-type="projects">
+        <h2>Projects</h2>
         {{#each projects}}
           <h3>
             <span>
@@ -67,34 +126,158 @@
             </span>
             {{#if start}}<span class="normal">{{{start}}} &ndash; {{{end}}}</span>{{/if}}
           </h3>
-          <ul>
-            {{#each bullets}}<li>{{{item}}}</li>{{/each}}
-          </ul>
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
         {{/each}}
-      {{else}}
-        <p class="indent">Add your projects here</p>
-      {{/if}}
-    </section>
+      </section>
+    {{/if}}
 
     <!-- SKILLS -->
-    <section>
-      <h2>Technical Skills</h2>
+    {{#if skills}}
       {{#if skills.languages}}
-        <p class="indent"><strong>Languages</strong>: {{{skills.languages}}}</p>
-      {{else}}
-        <p class="indent"><strong>Languages</strong>: Add your programming languages here</p>
+        <section data-section-type="skills">
+          <h2>Technical Skills</h2>
+          {{#if skills.languages}}
+            <p class="indent"><strong>Languages</strong>: {{{skills.languages}}}</p>
+          {{/if}}
+          {{#if skills.tools}}
+            <p class="indent"><strong>Developer Tools</strong>: {{{skills.tools}}}</p>
+          {{/if}}
+          {{#if skills.libraries}}
+            <p class="indent"><strong>Libraries/Frameworks</strong>: {{{skills.libraries}}}</p>
+          {{/if}}
+        </section>
       {{/if}}
-      {{#if skills.tools}}
-        <p class="indent"><strong>Developer Tools</strong>: {{{skills.tools}}}</p>
-      {{else}}
-        <p class="indent"><strong>Developer Tools</strong>: Add your tools here</p>
-      {{/if}}
-      {{#if skills.libraries}}
-        <p class="indent"><strong>Libraries/Frameworks</strong>: {{{skills.libraries}}}</p>
-      {{else}}
-        <p class="indent"><strong>Libraries/Frameworks</strong>: Add your libraries here</p>
-      {{/if}}
-    </section>
+    {{/if}}
+
+    <!-- CERTIFICATIONS -->
+    {{#if certifications}}
+      <section class="mb6" data-section-type="certifications">
+        <h2>Certifications</h2>
+        {{#each certifications}}
+          <h3>
+            <span>{{{name}}}</span>
+            {{#if date}}<span class="normal">{{{date}}}</span>{{/if}}
+          </h3>
+          {{#if issuer}}<p class="indent">{{{issuer}}}</p>{{/if}}
+          {{#if description}}<p class="indent">{{{description}}}</p>{{/if}}
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
+        {{/each}}
+      </section>
+    {{/if}}
+
+    <!-- LEADERSHIP -->
+    {{#if leadership}}
+      <section class="mb6" data-section-type="leadership">
+        <h2>Leadership</h2>
+        {{#each leadership}}
+          <h3>
+            <span>{{{role}}}</span>
+            {{#if dateRange}}<span class="normal">{{{dateRange}}}</span>{{/if}}
+          </h3>
+          {{#if company}}
+            <h4>
+              <span>{{{company}}}</span>
+              {{#if location}}<span>{{{location}}}</span>{{/if}}
+            </h4>
+          {{/if}}
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
+        {{/each}}
+      </section>
+    {{/if}}
+
+    <!-- VOLUNTEER -->
+    {{#if volunteer}}
+      <section class="mb6" data-section-type="volunteer">
+        <h2>Volunteer</h2>
+        {{#each volunteer}}
+          <h3>
+            <span>{{{role}}}</span>
+            {{#if dateRange}}<span class="normal">{{{dateRange}}}</span>{{/if}}
+          </h3>
+          {{#if company}}
+            <h4>
+              <span>{{{company}}}</span>
+              {{#if location}}<span>{{{location}}}</span>{{/if}}
+            </h4>
+          {{/if}}
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
+        {{/each}}
+      </section>
+    {{/if}}
+
+    <!-- AWARDS & HONORS -->
+    {{#if awardsHonors}}
+      <section class="mb6" data-section-type="awardsHonors">
+        <h2>Awards &amp; Honors</h2>
+        {{#each awardsHonors}}
+          <h3>
+            <span>{{{title}}}</span>
+            {{#if date}}<span class="normal">{{{date}}}</span>{{/if}}
+          </h3>
+          {{#if issuer}}<p class="indent">{{{issuer}}}</p>{{/if}}
+          {{#if description}}<p class="indent">{{{description}}}</p>{{/if}}
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
+        {{/each}}
+      </section>
+    {{/if}}
+
+    <!-- PUBLICATIONS -->
+    {{#if publications}}
+      <section class="mb6" data-section-type="publications">
+        <h2>Publications</h2>
+        {{#each publications}}
+          <h3>
+            <span>
+              {{#if link}}<a href="{{link}}">{{{title}}}</a>{{else}}{{{title}}}{{/if}}
+            </span>
+            {{#if date}}<span class="normal">{{{date}}}</span>{{/if}}
+          </h3>
+          {{#if venue}}<p class="indent"><em>{{{venue}}}</em></p>{{/if}}
+          {{#if bullets}}
+            <ul>
+              {{#each bullets}}<li>{{{item}}}</li>{{/each}}
+            </ul>
+          {{/if}}
+        {{/each}}
+      </section>
+    {{/if}}
+
+    <!-- REFERENCES -->
+    {{#if references}}
+      <section class="mb6" data-section-type="references">
+        <h2>References</h2>
+        <ul class="indent references-list">
+          {{#each references}}
+            <li>
+              <strong>{{{name}}}</strong>
+              {{#if relationship}} &mdash; {{{relationship}}}{{/if}}
+              {{#if contact}}<br/>{{{contact}}}{{/if}}
+              {{#if notes}}<br/><span class="reference-notes">{{{notes}}}</span>{{/if}}
+            </li>
+          {{/each}}
+        </ul>
+      </section>
+    {{/if}}
   `,
   css: `
     @import url('https://www.resume.lol/fonts/cm/fonts.css');
@@ -238,6 +421,19 @@
     .headerInfo > ul > li:not(:last-child)::after { 
       content: "|"; 
       margin-left: 8px; 
+    }
+
+    .references-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .references-list > li {
+      margin-bottom: 4pt;
+    }
+
+    .reference-notes {
+      font-style: italic;
     }
 
     /* Helpers */

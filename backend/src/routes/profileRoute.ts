@@ -43,6 +43,9 @@ import {
   getSummary,
   updateObjective,
   getObjective,
+  addLinks,
+  getLinks,
+  updateLinks,
 } from '../controllers/profileController';
 import { protect } from '../controllers/authController';
 
@@ -111,5 +114,10 @@ router.patch('/summary', protect, updateSummary);
 // Objective
 router.get('/objective', protect, getObjective);
 router.patch('/objective', protect, updateObjective);
+
+// Links
+router.get('/links', protect, getLinks);
+router.post('/links', protect, addLinks);
+router.patch('/links', protect, updateLinks);
 
 export default router;

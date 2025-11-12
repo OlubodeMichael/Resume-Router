@@ -18,6 +18,13 @@ export type EducationItem = {
   start?: string
   end?: string
   gpa?: string
+  // Display preferences
+  schoolRightSide?: 'date' | 'location' // What to show on the right side of school name
+  schoolLocation?: string // Location value for school (when schoolRightSide is 'location')
+  degreeLocationShow?: boolean // Whether to show location for degree
+  degreeLocationPosition?: 'left' | 'right' // Position of location relative to degree
+  degreeLocation?: string // Location value for degree
+  degreeGpaShow?: boolean // Whether to show GPA for degree
 }
 
 export type ProjectItem = {
@@ -36,9 +43,12 @@ export type AchievementItem = {
 }
 
 export type LeadershipItem = {
-  title: string
-  description?: string
-  issuedBy?: string
+  organization?: string
+  role?: string
+  location?: string
+  start?: string
+  end?: string
+  bullets?: Bullet[]
 }
 
 export type CertItem = {
@@ -46,6 +56,38 @@ export type CertItem = {
   issuedBy?: string
   start?: string
   end?: string
+}
+
+export type VolunteerItem = {
+  organization?: string
+  role?: string
+  location?: string
+  start?: string
+  end?: string
+  bullets?: Bullet[]
+}
+
+export type PublicationItem = {
+  title: string
+  venue?: string
+  date?: string
+  link?: string
+  bullets?: Bullet[]
+}
+
+export type AwardHonorItem = {
+  title: string
+  issuer?: string
+  date?: string
+  description?: string
+  bullets?: Bullet[]
+}
+
+export type ReferenceItem = {
+  name: string
+  contact?: string
+  relationship?: string
+  notes?: string
 }
 
 export type ResumeData = {
@@ -57,6 +99,8 @@ export type ResumeData = {
   contacts?: string[]   // ["email@x.com", "linkedin.com/in/you", "github.com/you"]
   locationLine?: string // e.g. "Georgetown, TX"
   summaryHTML?: string  // AI summary (HTML OK)
+  summary?: string
+  objective?: string
   education?: EducationItem[]
   experience?: ExperienceItem[]
   projects?: ProjectItem[]
@@ -69,5 +113,9 @@ export type ResumeData = {
   achievements?: AchievementItem[]
   certifications?: CertItem[]
   leadership?: LeadershipItem[]
+  volunteer?: VolunteerItem[]
+  publications?: PublicationItem[]
+  awardsHonors?: AwardHonorItem[]
+  references?: ReferenceItem[]
 }
 
