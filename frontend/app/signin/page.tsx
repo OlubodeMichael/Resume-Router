@@ -58,10 +58,14 @@ export default function SignIn() {
         try {
             setIsLoading(true);
             setFormError("");
-            await login(formData.email, formData.password);
+            const user = await login(formData.email, formData.password);
             
-            // Redirect to dashboard on successful login
-            router.push("/dashboard");
+            // Redirect based on user role
+            if (user?.role === "ADMIN") {
+                router.push("/admin");
+            } else {
+                router.push("/dashboard");
+            }
         } catch (error) {
             console.error("Sign in error:", error);
             setFormError("Invalid email or password. Please try again.");

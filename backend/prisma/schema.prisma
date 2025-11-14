@@ -24,6 +24,7 @@ model User {
   profile          Profile?
   resumes          Resume[]
   subscriptions    Subscription[]
+  role UserRole @default(USER)
 
   @@index([createdAt])
 }
@@ -158,4 +159,10 @@ enum ResumeStatus {
   processing
   ready
   failed
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR  
 }

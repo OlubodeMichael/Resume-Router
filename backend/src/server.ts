@@ -16,7 +16,7 @@ async function startServer() {
   try {
     // Try a simple query to confirm connection
     await prisma.user.findMany();
-    console.log(`✅ Connected to the database ${process.env.DATABASE_URL}`);
+    console.log(`✅ Connected to the database`);
 
     try {
       await getRedis();

@@ -136,7 +136,7 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
 
   res.status(200).json({
     message: "Login successful",
-    user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits },
+    user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits, role: user.role },
     token,
   });
 });
@@ -211,6 +211,18 @@ export const googleCallback = (req: Request, res: Response) => {
           : {})
       });
       
+      // Check user role first
+      const user = await prisma.user.findUnique({
+        where: { id: userAuth.id },
+        select: { role: true }
+      });
+
+      // If admin, redirect to admin dashboard
+      if (user?.role === "ADMIN") {
+        res.redirect(`${process.env.FRONTEND_URL}/admin`);
+        return;
+      }
+
       // Check if user needs to complete profile (for new users)
       if (userAuth.isNewUser) {
         res.redirect(`${process.env.FRONTEND_URL}/dashboard/profile`);
@@ -270,7 +282,7 @@ export const verifyAuth = async (req: Request, res: Response) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; picture: string };
     const user = await prisma.user.findUnique({ 
       where: { id: decoded.id },
-      select: { id: true, email: true, name: true, avatarUrl: true, credits: true }
+      select: { id: true, email: true, name: true, avatarUrl: true, credits: true, role: true }
     });
     if (!user) {
       console.log("User not found in database");
@@ -278,7 +290,7 @@ export const verifyAuth = async (req: Request, res: Response) => {
     }
     
     console.log("User verified successfully:", user.email);
-    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits } });
+    res.json({ user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, credits: user.credits, role: user.role } });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
   }

@@ -9,13 +9,14 @@ interface User {
   picture?: string;
   avatarUrl?: string;
   credits?: number;
+  role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   signup: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   googleLogin: () => void;
@@ -103,7 +104,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const userData = {
             ...data.user,
             picture: data.user.avatarUrl || data.user.picture,
-            credits
+            credits,
+            role: data.user.role || "USER"
           };
           
           setUser(userData);
@@ -131,7 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<User> => {
     setLoading(true);
     setError(null);
     const url =
@@ -155,10 +157,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const userData = {
         ...data.user,
         picture: data.user.avatarUrl || data.user.picture,
-        credits: data.user.credits ?? 0
+        credits: data.user.credits ?? 0,
+        role: data.user.role || "USER"
       };
       setUser(userData);
       Cookies.set("authToken", data.token, { expires: 7 }); // 7 days
+      return userData;
     } catch (err) {
       setError((err as Error).message);
       Cookies.remove("authToken");

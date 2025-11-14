@@ -14,6 +14,7 @@ import personalInfoRoute from "./routes/personalInfoRoute";
 import jobRoute from "./routes/jobRoute";
 import resumeRoute from "./routes/resumeRoute";
 import paymentRoute from "./routes/payment";
+import adminRoute from "./routes/adminRoute";
 
 import { stripeWebhook } from "./webhooks/stripeWebhook"; // import the handler
 import { RequestHandler } from "express";
@@ -92,5 +93,6 @@ app.use("/api/personal-info", personalInfoRoute);
 app.use("/api/job-description", jobRoute);
 app.use("/api/resumes", resumeRoute);
 app.use("/api/payment", paymentRoute);       // includes /checkout etc. (NO webhook here)
+app.use("/api/admin", adminRoute);
 
 export default app;
