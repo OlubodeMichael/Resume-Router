@@ -84,7 +84,7 @@ function Hero() {
         Powered by AI. Trained to align your experience with what recruiters are looking for.
       </p>
       <a
-        href="#join-waitlist"
+        href="/signin"
         className="bg-blue-800 text-white px-8 py-3 rounded-xl font-medium shadow-md hover:bg-blue-900 transition text-lg"
         style={{ boxShadow: "0 2px 16px 0 rgba(60, 120, 255, 0.10)" }}
       >
