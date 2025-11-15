@@ -42,6 +42,7 @@ export async function middleware(req: NextRequest) {
       headers: { Cookie: `authToken=${token.value}` }, // ⬅️ manually forward token
     });
 
+
     // If token is expired or invalid (401), clear cookie and redirect to signin
     if (!res.ok || res.status === 401) {
       const url = req.nextUrl.clone();
