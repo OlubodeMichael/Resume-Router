@@ -185,7 +185,7 @@ function PlanCard({ plan, isPopular }: {
         </ul>
 
         <a
-          href={plan.cta.href}
+          href="/dashboard"
           className={`w-full inline-block px-6 py-4 rounded-xl font-medium text-center transition ${
             isPopular
               ? 'bg-blue-800 text-white hover:bg-blue-900 shadow-md'
