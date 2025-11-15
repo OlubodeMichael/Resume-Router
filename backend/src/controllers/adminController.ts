@@ -2,11 +2,16 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma";
 import { catchAsync } from "../../utils/catchAsync";
 import AppError from "../../utils/appError";
+import { rget, rset, rdel } from '../../utils/rcache';
 import Stripe from "stripe";
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
+
+const KUserMetrics = (period: string) => `rr:v1:admin:userMetrics:${period}`;
+const KRevenueMetrics = (period: string) => `rr:v1:admin:revenueMetrics:${period}`;
+const KResumeMetrics = (period: string) => `rr:v1:admin:resumeMetrics:${period}`;
 
 export const userMetrics = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const { period = "all" } = req.query; // 'day', 'week', 'month', 'all'
