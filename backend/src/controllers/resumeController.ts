@@ -236,6 +236,60 @@ export const createResume = catchAsync(async (req, res) => {
     return void res.status(400).json({ message: "Provide a valid job description (≥ 30 chars) or a template." });
   }
 
+  // Check if profile has meaningful data
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+    select: {
+      experience: true,
+      education: true,
+      skills: true,
+      projects: true,
+      achievements: true,
+      certifications: true,
+      volunteer: true,
+      leadership: true,
+      publications: true,
+      awardsHonors: true,
+      references: true,
+      summary: true,
+      objective: true,
+    },
+  });
+
+  if (!profile) {
+    return void res.status(400).json({ 
+      message: "Please complete your profile before generating a resume. Add at least one of: experience, education, skills, or projects.",
+      error: "profile_incomplete"
+    });
+  }
+
+  // Check if profile has at least one meaningful data field
+  const hasExperience = Array.isArray(profile.experience) && profile.experience.length > 0;
+  const hasEducation = Array.isArray(profile.education) && profile.education.length > 0;
+  const hasSkills = Array.isArray(profile.skills) && profile.skills.length > 0;
+  const hasProjects = Array.isArray(profile.projects) && profile.projects.length > 0;
+  const hasAchievements = Array.isArray(profile.achievements) && profile.achievements.length > 0;
+  const hasCertifications = Array.isArray(profile.certifications) && profile.certifications.length > 0;
+  const hasVolunteer = Array.isArray(profile.volunteer) && profile.volunteer.length > 0;
+  const hasLeadership = Array.isArray(profile.leadership) && profile.leadership.length > 0;
+  const hasPublications = Array.isArray(profile.publications) && profile.publications.length > 0;
+  const hasAwardsHonors = Array.isArray(profile.awardsHonors) && profile.awardsHonors.length > 0;
+  const hasReferences = Array.isArray(profile.references) && profile.references.length > 0;
+  const hasSummary = profile.summary && typeof profile.summary === 'string' && profile.summary.trim().length > 0;
+  const hasObjective = profile.objective && typeof profile.objective === 'string' && profile.objective.trim().length > 0;
+
+  const hasProfileData = hasExperience || hasEducation || hasSkills || hasProjects || 
+                         hasAchievements || hasCertifications || hasVolunteer || 
+                         hasLeadership || hasPublications || hasAwardsHonors || 
+                         hasReferences || hasSummary || hasObjective;
+
+  if (!hasProfileData) {
+    return void res.status(400).json({ 
+      message: "Please complete your profile before generating a resume. Add at least one of: experience, education, skills, or projects.",
+      error: "profile_incomplete"
+    });
+  }
+
   const resumeId = await createDraftAndStart({
     userId,
     jd: jd ?? "",
