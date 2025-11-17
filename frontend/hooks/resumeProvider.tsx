@@ -41,6 +41,8 @@ interface ResumeContextType {
   parseResumeFile: (file: File) => Promise<ParsedResumeResult | null>;
   isParsingResume: boolean;
   lastParsedResume: ParsedResumeResult | null;
+  showError: (title: string, message: string, duration?: number) => void;
+  showSuccess: (title: string, message: string, duration?: number) => void;
 }
 
 export type ParsedResumeResult = {
@@ -97,6 +99,17 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                     return;
                 }
                 
+                // Check if it's a profile incomplete error
+                if (response.status === 400 && errorData.error === 'profile_incomplete') {
+                    showError(
+                        'Profile Incomplete',
+                        errorData.message || 'Please complete your profile before generating a resume.',
+                        6000
+                    );
+                    setError(errorData.message || 'Profile incomplete');
+                    return;
+                }
+                
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
             
@@ -110,6 +123,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                     resumeId: data.resumeId,
                     status: data.status
                 });
+                
+                // Credits are deducted when job description is created, refresh immediately
+                // Import useAuth hook to get refreshCredits - but we can't use hooks here
+                // So we'll handle it in the component that calls this
             } else {
                 throw new Error('Invalid response format');
             }
@@ -374,7 +391,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                 setShowUpgradePrompt,
                 parseResumeFile,
                 isParsingResume,
-                lastParsedResume
+                lastParsedResume,
+                showError,
+                showSuccess
             }}
         >
             {children}
