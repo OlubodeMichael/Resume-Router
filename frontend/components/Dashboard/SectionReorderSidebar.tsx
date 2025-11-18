@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GripVertical, Settings, Eye, EyeOff, X, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { GripVertical, Settings, Eye, EyeOff, X, Plus, Trash2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { extractSectionContentByType, hasSubsections, extractSubsections, extractSubsectionContent } from "@/lib/sectionUtils";
 
 type SectionDefinition = {
   type: string;
@@ -20,6 +21,7 @@ interface SectionReorderSidebarProps {
   onOpenChange?: (open: boolean) => void;
   onAddSection?: (sectionType: string) => void;
   onRemoveSection?: (sectionKey: string, sectionType?: string) => void;
+  onSectionRewrite?: (sectionType: string, originalContent: string, subsectionIndex?: number) => void;
 }
 
 const SECTION_LIBRARY: SectionDefinition[] = [
@@ -136,6 +138,7 @@ export function SectionReorderSidebar({
   onOpenChange,
   onAddSection,
   onRemoveSection,
+  onSectionRewrite,
 }: SectionReorderSidebarProps) {
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [draggingKey, setDraggingKey] = useState<string | null>(null);
@@ -144,6 +147,24 @@ export function SectionReorderSidebar({
   const [hiddenSections, setHiddenSections] = useState<Record<string, boolean>>({});
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState<boolean>(false);
   const [expandedHeaderSection, setExpandedHeaderSection] = useState<string | null>(null);
+  const [openRewriteDropdown, setOpenRewriteDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenRewriteDropdown(null);
+      }
+    };
+
+    if (openRewriteDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [openRewriteDropdown]);
   const [headerContactInfo, setHeaderContactInfo] = useState<{
     phone: string;
     email: string;
@@ -1030,6 +1051,116 @@ export function SectionReorderSidebar({
                           </>
                         ) : (
                           <>
+                            {onSectionRewrite && section.type && section.type !== "header" && (
+                              <div className="relative" ref={openRewriteDropdown === section.key ? dropdownRef : null}>
+                                {hasSubsections(section.type) ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setOpenRewriteDropdown(
+                                          openRewriteDropdown === section.key ? null : section.key
+                                        );
+                                      }}
+                                      onMouseDown={(event) => event.stopPropagation()}
+                                      onPointerDown={(event) => event.stopPropagation()}
+                                      className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600 flex items-center gap-1"
+                                      aria-label="Rewrite section with AI"
+                                      title="Rewrite section with AI"
+                                    >
+                                      <Sparkles className="h-4 w-4" />
+                                      <ChevronDown className={`h-3 w-3 transition-transform ${openRewriteDropdown === section.key ? 'rotate-180' : ''}`} />
+                                    </button>
+                                    {openRewriteDropdown === section.key && (
+                                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto" ref={dropdownRef}>
+                                        {(() => {
+                                          const editor = editorRef.current;
+                                          if (!editor || !section.type) return null;
+                                          
+                                          const sectionElement = editor.querySelector(
+                                            `section[data-section-key="${section.key}"]`
+                                          ) as HTMLElement | null;
+                                          
+                                          if (!sectionElement) return null;
+                                          
+                                          const subsections = extractSubsections(sectionElement);
+                                          
+                                          return (
+                                            <>
+                                              <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                  event.preventDefault();
+                                                  event.stopPropagation();
+                                                  const content = extractSectionContentByType(editor, section.type!);
+                                                  if (content && onSectionRewrite) {
+                                                    onSectionRewrite(section.type!, content);
+                                                    setOpenRewriteDropdown(null);
+                                                  }
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 border-b border-gray-200"
+                                              >
+                                                Rewrite All Entries
+                                              </button>
+                                              {subsections.map((subsection) => (
+                                                <button
+                                                  key={subsection.id}
+                                                  type="button"
+                                                  onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    const content = extractSubsectionContent(sectionElement, subsection.id);
+                                                    if (content && onSectionRewrite) {
+                                                      onSectionRewrite(section.type!, content, subsection.id);
+                                                      setOpenRewriteDropdown(null);
+                                                    }
+                                                  }}
+                                                  className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 truncate"
+                                                  title={subsection.label}
+                                                >
+                                                  {subsection.label}
+                                                </button>
+                                              ))}
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      const editor = editorRef.current;
+                                      if (!editor || !section.type) return;
+                                      
+                                      const sectionElement = editor.querySelector(
+                                        `section[data-section-key="${section.key}"]`
+                                      ) as HTMLElement | null;
+                                      
+                                      if (sectionElement && onSectionRewrite) {
+                                        // Extract content and trigger rewrite
+                                        const content = extractSectionContentByType(editor, section.type);
+                                        if (content) {
+                                          onSectionRewrite(section.type, content);
+                                        }
+                                      }
+                                    }}
+                                    onMouseDown={(event) => event.stopPropagation()}
+                                    onPointerDown={(event) => event.stopPropagation()}
+                                    className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                    aria-label="Rewrite section with AI"
+                                    title="Rewrite section with AI"
+                                  >
+                                    <Sparkles className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             <button
                               type="button"
                               onClick={(event) => {

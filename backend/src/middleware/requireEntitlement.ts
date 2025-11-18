@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { hasActivePass } from "../services/entitlements";
 import { spendCreditsAtomic } from "../services/credits";
 
-type Feature = "resume" | "regen";
+type Feature = "resume" | "regen" | "rewrite";
 
 export function requireEntitlement(opts: {
   feature: Feature;
@@ -17,6 +17,10 @@ export function requireEntitlement(opts: {
   return async (req: any, res: any, next: any) => {
     const userId = req.user.id as string;
     const opKey = opts.opKeyFromReq(req) || crypto.randomUUID();
+    
+    // Attach opKey to request for potential refunds
+    req.entitlementOpKey = opKey;
+    req.entitlementCreditCost = opts.creditCost;
 
     const log = (...args: any[]) => opts.debugLogs && console.log("[ENT]", ...args);
 

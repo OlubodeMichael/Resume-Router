@@ -56,12 +56,19 @@ router.post('/', protect, requireEntitlement({
   opKeyFromReq: (req) => req.body.resumeId || `resume:${req.user.id}:${Date.now()}` }), Resume.createResume);
 router.get('/', protect, Resume.getResumes);
 router.post('/parse', protect, upload.single('resume'), Resume.parseResume);
+// Specific routes must come BEFORE the general /:id route
+router.post('/:id/tailor', protect, Resume.tailorResume);
+router.post('/:id/rewrite-section', protect, requireEntitlement({
+  feature: 'rewrite',
+  creditCost: 2,
+  opKeyFromReq: (req) => `rewrite-section:${req.params.id}:${req.body.sectionType || 'unknown'}:${Date.now()}`
+}), Resume.rewriteSection);
+router.get('/:id/status', protect, Resume.getResumeStatus);
+router.get('/:id/stream', protect, Resume.resumeStream);
+// General routes come last
 router.get('/:id', protect, Resume.getResume);
 router.post('/:id', protect, Resume.updateResume); // POST for updating resume content
 router.delete('/:id', protect, Resume.deleteResume);
-router.post('/:id/tailor', protect, Resume.tailorResume);
-router.get('/:id/status', protect, Resume.getResumeStatus);
-router.get('/:id/stream', protect, Resume.resumeStream);
 /*
 router.post('/:resumeId/template', protect, setTemplateId);
 router.get('/:resumeId/template', protect, getTemplateId);

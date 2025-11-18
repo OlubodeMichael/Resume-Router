@@ -15,11 +15,14 @@ import { downloadResumeAsPDF } from "@/lib/pdfUtils";
 import { updateJsonFromHtml } from "@/lib/htmlToJsonConverter";
 import Toolbar from "@/components/Dashboard/Toolbar";
 import SectionReorderSidebar from "@/components/Dashboard/SectionReorderSidebar";
+import RewritePreviewModal from "@/components/Dashboard/RewritePreviewModal";
+import RewriteSelectionModal from "@/components/Dashboard/RewriteSelectionModal";
+import { injectSectionContentByType } from "@/lib/sectionUtils";
 
 import ResumeLoading from "@/components/resumeLoading";
 
 export default function DocumentPage() {
-  const { generatedResumeContent, getResume, useResumeSSE } = useResume()
+  const { generatedResumeContent, getResume, useResumeSSE, rewriteSection } = useResume()
   const editorRef = useRef<HTMLDivElement>(null)
   const [editedContent, setEditedContent] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -28,6 +31,26 @@ export default function DocumentPage() {
   const [isSaving, setIsSaving] = useState(false)
   const { toasts, removeToast, showSuccess, showError } = useToast()
   const { id } = useParams()
+  
+  // Rewrite selection modal state (first step - select what to rewrite)
+  const [rewriteSelectionModal, setRewriteSelectionModal] = useState<{
+    isOpen: boolean;
+    sectionType: string;
+    sectionContent: string;
+    subsectionIndex?: number; // Optional: for subsections
+  } | null>(null)
+
+  // Rewrite preview modal state (second step - preview and accept)
+  const [rewritePreviewModal, setRewritePreviewModal] = useState<{
+    isOpen: boolean;
+    sectionType: string;
+    originalContent: string;
+    rewrittenContent: string | null;
+    isRegenerating: boolean;
+    creditCost?: number;
+    customPrompt?: string; // Store custom prompt for regeneration
+    subsectionIndex?: number; // Optional: for subsection-specific rewrites
+  } | null>(null)
   
   // Use SSE to monitor resume processing status
   const status = useResumeSSE(id as string)
@@ -244,6 +267,232 @@ export default function DocumentPage() {
     )
   }, [templateData, showSuccess, showError])
 
+  // Handle section rewrite button click - opens selection modal
+  const handleSectionRewriteClick = useCallback((sectionType: string, sectionContent: string, subsectionIndex?: number) => {
+    // Validate content
+    if (!sectionContent || sectionContent.trim().length === 0) {
+      showError('Error', 'Section content is empty. Cannot rewrite empty sections.', 3000);
+      return;
+    }
+
+    // Open selection modal
+    setRewriteSelectionModal({
+      isOpen: true,
+      sectionType,
+      sectionContent,
+      subsectionIndex,
+    });
+  }, [showError])
+
+  // Handle confirm from selection modal - starts the rewrite process
+  const handleRewriteConfirm = useCallback(async (selectedContent: string, customPrompt?: string) => {
+    const resumeId = (id as string) || generatedResumeContent?.id;
+    if (!resumeId) {
+      showError('Error', 'Resume ID not found', 3000);
+      setRewriteSelectionModal(null);
+      return;
+    }
+
+    // Store section info before closing selection modal
+    const sectionType = rewriteSelectionModal?.sectionType || '';
+    const subsectionIndex = rewriteSelectionModal?.subsectionIndex;
+    
+    // Close selection modal and open preview modal with loading state
+    setRewriteSelectionModal(null);
+    setRewritePreviewModal({
+      isOpen: true,
+      sectionType,
+      originalContent: selectedContent,
+      rewrittenContent: null,
+      isRegenerating: false,
+      customPrompt,
+      subsectionIndex,
+    });
+
+    try {
+      const result = await rewriteSection(resumeId, sectionType, selectedContent, customPrompt);
+      
+      // Update preview modal with rewritten content
+      setRewritePreviewModal((prev) => prev ? {
+        ...prev,
+        rewrittenContent: result.rewrittenContent,
+        creditCost: result.creditCost,
+      } : null);
+
+    } catch (error) {
+      // Determine error message
+      let errorMessage = 'Failed to rewrite section. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message === 'Insufficient Credits') {
+          showError(
+            'Insufficient Credits',
+            'You don\'t have enough credits. Please upgrade your plan or purchase more credits.',
+            5000
+          );
+        } else if (error.message === 'Authentication Required') {
+          showError(
+            'Authentication Required',
+            'Please sign in to continue.',
+            5000
+          );
+        } else {
+          showError(
+            'Rewrite Failed',
+            errorMessage,
+            5000
+          );
+        }
+      } else {
+        showError(
+          'Rewrite Failed',
+          errorMessage,
+          5000
+        );
+      }
+      
+      setRewritePreviewModal(null);
+    }
+  }, [id, generatedResumeContent?.id, rewriteSelectionModal, rewriteSection, showError])
+
+  // Handle accept rewrite
+  const handleAcceptRewrite = useCallback(async (rewrittenContent: string) => {
+    if (!rewritePreviewModal) return;
+
+    const { sectionType, originalContent, subsectionIndex } = rewritePreviewModal;
+    const editor = editorRef.current;
+
+    if (!editor) {
+      showError('Error', 'Editor not found', 3000);
+      return;
+    }
+
+    try {
+      // Inject rewritten content into the section or subsection, passing originalContent for smart merging
+      const success = injectSectionContentByType(
+        editor, 
+        sectionType, 
+        rewrittenContent, 
+        originalContent,
+        subsectionIndex
+      );
+
+      if (!success) {
+        showError('Error', `Section "${sectionType}" not found in editor`, 3000);
+        return;
+      }
+
+      // Trigger content change to mark as unsaved
+      setHasUnsavedChanges(true);
+      const updatedHtml = editor.innerHTML;
+      setEditedContent(updatedHtml);
+
+      // Close modal
+      setRewritePreviewModal(null);
+
+      // Show success message
+      showSuccess(
+        'Section Rewritten',
+        'The section has been updated. Don\'t forget to save your changes.',
+        3000
+      );
+
+      // Optionally auto-save (or let user save manually)
+      // await handleSaveToDB({ silent: true });
+
+    } catch (error) {
+      console.error('Error accepting rewrite:', error);
+      showError(
+        'Error',
+        'Failed to apply rewritten content. Please try again.',
+        5000
+      );
+    }
+  }, [rewritePreviewModal, showSuccess, showError])
+
+  // Handle regenerate rewrite
+  const handleRegenerateRewrite = useCallback(async () => {
+    if (!rewritePreviewModal) return;
+
+    const { sectionType, originalContent, customPrompt } = rewritePreviewModal;
+    const resumeId = (id as string) || generatedResumeContent?.id;
+    
+    if (!resumeId) {
+      showError('Error', 'Resume ID not found', 3000);
+      return;
+    }
+
+    // Set regenerating state
+    setRewritePreviewModal((prev) => prev ? {
+      ...prev,
+      isRegenerating: true,
+      rewrittenContent: null,
+    } : null);
+
+    try {
+      const result = await rewriteSection(resumeId, sectionType, originalContent, customPrompt);
+      
+      // Update preview modal with new rewritten content
+      setRewritePreviewModal((prev) => prev ? {
+        ...prev,
+        rewrittenContent: result.rewrittenContent,
+        isRegenerating: false,
+        creditCost: result.creditCost,
+      } : null);
+
+    } catch (error) {
+      // Determine error message
+      let errorMessage = 'Failed to regenerate rewrite. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message === 'Insufficient Credits') {
+          showError(
+            'Insufficient Credits',
+            'You don\'t have enough credits. Please upgrade your plan or purchase more credits.',
+            5000
+          );
+        } else if (error.message === 'Authentication Required') {
+          showError(
+            'Authentication Required',
+            'Please sign in to continue.',
+            5000
+          );
+        } else {
+          showError(
+            'Regenerate Failed',
+            errorMessage,
+            5000
+          );
+        }
+      } else {
+        showError(
+          'Regenerate Failed',
+          errorMessage,
+          5000
+        );
+      }
+      
+      setRewritePreviewModal((prev) => prev ? {
+        ...prev,
+        isRegenerating: false,
+      } : null);
+    }
+  }, [rewritePreviewModal, id, generatedResumeContent?.id, rewriteSection, showError])
+
+  // Handle cancel rewrite selection
+  const handleCancelRewriteSelection = useCallback(() => {
+    setRewriteSelectionModal(null);
+  }, [])
+
+  // Handle cancel rewrite preview
+  const handleCancelRewritePreview = useCallback(() => {
+    setRewritePreviewModal(null);
+  }, [])
+
   // Load resume when status becomes ready or on initial load
   useEffect(() => {
     const resumeId = id as string | undefined
@@ -384,10 +633,40 @@ export default function DocumentPage() {
             )}
           </div>
 
-          <SectionReorderSidebar editorRef={editorRef} onReorder={handleSectionsReordered} />
+          <SectionReorderSidebar 
+            editorRef={editorRef} 
+            onReorder={handleSectionsReordered}
+            onSectionRewrite={handleSectionRewriteClick}
+          />
         </div>
       </main>
 
+      {/* Rewrite Selection Modal (Step 1) */}
+      {rewriteSelectionModal && (
+        <RewriteSelectionModal
+          isOpen={rewriteSelectionModal.isOpen}
+          onClose={handleCancelRewriteSelection}
+          sectionType={rewriteSelectionModal.sectionType}
+          sectionContent={rewriteSelectionModal.sectionContent}
+          onConfirm={handleRewriteConfirm}
+          isProcessing={false}
+        />
+      )}
+
+      {/* Rewrite Preview Modal (Step 2) */}
+      {rewritePreviewModal && (
+        <RewritePreviewModal
+          isOpen={rewritePreviewModal.isOpen}
+          onClose={handleCancelRewritePreview}
+          sectionType={rewritePreviewModal.sectionType}
+          originalContent={rewritePreviewModal.originalContent}
+          rewrittenContent={rewritePreviewModal.rewrittenContent}
+          onAccept={handleAcceptRewrite}
+          onRegenerate={handleRegenerateRewrite}
+          isRegenerating={rewritePreviewModal.isRegenerating}
+          creditCost={rewritePreviewModal.creditCost}
+        />
+      )}
     
       
       {/* Toast Notifications */}
