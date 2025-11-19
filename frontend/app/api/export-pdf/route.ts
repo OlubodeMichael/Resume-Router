@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
 
 export async function POST(request: NextRequest) {
+  let browser;
   try {
     const { html, filename = 'resume.pdf' } = await request.json();
-
 
     if (!html) {
       return NextResponse.json(
@@ -13,17 +12,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ],
-      headless: true
-    });
+    // Use Chromium binary for serverless (production) or regular Puppeteer for local
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+    
+    let puppeteer;
+    if (isProduction) {
+      // Use puppeteer-core with @sparticuz/chromium for production (serverless)
+      puppeteer = (await import('puppeteer-core')).default;
+      const chromium = await import('@sparticuz/chromium');
+      
+      browser = await puppeteer.launch({
+        args: chromium.default.args,
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath: await chromium.default.executablePath(),
+        headless: true,
+      });
+    } else {
+      // Use regular puppeteer for development (includes bundled Chrome)
+      puppeteer = (await import('puppeteer')).default;
+      
+      browser = await puppeteer.launch({
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ],
+        headless: true,
+      });
+    }
 
     const page = await browser.newPage();
 
@@ -104,9 +123,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('PDF export error:', error);
+    
+    // Ensure browser is closed even on error
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError);
+      }
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'PDF export failed';
     return NextResponse.json(
-      { error: errorMessage },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : String(error)) : undefined
+      },
       { status: 500 }
     );
   }

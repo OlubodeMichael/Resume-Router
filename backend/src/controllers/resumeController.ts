@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../lib/prisma';
 import { catchAsync } from '../../utils/catchAsync';
-import { generateResume } from '../services/resume.service';
+import { generateResume, rewriteSectionWithAI } from '../services/resume.service';
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import fs from "fs/promises";
@@ -13,6 +13,7 @@ import { processResumeAsync } from '../../utils/worker';
 import { $Enums } from '@prisma/client';
 import { createDraftAndStart } from '../services/resumeDraft.service';
 import { rdel } from '../../utils/rcache';
+import { refundCredits } from '../services/credits';
 
 // Extend Express Request to include file property
 interface RequestWithFile extends Request {
@@ -987,3 +988,124 @@ export const resumeStream = catchAsync(async (req: Request, res: Response): Prom
     clearInterval(ping);
   });
 })
+
+// Rewrite Section with AI
+// POST /api/resumes/:id/rewrite-section
+export const rewriteSection = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const userId = (req.user as any)?.id;
+  const { id } = req.params;
+  const { sectionType, content, tone, jobDescriptionId, customPrompt } = req.body as {
+    sectionType?: string;
+    content?: string;
+    tone?: string;
+    jobDescriptionId?: string;
+    customPrompt?: string; // Optional custom instructions from user
+  };
+
+  if (!userId) {
+    res.status(401).json({ message: 'User not authenticated' });
+    return;
+  }
+
+  // Validate required fields
+  if (!sectionType || typeof sectionType !== 'string') {
+    res.status(400).json({ message: 'sectionType is required and must be a string' });
+    return;
+  }
+
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    res.status(400).json({ message: 'content is required and must be a non-empty string' });
+    return;
+  }
+
+  // Validate section type
+  const validSectionTypes = [
+    'summary',
+    'objective',
+    'experience',
+    'projects',
+    'skills',
+    'education',
+    'certifications',
+    'leadership',
+    'volunteer',
+    'awardsHonors',
+    'publications',
+    'references',
+  ];
+
+  if (!validSectionTypes.includes(sectionType)) {
+    res.status(400).json({
+      message: `Invalid section type. Valid types are: ${validSectionTypes.join(', ')}`,
+    });
+    return;
+  }
+
+  // Verify resume exists and belongs to user
+  const resume = await prisma.resume.findFirst({
+    where: { id, userId },
+    select: { id: true, jobDescriptionId: true },
+  });
+
+  if (!resume) {
+    res.status(404).json({ message: 'Resume not found' });
+    return;
+  }
+
+  // Credits are handled by requireEntitlement middleware
+  // Get opKey and creditCost from middleware for potential refund on failure
+  const opKey = (req as any).entitlementOpKey;
+  const creditCost = (req as any).entitlementCreditCost || 2;
+
+  try {
+    // Get job description context if provided
+    let jobDescriptionContext: string | undefined;
+    const jdId = jobDescriptionId || resume.jobDescriptionId;
+    
+    if (jdId) {
+      const jobDescription = await prisma.jobDescription.findUnique({
+        where: { id: jdId },
+        select: { parsedData: true, content: true },
+      });
+
+      if (jobDescription) {
+        // Use content field if available, otherwise try to extract from parsedData
+        if (jobDescription.content) {
+          jobDescriptionContext = jobDescription.content;
+        } else if (jobDescription.parsedData && typeof jobDescription.parsedData === 'object') {
+          // Try to extract meaningful text from parsed data
+          jobDescriptionContext = JSON.stringify(jobDescription.parsedData).substring(0, 1000);
+        }
+      }
+    }
+
+    // Call AI service to rewrite the section
+    const rewrittenContent = await rewriteSectionWithAI(
+      sectionType,
+      content.trim(),
+      tone || 'professional',
+      jobDescriptionContext,
+      customPrompt
+    );
+
+    res.status(200).json({
+      rewrittenContent,
+      creditCost: 2,
+      sectionType,
+    });
+  } catch (error) {
+    console.error('Error rewriting section:', error);
+    
+    // Refund credits on failure using the same opKey from middleware
+    if (opKey) {
+      await refundCredits(userId, creditCost, opKey, `refund:rewrite-section-failed`).catch((refundError) => {
+        console.error('Failed to refund credits:', refundError);
+      });
+    }
+
+    res.status(500).json({
+      message: 'Failed to rewrite section. Credits have been refunded.',
+      error: 'ai_generation_failed',
+    });
+  }
+});

@@ -1506,3 +1506,165 @@ export const generateResume = async (
 
   return resumeContent;
 };
+
+/* ----------------------------------------------------------------------------
+ * Public: Rewrite Section with AI
+ * --------------------------------------------------------------------------*/
+
+const rewriteSectionPrompt = PromptTemplate.fromTemplate(`
+You are a professional resume writer. Rewrite the following {sectionType} section
+to improve clarity, tone, and professional phrasing while preserving all factual
+information, dates, companies, and quantifiable metrics.
+
+Tone preference: {tone}
+
+Original content:
+{originalContent}
+
+CRITICAL OUTPUT FORMAT:
+- If the original content contains bullet points (lines starting with •, -, *, or numbered), 
+  you MUST return a JSON array of strings representing the rewritten bullets.
+- Example for bullets: ["Rewritten bullet 1", "Rewritten bullet 2", "Rewritten bullet 3"]
+- If the original content is NOT bullets (e.g., summary, objective, paragraph), return a plain text string.
+- Return ONLY valid JSON (no markdown, no code blocks, no explanations)
+
+Requirements:
+- Maintain all factual information (dates, companies, locations, metrics, names, titles)
+- Improve clarity and readability
+- Use professional, impactful language
+- Keep the same approximate length
+- Preserve the SAME NUMBER of bullet points if input is bullets
+- Maintain proper formatting (paragraphs, lists, etc.)
+- Do not add information that wasn't in the original
+- Do not remove important details
+
+Return ONLY the rewritten content as JSON array (for bullets) or plain text (for paragraphs), no explanations or markdown formatting.
+`);
+
+export async function rewriteSectionWithAI(
+  sectionType: string,
+  originalContent: string,
+  tone: string = "professional",
+  jobDescriptionContext?: string,
+  customPrompt?: string
+): Promise<string> {
+  try {
+    // Build the prompt with optional job description context
+    let promptText = await rewriteSectionPrompt.format({
+      sectionType,
+      tone,
+      originalContent: originalContent.trim(),
+    });
+
+    // If custom prompt is provided, add it prominently BEFORE the requirements section
+    // This ensures the AI model prioritizes the user's specific instructions
+    if (customPrompt && customPrompt.trim()) {
+      // Find where "Requirements:" starts and insert custom prompt before it
+      const requirementsIndex = promptText.indexOf('Requirements:');
+      if (requirementsIndex > -1) {
+        const beforeRequirements = promptText.substring(0, requirementsIndex);
+        const afterRequirements = promptText.substring(requirementsIndex);
+        promptText = `${beforeRequirements}\n\nIMPORTANT - USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE):\n${customPrompt.trim()}\n\n${afterRequirements}`;
+      } else {
+        // Fallback: add before the final instruction
+        promptText = promptText.replace(
+          'Return ONLY the rewritten content, no explanations or markdown formatting.',
+          `IMPORTANT - USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE):\n${customPrompt.trim()}\n\nReturn ONLY the rewritten content, no explanations or markdown formatting.`
+        );
+      }
+    }
+
+    // If job description context is provided, add it to the prompt
+    if (jobDescriptionContext) {
+      promptText += `\n\nAdditional context from job description (use to tailor language and keywords, but do not add new information):\n${jobDescriptionContext}`;
+    }
+
+    // Use a lower temperature for more consistent rewrites
+    const model = new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY!,
+      model: "gpt-4o",
+      temperature: 0.3, // Lower than full generation for consistency
+      maxTokens: 1000, // Section-specific, adjust based on section type
+    });
+
+    const res = await model.invoke([{ role: "user", content: promptText }]);
+    
+    // Normalize content to string
+    let content =
+      typeof res.content === "string"
+        ? res.content
+        : Array.isArray(res.content)
+        ? res.content.map((c: any) => (typeof c === "string" ? c : c?.text ?? "")).join("\n")
+        : String(res.content ?? "");
+
+    content = content.trim();
+
+    // Check if the original content contains bullet points
+    const hasBullets = /^[•\-\*]\s+/m.test(originalContent) || /^\d+[\.\)]\s+/m.test(originalContent);
+    
+    if (hasBullets) {
+      // Try to extract JSON array from response
+      let jsonString = content;
+      
+      // Remove markdown code blocks if present
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[1].trim();
+      }
+
+      // Try to find JSON array in the response
+      const arrayStart = jsonString.indexOf('[');
+      if (arrayStart !== -1) {
+        // Find the matching closing bracket
+        let depth = 0;
+        let end = arrayStart;
+        
+        for (let i = arrayStart; i < jsonString.length; i++) {
+          if (jsonString[i] === '[') depth++;
+          if (jsonString[i] === ']') depth--;
+          if (depth === 0) {
+            end = i + 1;
+            break;
+          }
+        }
+        
+        try {
+          const extractedJson = jsonString.substring(arrayStart, end);
+          const parsed = JSON.parse(extractedJson);
+          
+          // Validate it's an array of strings
+          if (Array.isArray(parsed) && parsed.every(item => typeof item === "string")) {
+            // Return as JSON string
+            return JSON.stringify(parsed);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse JSON array from response:", parseError);
+        }
+      }
+      
+      // If JSON parsing fails but we detected bullets, try to parse bullet format
+      const bulletLines = content.split("\n")
+        .map(line => line.trim())
+        .filter(line => {
+          // Check if it's a bullet point
+          return /^[•\-\*]\s+/.test(line) || /^\d+[\.\)]\s+/.test(line);
+        })
+        .map(line => {
+          // Remove bullet marker
+          return line.replace(/^[•\-\*]\s*/, "").replace(/^\d+[\.\)]\s*/, "").trim();
+        })
+        .filter(line => line.length > 0);
+      
+      if (bulletLines.length > 0) {
+        // Return as JSON array
+        return JSON.stringify(bulletLines);
+      }
+    }
+
+    // For non-bullet content or if parsing failed, return as-is
+    return content;
+  } catch (error) {
+    console.error("AI section rewrite failed:", error);
+    throw new Error("Failed to rewrite section with AI");
+  }
+}

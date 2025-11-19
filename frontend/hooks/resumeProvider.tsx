@@ -43,6 +43,7 @@ interface ResumeContextType {
   lastParsedResume: ParsedResumeResult | null;
   showError: (title: string, message: string, duration?: number) => void;
   showSuccess: (title: string, message: string, duration?: number) => void;
+  rewriteSection: (resumeId: string, sectionType: string, content: string, customPrompt?: string) => Promise<{ rewrittenContent: string; creditCost: number }>;
 }
 
 export type ParsedResumeResult = {
@@ -366,6 +367,106 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(false);
         }
     }
+
+    const rewriteSection = async (
+        resumeId: string,
+        sectionType: string,
+        content: string,
+        customPrompt?: string
+    ): Promise<{ rewrittenContent: string; creditCost: number }> => {
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/resumes/${resumeId}/rewrite-section`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    sectionType,
+                    content,
+                    tone: 'professional',
+                    customPrompt: customPrompt,
+                }),
+            });
+            
+            if (!response.ok) {
+                // Try to get the response as text first to handle both JSON and HTML responses
+                const contentType = response.headers.get('content-type');
+                let errorData: { message?: string; error?: string } = {};
+                let errorText = '';
+                
+                try {
+                    if (contentType && contentType.includes('application/json')) {
+                        errorData = await response.json();
+                    } else {
+                        errorText = await response.text();
+                        console.error('Non-JSON error response:', errorText);
+                        // Try to parse as JSON anyway, but use text as fallback
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch {
+                            // If it's HTML or other non-JSON, extract meaningful message
+                            if (errorText.includes('Cannot POST') || errorText.includes('404')) {
+                                throw new Error('Route not found. The server may need to be restarted or the route is not configured.');
+                            }
+                            errorData = { message: errorText || 'Request failed' };
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing response:', parseError);
+                    errorData = { message: errorText || `HTTP error! status: ${response.status}` };
+                }
+                
+                console.error('Rewrite section error response:', { status: response.status, errorData, errorText });
+                
+                // Check if it's an insufficient credits error
+                if (response.status === 402 && errorData.error === 'insufficient_credits') {
+                    setShowUpgradePrompt(true);
+                    setError(null); // Clear any existing error
+                    throw new Error('Insufficient Credits');
+                }
+                
+                // Handle authentication errors
+                if (response.status === 401) {
+                    throw new Error(errorData.message || 'Authentication Required');
+                }
+                
+                // Handle 404 - route not found
+                if (response.status === 404) {
+                    throw new Error(errorData.message || 'Route not found. Please check if the server is running correctly.');
+                }
+                
+                throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.rewrittenContent) {
+                throw new Error('No rewritten content received from server');
+            }
+
+            return {
+                rewrittenContent: data.rewrittenContent,
+                creditCost: data.creditCost || 2,
+            };
+        } catch (err) {
+            console.error('Rewrite section error:', err);
+            const errorMessage = (err as Error).message || 'Failed to rewrite section. Please try again.';
+            setError(errorMessage);
+            showError(
+                'Section Rewrite Failed',
+                errorMessage,
+                5000
+            );
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <ResumeContext.Provider 
             value={{ 
@@ -393,7 +494,8 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
                 isParsingResume,
                 lastParsedResume,
                 showError,
-                showSuccess
+                showSuccess,
+                rewriteSection
             }}
         >
             {children}
