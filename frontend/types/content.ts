@@ -1,4 +1,4 @@
-export type ResumeContent = Record<string, any>;
+export type ResumeContent = Record<string, unknown>;
 
 export type ResumeDraftEnvelope = {
   v: 1;
