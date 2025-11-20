@@ -304,7 +304,7 @@ export default function DocumentPage() {
       sectionType,
       originalContent: selectedContent,
       rewrittenContent: null,
-      isRegenerating: false,
+      isRegenerating: true, // Show loading state while AI is processing
       customPrompt,
       subsectionIndex,
     });
@@ -312,11 +312,12 @@ export default function DocumentPage() {
     try {
       const result = await rewriteSection(resumeId, sectionType, selectedContent, customPrompt);
       
-      // Update preview modal with rewritten content
+      // Update preview modal with rewritten content (stop loading)
       setRewritePreviewModal((prev) => prev ? {
         ...prev,
         rewrittenContent: result.rewrittenContent,
         creditCost: result.creditCost,
+        isRegenerating: false, // Stop loading state
       } : null);
 
     } catch (error) {
@@ -353,6 +354,7 @@ export default function DocumentPage() {
         );
       }
       
+      // Close modal on error (stop loading state)
       setRewritePreviewModal(null);
     }
   }, [id, generatedResumeContent?.id, rewriteSelectionModal, rewriteSection, showError])
@@ -537,7 +539,13 @@ export default function DocumentPage() {
               style={{ left: 'var(--sidebar-width, 64px)' }}>
         <div className="mx-auto max-w-none px-4 py-3">
           <div className="overflow-x-auto">
-            <Toolbar editorRef={editorRef} />
+            <Toolbar 
+              editorRef={editorRef}
+              templateData={templateData}
+              setIsDownloading={setIsDownloading}
+              onSuccess={showSuccess}
+              onError={showError}
+            />
           </div>
         </div>
       </header>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { X, Check, RotateCw, Loader2 } from "lucide-react";
+import { X, Check, RotateCw, Loader2, Sparkles } from "lucide-react";
 
 interface RewritePreviewModalProps {
   isOpen: boolean;
@@ -53,18 +53,8 @@ export default function RewritePreviewModal({
     };
   }, [isOpen, onClose]);
 
-  // Sync scrolling between both panels
-  const handleOriginalScroll = () => {
-    if (originalScrollRef.current && rewrittenScrollRef.current) {
-      rewrittenScrollRef.current.scrollTop = originalScrollRef.current.scrollTop;
-    }
-  };
-
-  const handleRewrittenScroll = () => {
-    if (originalScrollRef.current && rewrittenScrollRef.current) {
-      originalScrollRef.current.scrollTop = rewrittenScrollRef.current.scrollTop;
-    }
-  };
+  // Note: Scroll sync removed since content is now stacked vertically
+  // Each section has independent scrolling
 
   // Format section type for display
   const formatSectionType = (type: string): string => {
@@ -129,7 +119,7 @@ export default function RewritePreviewModal({
     >
       {/* Backdrop - covers entire viewport including sidebar */}
       <div
-        className="fixed inset-0 bg-black/40 transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         style={{ left: 0, width: '100vw', zIndex: 0 }}
       />
@@ -137,95 +127,115 @@ export default function RewritePreviewModal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className="relative bg-white rounded-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
+        className="relative bg-white rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl border border-gray-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Rewrite Preview: {formatSectionType(sectionType)}
-            </h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                AI Rewrite Preview
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {formatSectionType(sectionType)}
+              </p>
+            </div>
             {creditCost && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <span className="ml-2 text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
                 {creditCost} credit{creditCost !== 1 ? "s" : ""}
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content - Side by side comparison */}
-        <div className="flex-1 flex overflow-hidden">
+        {/* Content - Stacked vertically (column) comparison */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
           {/* Original Content */}
-          <div className="flex-1 flex flex-col border-r border-gray-200">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Original
-              </h3>
+          <div className="flex-1 flex flex-col bg-white m-4 mb-2 rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Original Content
+                </h3>
+              </div>
             </div>
             <div
               ref={originalScrollRef}
-              onScroll={handleOriginalScroll}
-              className="flex-1 overflow-y-auto px-4 py-4 text-sm text-gray-700"
-              style={{ maxHeight: "calc(90vh - 200px)" }}
+              className="flex-1 overflow-y-auto px-6 py-5 text-sm text-gray-700 bg-white"
+              style={{ maxHeight: "calc(42vh - 120px)" }}
             >
               <div
                 dangerouslySetInnerHTML={{
                   __html: formatContent(originalContent),
                 }}
-                className="prose prose-sm max-w-none"
+                className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
               />
             </div>
           </div>
 
           {/* Rewritten Content */}
-          <div className="flex-1 flex flex-col">
-            <div className="px-4 py-3 bg-blue-50 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wide">
-                Rewritten
-              </h3>
+          <div className="flex-1 flex flex-col bg-white m-4 mt-2 rounded-xl border-2 border-blue-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
+                  AI Rewritten Content
+                </h3>
+              </div>
             </div>
             <div
               ref={rewrittenScrollRef}
-              onScroll={handleRewrittenScroll}
-              className="flex-1 overflow-y-auto px-4 py-4 text-sm text-gray-700"
-              style={{ maxHeight: "calc(90vh - 200px)" }}
+              className="flex-1 overflow-y-auto px-6 py-5 text-sm text-gray-700 bg-white"
+              style={{ maxHeight: "calc(42vh - 120px)" }}
             >
-              {isRegenerating ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex flex-col items-center gap-3 text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                    <p className="text-sm">Regenerating...</p>
+              {isRegenerating || !rewrittenContent ? (
+                <div className="flex items-center justify-center h-full min-h-[250px]">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-700">
+                        {isRegenerating ? 'Generating rewrite...' : 'Loading...'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Please wait while AI improves your content
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ) : rewrittenContent ? (
+              ) : (
                 <div
                   dangerouslySetInnerHTML={{
                     __html: formatContent(rewrittenContent),
                   }}
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
                 />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <p>No rewritten content available</p>
-                </div>
               )}
             </div>
           </div>
         </div>
 
         {/* Footer - Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between px-6 py-5 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
           >
             Cancel
           </button>
@@ -234,17 +244,17 @@ export default function RewritePreviewModal({
             <button
               onClick={onRegenerate}
               disabled={isRegenerating}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-blue-700 bg-white border-2 border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-blue-300"
             >
               {isRegenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Regenerating...
+                  <span>Regenerating...</span>
                 </>
               ) : (
                 <>
                   <RotateCw className="w-4 h-4" />
-                  Regenerate
+                  <span>Regenerate</span>
                 </>
               )}
             </button>
@@ -256,10 +266,10 @@ export default function RewritePreviewModal({
                 }
               }}
               disabled={!rewrittenContent || isRegenerating}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
             >
               <Check className="w-4 h-4" />
-              Accept Changes
+              <span>Accept Changes</span>
             </button>
           </div>
         </div>

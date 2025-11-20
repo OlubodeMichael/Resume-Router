@@ -22,10 +22,18 @@ import {
   ChevronDown,
   Download
 } from "lucide-react";
-import { exportToPDF, exportVectorPDF, generateFilename } from "@/lib/exportUtils";
+import { downloadResumeAsPDF } from "@/lib/pdfUtils";
+
+type TemplateData = {
+  [key: string]: string | number | boolean | TemplateData | TemplateData[];
+};
 
 interface ToolbarProps {
   editorRef: React.RefObject<HTMLDivElement | null>;
+  templateData?: TemplateData;
+  setIsDownloading?: (loading: boolean) => void;
+  onSuccess?: (message: string, description: string, duration: number) => void;
+  onError?: (message: string, error: string, duration: number) => void;
 }
 
 type ActiveMap = {
@@ -55,7 +63,13 @@ const roundFontSize = (fontSize: string): string => {
   return fontSize; // Return as-is if not in px format
 };
 
-export default function Toolbar({ editorRef }: ToolbarProps) {
+export default function Toolbar({ 
+  editorRef, 
+  templateData = {},
+  setIsDownloading,
+  onSuccess,
+  onError
+}: ToolbarProps) {
   const [currentFontSize, setCurrentFontSize] = useState<string>("12px");
   const [showFontSizeDropdown, setShowFontSizeDropdown] = useState<boolean>(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
@@ -511,30 +525,50 @@ export default function Toolbar({ editorRef }: ToolbarProps) {
   const handleExportPDF = useCallback(async () => {
     if (!editorRef.current || isExporting) return;
     
-    setIsExporting(true);
+    const setDownloading = setIsDownloading || setIsExporting;
+    setDownloading(true);
+    
     try {
-      const filename = generateFilename('resume', 'pdf');
-      
-      // Try vector PDF first (server-side, smaller, crisp)
-      try {
-        const html = editorRef.current.outerHTML;
-        await exportVectorPDF(html, filename, true);
-      } catch (vectorError) {
-        console.warn('Vector PDF failed, falling back to client-side:', vectorError);
-        // Fallback to client-side export
-        await exportToPDF(editorRef.current, { 
-          filename,
-          quality: 0.7, // Optimized for smaller file size
-          allowUserToChooseLocation: true
-        });
-      }
+      await downloadResumeAsPDF(
+        editorRef,
+        templateData,
+        setDownloading,
+        () => {
+          if (onSuccess) {
+            onSuccess(
+              'PDF Downloaded Successfully!',
+              'Your resume has been saved to your device.',
+              3000
+            );
+          }
+        },
+        (error: string) => {
+          if (onError) {
+            onError(
+              'PDF Download Failed',
+              error,
+              5000
+            );
+          } else {
+            alert(`Failed to download resume: ${error}`);
+          }
+        }
+      );
     } catch (error) {
-      console.error('PDF export failed:', error);
-      alert('Failed to export PDF. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (onError) {
+        onError(
+          'PDF Download Failed',
+          errorMessage,
+          5000
+        );
+      } else {
+        alert(`Failed to download resume: ${errorMessage}`);
+      }
     } finally {
-      setIsExporting(false);
+      setDownloading(false);
     }
-  }, [editorRef, isExporting]);
+  }, [editorRef, templateData, setIsDownloading, isExporting, onSuccess, onError]);
 
 
   const baseButtonClass =
