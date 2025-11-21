@@ -478,11 +478,11 @@ export function buildStandaloneHTML(
             ${spec.css}
             
             /* Additional print styles */
-            @media print {
-              @page {
-                margin: ${spec.page?.margin || '0.25in'} !important;
-                size: ${spec.page?.size || 'letter'} !important;
-              }
+              @media print {
+                @page {
+                  margin: ${spec.page?.margin || '0.25in 0.25in 0.1in 0.25in'} !important;
+                  size: ${spec.page?.size || 'letter'} !important;
+                }
               
               * {
                 -webkit-print-color-adjust: exact !important;

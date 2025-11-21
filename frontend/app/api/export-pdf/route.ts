@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       content: `
         @page { 
           size: letter; 
-          margin: 0.25in 0.75in 0.1in 0.75in;
+          margin: 0.25in 0.25in 0.1in 0.25in;
         }
         
         /* Ensure print compatibility */
@@ -73,6 +73,22 @@ export async function POST(request: NextRequest) {
           padding: 0 !important;
           background: white !important;
           color: black !important;
+          line-height: 1.1 !important;
+        }
+        
+        /* Reduce line height for better spacing in PDF */
+        p, li, div, span {
+          line-height: 1.1 !important;
+        }
+        
+        /* Reduce spacing between sections */
+        section.mb6 {
+          margin-bottom: 2pt !important;
+        }
+        
+        h2 {
+          margin-top: 3pt !important;
+          margin-bottom: 2pt !important;
         }
         
         /* Ensure all text is black in PDF */
@@ -102,10 +118,10 @@ export async function POST(request: NextRequest) {
       printBackground: true,
       displayHeaderFooter: false,
       margin: {
-        top: '0.1in',
-        right: '0.75in',
+        top: '0.25in',
+        right: '0.4in',
         bottom: '0.1in',
-        left: '0.75in'
+        left: '0.4in'
       },
       preferCSSPageSize: false
     });

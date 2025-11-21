@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical, Settings, Eye, EyeOff, X, Plus, Trash2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { extractSectionContentByType, hasSubsections, extractSubsections, extractSubsectionContent } from "@/lib/sectionUtils";
+import { extractSectionContentByType, hasSubsections, extractSubsectionContent } from "@/lib/sectionUtils";
 
 type SectionDefinition = {
   type: string;
@@ -148,6 +148,10 @@ export function SectionReorderSidebar({
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState<boolean>(false);
   const [expandedHeaderSection, setExpandedHeaderSection] = useState<string | null>(null);
   const [openRewriteDropdown, setOpenRewriteDropdown] = useState<string | null>(null);
+  const [expandedSubsections, setExpandedSubsections] = useState<string | null>(null);
+  const [hiddenSubsections, setHiddenSubsections] = useState<Record<string, Set<number>>>({});
+  const [draggingSubsection, setDraggingSubsection] = useState<{ sectionKey: string; subsectionId: number } | null>(null);
+  const [dropTargetSubsection, setDropTargetSubsection] = useState<{ sectionKey: string; subsectionId: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Close dropdown when clicking outside
@@ -391,6 +395,132 @@ export function SectionReorderSidebar({
       [sectionKey]: !(prev[sectionKey] ?? false),
     }));
   }, []);
+
+  const toggleSubsectionVisibility = useCallback((sectionKey: string, subsectionId: number) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    const sectionElement = editor.querySelector(`section[data-section-key="${sectionKey}"]`) as HTMLElement | null;
+    if (!sectionElement) return;
+    
+    // Get all h3 elements directly from DOM (these are the subsection markers)
+    const h3Elements = Array.from(sectionElement.querySelectorAll("h3")) as HTMLElement[];
+    if (subsectionId < 0 || subsectionId >= h3Elements.length) return;
+    
+    const h3 = h3Elements[subsectionId];
+    if (!h3) return;
+    
+    // Get current state and toggle
+    setHiddenSubsections((prev) => {
+      const sectionHiddenSet = prev[sectionKey] || new Set<number>();
+      const newSet = new Set(sectionHiddenSet);
+      const wasHidden = newSet.has(subsectionId);
+      
+      if (wasHidden) {
+        newSet.delete(subsectionId);
+      } else {
+        newSet.add(subsectionId);
+      }
+      
+      const isHidden = newSet.has(subsectionId);
+      
+      // Collect all elements for this subsection (h3 and all its siblings until next h3 or end)
+      // This includes: h3 (title), h4 (company), ul/ol (bullets), and any other elements
+      const elementsToToggle: HTMLElement[] = [h3];
+      let currentElement: Element | null = h3.nextElementSibling;
+      
+      while (currentElement && currentElement.parentElement === sectionElement) {
+        // Stop if we hit another h3 (start of next subsection) or h2 (section header)
+        if (currentElement.tagName === 'H3' || currentElement.tagName === 'H2') break;
+        elementsToToggle.push(currentElement as HTMLElement);
+        currentElement = currentElement.nextElementSibling;
+      }
+      
+      // Apply visibility to all elements in this subsection
+      // Use !important to override any inline styles that might be set elsewhere
+      elementsToToggle.forEach(el => {
+        if (isHidden) {
+          el.style.setProperty('display', 'none', 'important');
+          el.setAttribute('data-subsection-hidden', 'true');
+        } else {
+          el.style.removeProperty('display');
+          el.removeAttribute('data-subsection-hidden');
+        }
+      });
+      
+      // Trigger reorder callback to save changes
+      if (onReorder) {
+        requestAnimationFrame(() => {
+          const htmlSnapshot = editor.innerHTML;
+          onReorder(htmlSnapshot);
+        });
+      }
+      
+      return {
+        ...prev,
+        [sectionKey]: newSet,
+      };
+    });
+  }, [editorRef, onReorder]);
+
+  const reorderSubsections = useCallback((sectionKey: string, sourceId: number, targetId: number | null) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    
+    const sectionElement = editor.querySelector(`section[data-section-key="${sectionKey}"]`) as HTMLElement | null;
+    if (!sectionElement) return;
+    
+    // Get all h3 elements directly from DOM (these are the subsection markers)
+    const h3Elements = Array.from(sectionElement.querySelectorAll("h3")) as HTMLElement[];
+    if (sourceId < 0 || sourceId >= h3Elements.length) return;
+    if (sourceId === targetId) return;
+    
+    const sourceH3 = h3Elements[sourceId];
+    if (!sourceH3) return;
+    
+    // Collect all elements for the source subsection (h3 and its siblings until next h3 or end)
+    const sourceElements: HTMLElement[] = [sourceH3];
+    let currentElement: Element | null = sourceH3.nextElementSibling;
+    
+    while (currentElement && currentElement.parentElement === sectionElement) {
+      // Stop if we hit another h3 (start of next subsection) or h2 (section header)
+      if (currentElement.tagName === 'H3' || currentElement.tagName === 'H2') break;
+      sourceElements.push(currentElement as HTMLElement);
+      currentElement = currentElement.nextElementSibling;
+    }
+    
+    // Find target position
+    let targetH3: HTMLElement | null = null;
+    if (targetId !== null && targetId >= 0 && targetId < h3Elements.length) {
+      targetH3 = h3Elements[targetId];
+    }
+    
+    // Create fragment and move elements (actual DOM nodes, not clones)
+    const fragment = document.createDocumentFragment();
+    sourceElements.forEach(el => {
+      fragment.appendChild(el); // This automatically removes from original position
+    });
+    
+    // Insert at target position
+    if (targetH3 && targetH3 !== sourceH3 && targetH3.parentElement === sectionElement) {
+      // Insert before target h3
+      sectionElement.insertBefore(fragment, targetH3);
+    } else {
+      // Insert at end (after last subsection)
+      sectionElement.appendChild(fragment);
+    }
+    
+    // Update sections list first
+    updateSectionsFromDom();
+    
+    // Trigger reorder callback to save changes
+    if (onReorder) {
+      requestAnimationFrame(() => {
+        const htmlSnapshot = editor.innerHTML;
+        onReorder(htmlSnapshot);
+      });
+    }
+  }, [editorRef, onReorder, updateSectionsFromDom]);
 
   const extractHeaderContactInfo = useCallback(() => {
     const editor = editorRef.current;
@@ -764,7 +894,7 @@ export function SectionReorderSidebar({
     const editor = editorRef.current;
     if (!editor) return;
 
-    sections.forEach(({ key }) => {
+    sections.forEach(({ key, type }) => {
       const node = editor.querySelector<HTMLElement>(`[data-section-key="${key}"]`);
       if (!node) return;
       const hidden = hiddenSections[key] ?? false;
@@ -774,6 +904,39 @@ export function SectionReorderSidebar({
       } else {
         node.style.display = "";
         node.setAttribute("data-section-hidden", "false");
+        
+        // Apply subsection visibility if section has subsections
+        if (type && hasSubsections(type)) {
+          const sectionHiddenSubsections = hiddenSubsections[key] || new Set<number>();
+          // Get h3 elements directly from DOM (these mark subsections)
+          const h3Elements = Array.from(node.querySelectorAll("h3")) as HTMLElement[];
+          
+          h3Elements.forEach((h3, index) => {
+            const isHidden = sectionHiddenSubsections.has(index);
+            
+            // Collect all elements for this subsection (h3 and all siblings until next h3)
+            const elementsToToggle: HTMLElement[] = [h3];
+            let currentElement: Element | null = h3.nextElementSibling;
+            
+            while (currentElement && currentElement.parentElement === node) {
+              // Stop if we hit another h3 (start of next subsection) or h2 (section header)
+              if (currentElement.tagName === 'H3' || currentElement.tagName === 'H2') break;
+              elementsToToggle.push(currentElement as HTMLElement);
+              currentElement = currentElement.nextElementSibling;
+            }
+            
+            // Apply visibility - use !important to ensure it overrides other styles
+            elementsToToggle.forEach(el => {
+              if (isHidden) {
+                el.style.setProperty('display', 'none', 'important');
+                el.setAttribute('data-subsection-hidden', 'true');
+              } else {
+                el.style.removeProperty('display');
+                el.removeAttribute('data-subsection-hidden');
+              }
+            });
+          });
+        }
       }
     });
 
@@ -781,7 +944,7 @@ export function SectionReorderSidebar({
       const htmlSnapshot = editor.innerHTML;
       requestAnimationFrame(() => onReorder(htmlSnapshot));
     }
-  }, [hiddenSections, sections, editorRef, onReorder]);
+  }, [hiddenSections, hiddenSubsections, sections, editorRef, onReorder]);
 
   const hasSections = sections.length > 0;
 
@@ -1049,117 +1212,115 @@ export function SectionReorderSidebar({
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </>
+                        ) : hasSubsections(section.type || '') ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setExpandedSubsections(
+                                  expandedSubsections === section.key ? null : section.key
+                                );
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                              aria-label={expandedSubsections === section.key ? "Collapse section" : "Expand section"}
+                              title={expandedSubsections === section.key ? "Collapse section" : "Expand section"}
+                            >
+                              {expandedSubsections === section.key ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </button>
+                            {onSectionRewrite && section.type !== "skills" && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  const editor = editorRef.current;
+                                  if (!editor || !section.type) return;
+                                  
+                                  const content = extractSectionContentByType(editor, section.type);
+                                  if (content && onSectionRewrite) {
+                                    onSectionRewrite(section.type, content);
+                                  }
+                                }}
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onPointerDown={(event) => event.stopPropagation()}
+                                className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                aria-label="Rewrite section with AI"
+                                title="Rewrite section with AI"
+                              >
+                                <Sparkles className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleSectionVisibility(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                              aria-pressed={isHidden}
+                              aria-label={isHidden ? "Show section" : "Hide section"}
+                              title={isHidden ? "Show section" : "Hide section"}
+                            >
+                              {isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                handleRemoveSection(section.key, section.type);
+                              }}
+                              onMouseDown={(event) => event.stopPropagation()}
+                              onPointerDown={(event) => event.stopPropagation()}
+                              className="rounded-full p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              aria-label="Remove section"
+                              title="Remove section"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
                         ) : (
                           <>
-                            {onSectionRewrite && section.type && section.type !== "header" && (
-                              <div className="relative" ref={openRewriteDropdown === section.key ? dropdownRef : null}>
-                                {hasSubsections(section.type) ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={(event) => {
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        setOpenRewriteDropdown(
-                                          openRewriteDropdown === section.key ? null : section.key
-                                        );
-                                      }}
-                                      onMouseDown={(event) => event.stopPropagation()}
-                                      onPointerDown={(event) => event.stopPropagation()}
-                                      className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600 flex items-center gap-1"
-                                      aria-label="Rewrite section with AI"
-                                      title="Rewrite section with AI"
-                                    >
-                                      <Sparkles className="h-4 w-4" />
-                                      <ChevronDown className={`h-3 w-3 transition-transform ${openRewriteDropdown === section.key ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {openRewriteDropdown === section.key && (
-                                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto" ref={dropdownRef}>
-                                        {(() => {
-                                          const editor = editorRef.current;
-                                          if (!editor || !section.type) return null;
-                                          
-                                          const sectionElement = editor.querySelector(
-                                            `section[data-section-key="${section.key}"]`
-                                          ) as HTMLElement | null;
-                                          
-                                          if (!sectionElement) return null;
-                                          
-                                          const subsections = extractSubsections(sectionElement);
-                                          
-                                          return (
-                                            <>
-                                              <button
-                                                type="button"
-                                                onClick={(event) => {
-                                                  event.preventDefault();
-                                                  event.stopPropagation();
-                                                  const content = extractSectionContentByType(editor, section.type!);
-                                                  if (content && onSectionRewrite) {
-                                                    onSectionRewrite(section.type!, content);
-                                                    setOpenRewriteDropdown(null);
-                                                  }
-                                                }}
-                                                className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 border-b border-gray-200"
-                                              >
-                                                Rewrite All Entries
-                                              </button>
-                                              {subsections.map((subsection) => (
-                                                <button
-                                                  key={subsection.id}
-                                                  type="button"
-                                                  onClick={(event) => {
-                                                    event.preventDefault();
-                                                    event.stopPropagation();
-                                                    const content = extractSubsectionContent(sectionElement, subsection.id);
-                                                    if (content && onSectionRewrite) {
-                                                      onSectionRewrite(section.type!, content, subsection.id);
-                                                      setOpenRewriteDropdown(null);
-                                                    }
-                                                  }}
-                                                  className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 truncate"
-                                                  title={subsection.label}
-                                                >
-                                                  {subsection.label}
-                                                </button>
-                                              ))}
-                                            </>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      const editor = editorRef.current;
-                                      if (!editor || !section.type) return;
-                                      
-                                      const sectionElement = editor.querySelector(
-                                        `section[data-section-key="${section.key}"]`
-                                      ) as HTMLElement | null;
-                                      
-                                      if (sectionElement && onSectionRewrite) {
-                                        // Extract content and trigger rewrite
-                                        const content = extractSectionContentByType(editor, section.type);
-                                        if (content) {
-                                          onSectionRewrite(section.type, content);
-                                        }
-                                      }
-                                    }}
-                                    onMouseDown={(event) => event.stopPropagation()}
-                                    onPointerDown={(event) => event.stopPropagation()}
-                                    className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                                    aria-label="Rewrite section with AI"
-                                    title="Rewrite section with AI"
-                                  >
-                                    <Sparkles className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
+                            {onSectionRewrite && section.type && section.type !== "header" && section.type !== "skills" && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  const editor = editorRef.current;
+                                  if (!editor || !section.type) return;
+                                  
+                                  const sectionElement = editor.querySelector(
+                                    `section[data-section-key="${section.key}"]`
+                                  ) as HTMLElement | null;
+                                  
+                                  if (sectionElement && onSectionRewrite) {
+                                    // Extract content and trigger rewrite
+                                    const content = extractSectionContentByType(editor, section.type);
+                                    if (content) {
+                                      onSectionRewrite(section.type, content);
+                                    }
+                                  }
+                                }}
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onPointerDown={(event) => event.stopPropagation()}
+                                className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                aria-label="Rewrite section with AI"
+                                title="Rewrite section with AI"
+                              >
+                                <Sparkles className="h-4 w-4" />
+                              </button>
                             )}
                             <button
                               type="button"
@@ -1508,6 +1669,131 @@ export function SectionReorderSidebar({
                               Cancel
                             </button>
                           </div>
+                        </div>
+                      )}
+                      {hasSubsections(section.type || '') && expandedSubsections === section.key && (
+                        <div className="ml-4 mt-2 flex flex-col gap-2 border-l-2 border-gray-200 pl-3">
+                          {(() => {
+                            const editor = editorRef.current;
+                            if (!editor || !section.type) return null;
+                            
+                            const sectionElement = editor.querySelector(
+                              `section[data-section-key="${section.key}"]`
+                            ) as HTMLElement | null;
+                            
+                            if (!sectionElement) return null;
+                            
+                            // Get subsections directly from DOM using h3 elements
+                            const h3Elements = Array.from(sectionElement.querySelectorAll("h3")) as HTMLElement[];
+                            const sectionType = sectionElement.getAttribute("data-section-type") || "";
+                            const sectionHiddenSubsections = hiddenSubsections[section.key] || new Set<number>();
+                            
+                            return h3Elements.map((h3, index) => {
+                              // Extract label (company name for experience, h3 content for others)
+                              let label = `Item ${index + 1}`;
+                              
+                              if (sectionType === "experience") {
+                                // Find the h4 element that follows this h3 (contains company name)
+                                let current: Element | null = h3.nextElementSibling;
+                                while (current && current.tagName !== "H3" && current.tagName !== "H2") {
+                                  if (current.tagName === "H4") {
+                                    const firstSpan = current.querySelector("span");
+                                    label = firstSpan?.textContent?.trim() || current.textContent?.trim() || `Item ${index + 1}`;
+                                    break;
+                                  }
+                                  current = current.nextElementSibling;
+                                }
+                              } else {
+                                // For other sections, use the h3 content (title/name)
+                                const firstSpan = h3.querySelector("span");
+                                label = firstSpan?.textContent?.trim() || h3.textContent?.trim() || `Item ${index + 1}`;
+                              }
+                              
+                              const subsectionId = index;
+                              const isSubsectionHidden = sectionHiddenSubsections.has(subsectionId);
+                              const isDraggingSub = draggingSubsection?.sectionKey === section.key && draggingSubsection?.subsectionId === subsectionId;
+                              const isDropTargetSub = dropTargetSubsection?.sectionKey === section.key && dropTargetSubsection?.subsectionId === subsectionId;
+                              
+                              return (
+                                <div
+                                  key={subsectionId}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.effectAllowed = "move";
+                                    setDraggingSubsection({ sectionKey: section.key, subsectionId: subsectionId });
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setDropTargetSubsection({ sectionKey: section.key, subsectionId: subsectionId });
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (draggingSubsection && draggingSubsection.sectionKey === section.key) {
+                                      reorderSubsections(section.key, draggingSubsection.subsectionId, subsectionId);
+                                    }
+                                    setDraggingSubsection(null);
+                                    setDropTargetSubsection(null);
+                                  }}
+                                  onDragEnd={() => {
+                                    setDraggingSubsection(null);
+                                    setDropTargetSubsection(null);
+                                  }}
+                                  className={`group relative flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                                    isDraggingSub
+                                      ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md"
+                                      : isDropTargetSub
+                                      ? "border-blue-400 bg-blue-50/70"
+                                      : isSubsectionHidden
+                                      ? "border-gray-200 bg-gray-50 text-gray-400 opacity-70"
+                                      : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/60 text-gray-700"
+                                  }`}
+                                >
+                                  <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                                  <span className={`flex-1 truncate ${isSubsectionHidden ? 'line-through' : ''}`}>
+                                    {label}
+                                  </span>
+                                  {onSectionRewrite && (
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        const content = extractSubsectionContent(sectionElement, subsectionId);
+                                        if (content && onSectionRewrite) {
+                                          onSectionRewrite(section.type!, content, subsectionId);
+                                        }
+                                      }}
+                                      onMouseDown={(event) => event.stopPropagation()}
+                                      onPointerDown={(event) => event.stopPropagation()}
+                                      className="rounded-full p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                      aria-label="Rewrite entry with AI"
+                                      title="Rewrite entry with AI"
+                                    >
+                                      <Sparkles className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      toggleSubsectionVisibility(section.key, subsectionId);
+                                    }}
+                                    onMouseDown={(event) => event.stopPropagation()}
+                                    onPointerDown={(event) => event.stopPropagation()}
+                                    className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                                    aria-pressed={isSubsectionHidden}
+                                    aria-label={isSubsectionHidden ? "Show entry" : "Hide entry"}
+                                    title={isSubsectionHidden ? "Show entry" : "Hide entry"}
+                                  >
+                                    {isSubsectionHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       )}
                     </div>
