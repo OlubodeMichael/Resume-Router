@@ -476,14 +476,11 @@ const generationPrompt = PromptTemplate.fromTemplate(`
   You are a professional resume writer. Generate ONLY the dynamic content that needs to be tailored to the job description.
 
   CRITICAL: WORD COUNT REQUIREMENT - The entire resume content (experience + projects + summary) must be 400-600 words total:
-  - Target: ~650 words for optimal impact
-  - Minimum: 520 words (if less, expand bullet points with more detail)
-  - Maximum: 720 words (if more, condense while keeping metrics and impact)
   - Track word count as you write and adjust bullet point length accordingly
   - Prioritize quality over quantity, but stay within range
-  - Each experience bullet must be 25-40 words and read as a multi-clause sentence that explains the action, the method, and the quantified outcome
-  - Each project bullet must be 20-30 words and include both the technical approach and the measurable impact
-  - Summary should be 50-100 words
+  - Each experience bullet must be 65-70 words and read as a multi-clause sentence that explains the action, the method, and the quantified outcome
+  - Each project bullet must be 30-35 words and include both the technical approach and the measurable impact
+  - Summary should be 30-35 words
   
   CRITICAL: ZERO-TOLERANCE WORD REPETITION POLICY - Using the same words over and over again is STRICTLY FORBIDDEN:
   - YOU MUST maintain a running mental list of EVERY significant word you've used
@@ -1521,6 +1518,8 @@ Tone preference: {tone}
 Original content:
 {originalContent}
 
+{customInstructions}
+
 CRITICAL OUTPUT FORMAT:
 - If the original content contains bullet points (lines starting with •, -, *, or numbered), 
   you MUST return a JSON array of strings representing the rewritten bullets.
@@ -1549,30 +1548,29 @@ export async function rewriteSectionWithAI(
   customPrompt?: string
 ): Promise<string> {
   try {
-    // Build the prompt with optional job description context
+    // Build custom instructions text if provided
+    const customInstructionsText = customPrompt && customPrompt.trim()
+      ? `\n\n🚨🚨🚨 CRITICAL - USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE ABOVE ALL ELSE):\n${customPrompt.trim()}\n\nIMPORTANT: Follow the user's instructions above carefully. These instructions take precedence over all other guidance.\n`
+      : '';
+
+    console.log('=== AI SECTION REWRITE DEBUG ===');
+    console.log('Section Type:', sectionType);
+    console.log('Has Custom Prompt:', !!(customPrompt && customPrompt.trim()));
+    console.log('Custom Prompt:', customPrompt);
+    console.log('Custom Instructions Text:', customInstructionsText);
+
+    // Build the prompt with optional custom instructions and job description context
     let promptText = await rewriteSectionPrompt.format({
       sectionType,
       tone,
       originalContent: originalContent.trim(),
+      customInstructions: customInstructionsText,
     });
 
-    // If custom prompt is provided, add it prominently BEFORE the requirements section
-    // This ensures the AI model prioritizes the user's specific instructions
-    if (customPrompt && customPrompt.trim()) {
-      // Find where "Requirements:" starts and insert custom prompt before it
-      const requirementsIndex = promptText.indexOf('Requirements:');
-      if (requirementsIndex > -1) {
-        const beforeRequirements = promptText.substring(0, requirementsIndex);
-        const afterRequirements = promptText.substring(requirementsIndex);
-        promptText = `${beforeRequirements}\n\nIMPORTANT - USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE):\n${customPrompt.trim()}\n\n${afterRequirements}`;
-      } else {
-        // Fallback: add before the final instruction
-        promptText = promptText.replace(
-          'Return ONLY the rewritten content, no explanations or markdown formatting.',
-          `IMPORTANT - USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE):\n${customPrompt.trim()}\n\nReturn ONLY the rewritten content, no explanations or markdown formatting.`
-        );
-      }
-    }
+    console.log('Final Prompt Length:', promptText.length);
+    console.log('Prompt contains custom instructions:', promptText.includes('USER\'S SPECIFIC INSTRUCTIONS'));
+    console.log('Prompt Preview (first 500 chars):', promptText.substring(0, 500));
+    console.log('==============================');
 
     // If job description context is provided, add it to the prompt
     if (jobDescriptionContext) {

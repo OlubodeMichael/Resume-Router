@@ -285,7 +285,7 @@
     /* Page + base */
     @page { 
       size: letter; 
-      margin: 0.25in 0.75in 0.1in 0.75in; 
+      margin: 0.25in 0.05in 0.1in 0.05in; 
     }
     
     body { 
@@ -295,7 +295,7 @@
       color: #000; 
       margin: 0;
       padding: 0;
-      line-height: 1.2;
+      line-height: 1.1;
     }
     
     .spacer { margin: 0 auto; }
@@ -304,11 +304,11 @@
     @media print {
       body {
         font-size: 11pt;
-        line-height: 1.2;
+        line-height: 1.1;
       }
       @page { 
         size: letter; 
-        margin: 0.25in 0.75in 0.1in 0.75in; 
+        margin: 0.25in 0.05in 0.1in 0.05in; 
       }
       
       h1, h2, h3, h4, p, a, li, .normal {
@@ -341,7 +341,7 @@
     }
     
     h2 { 
-      margin: 6pt 0 3pt 0; 
+      margin: 2pt 0 2pt 0; 
       padding: 0; 
       border-bottom: 1px solid #000; 
       text-transform: uppercase; 
@@ -386,7 +386,7 @@
     
     ul > li { 
       margin-bottom: 1pt; 
-      line-height: 1.2;
+      line-height: 1.1;
       list-style-type: disc;
     }
     
@@ -447,7 +447,7 @@
     }
     
     .mb6 { 
-      margin-bottom: 4pt; 
+      margin-bottom: 2pt; 
     }
     
     .normal {
@@ -455,7 +455,7 @@
 
     }
   `,
-  page: { size: 'letter', margin: '0.25in 0.75in 0.1in 0.75in' },
+  page: { size: 'letter', margin: '0.15in 0.25in 0.1in 0.25in' },
   fonts: [],
   baseUrl: '',
 };
