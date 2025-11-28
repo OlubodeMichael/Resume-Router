@@ -23,6 +23,8 @@ export default function Home() {
       {/* Hero Section */}
       <FadeIn><Hero /></FadeIn>
 
+      
+
       {/* Company Logos Section */}
       <CompanyLogos />
 
@@ -38,6 +40,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* Video Section */}
+      <VideoSection />
 
       
 
@@ -493,6 +497,41 @@ function CTA() {
       </div>
     </section>
   )
+}
+
+function VideoSection() {
+  return (
+    <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-serif font-medium text-slate-900 mb-4">
+            See ResumeRouter in Action
+          </h2>
+          <p className="text-slate-600 text-lg sm:text-xl max-w-2xl mx-auto font-sans">
+            Watch how easy it is to create job-tailored resumes in minutes
+          </p>
+        </div>
+        
+        <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-slate-900">
+          <div className="aspect-video w-full">
+            <video
+              className="w-full h-full object-cover"
+              controls
+              playsInline 
+              autoPlay
+              muted
+              loop
+              preload="auto"
+              poster="/dashboardImage.png"
+            >
+              <source src="/video.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function CTA2() {
