@@ -10,7 +10,7 @@ interface RewritePreviewModalProps {
   originalContent: string; // Plain text or HTML
   rewrittenContent: string | null; // Plain text or HTML
   onAccept: (rewrittenContent: string) => void;
-  onRegenerate: () => void;
+  onRegenerate: () => void; // Opens the selection modal again
   isRegenerating?: boolean;
   creditCost?: number; // Optional: show cost
 }

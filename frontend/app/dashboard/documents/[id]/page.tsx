@@ -414,76 +414,23 @@ export default function DocumentPage() {
     }
   }, [rewritePreviewModal, showSuccess, showError])
 
-  // Handle regenerate rewrite
-  const handleRegenerateRewrite = useCallback(async () => {
+  // Handle regenerate rewrite - opens selection modal again
+  const handleRegenerateRewrite = useCallback(() => {
     if (!rewritePreviewModal) return;
 
-    const { sectionType, originalContent, customPrompt } = rewritePreviewModal;
-    const resumeId = (id as string) || generatedResumeContent?.id;
+    const { sectionType, originalContent, subsectionIndex } = rewritePreviewModal;
     
-    if (!resumeId) {
-      showError('Error', 'Resume ID not found', 3000);
-      return;
-    }
-
-    // Set regenerating state
-    setRewritePreviewModal((prev) => prev ? {
-      ...prev,
-      isRegenerating: true,
-      rewrittenContent: null,
-    } : null);
-
-    try {
-      const result = await rewriteSection(resumeId, sectionType, originalContent, customPrompt);
-      
-      // Update preview modal with new rewritten content
-      setRewritePreviewModal((prev) => prev ? {
-        ...prev,
-        rewrittenContent: result.rewrittenContent,
-        isRegenerating: false,
-        creditCost: result.creditCost,
-      } : null);
-
-    } catch (error) {
-      // Determine error message
-      let errorMessage = 'Failed to regenerate rewrite. Please try again.';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        
-        // Handle specific error cases
-        if (error.message === 'Insufficient Credits') {
-          showError(
-            'Insufficient Credits',
-            'You don\'t have enough credits. Please upgrade your plan or purchase more credits.',
-            5000
-          );
-        } else if (error.message === 'Authentication Required') {
-          showError(
-            'Authentication Required',
-            'Please sign in to continue.',
-            5000
-          );
-        } else {
-          showError(
-            'Regenerate Failed',
-            errorMessage,
-            5000
-          );
-        }
-      } else {
-        showError(
-          'Regenerate Failed',
-          errorMessage,
-          5000
-        );
-      }
-      
-      setRewritePreviewModal((prev) => prev ? {
-        ...prev,
-        isRegenerating: false,
-      } : null);
-    }
-  }, [rewritePreviewModal, id, generatedResumeContent?.id, rewriteSection, showError])
+    // Close preview modal
+    setRewritePreviewModal(null);
+    
+    // Open selection modal with the same section info
+    setRewriteSelectionModal({
+      isOpen: true,
+      sectionType,
+      sectionContent: originalContent,
+      subsectionIndex,
+    });
+  }, [rewritePreviewModal])
 
   // Handle cancel rewrite selection
   const handleCancelRewriteSelection = useCallback(() => {
