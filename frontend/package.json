@@ -38,7 +38,7 @@
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.525.0",
-    "next": "15.3.4",
+    "next": "15.3.8",
     "puppeteer": "^24.22.0",
     "puppeteer-core": "^24.30.0",
     "react": "^19.0.0",
